@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { useBusinessContext } from "@/components/business-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ import Link from "next/link";
 import { CURRENCY_OPTIONS, TIMEZONE_OPTIONS } from "@/lib/business";
 
 export default function NewBusinessPage() {
+  const { refreshBusinesses } = useBusinessContext();
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -48,6 +50,8 @@ export default function NewBusinessPage() {
       const data = await res.json();
 
       if (res.ok) {
+        // Refresh the business list in the context
+        await refreshBusinesses();
         router.push("/dashboard");
       } else {
         setError(data.error || "Something went wrong");

@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
+import { Topbar } from "@/components/topbar";
+import { BusinessSwitcher } from "@/components/business-switcher";
 import {
   Building2,
   Users,
@@ -46,7 +48,6 @@ const navigation = [
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [currentBusiness, setCurrentBusiness] = useState<any>(null);
 
   if (status === "loading") {
     return (
@@ -105,7 +106,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Mobile menu */}
       <div className="lg:hidden">
         <Sheet>
-          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+          <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6">
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="lg:hidden">
                 <Menu className="h-6 w-6" />
@@ -142,6 +143,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </div>
           
+          {/* Mobile Business Switcher Bar */}
+          <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+            <BusinessSwitcher />
+          </div>
+          
           <SheetContent side="left" className="w-72">
             <div className="flex h-16 shrink-0 items-center">
               <h1 className="text-2xl font-bold text-gray-900">Invixy</h1>
@@ -171,37 +177,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Desktop header */}
-      <div className="hidden lg:pl-72">
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="flex items-center gap-x-4 lg:gap-x-6 ml-auto">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-x-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={session?.user?.image || ""} />
-                      <AvatarFallback>{userInitials}</AvatarFallback>
-                    </Avatar>
-                    <span>{session?.user?.name}</span>
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
+      <div className="hidden lg:block lg:pl-72">
+        <Topbar />
       </div>
 
       {/* Page content */}
-      <main className="py-10 lg:pl-72">
+      <main className="py-6 lg:py-8 lg:pl-72">
         <div className="px-4 sm:px-6 lg:px-8">
           {children}
         </div>

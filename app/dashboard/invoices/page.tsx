@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { useBusinessContext } from "@/components/business-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -80,44 +81,24 @@ interface Invoice {
 
 export default function InvoicesPage() {
   const { data: session } = useSession();
+  const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const [selectedBusiness, setSelectedBusiness] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const businessId = localStorage.getItem("selectedBusinessId");
-    if (businessId) {
-      setSelectedBusiness(businessId);
-      fetchInvoices(businessId);
-    } else {
-      fetchBusinesses();
+    if (currentBusiness?.id) {
+      fetchInvoices(currentBusiness.id);
+    } else if (!businessLoading) {
+      setLoading(false);
     }
-  }, []);
+  }, [currentBusiness?.id, businessLoading]);
 
   useEffect(() => {
     filterInvoices();
   }, [invoices, searchTerm, statusFilter]);
-
-  const fetchBusinesses = async () => {
-    try {
-      const response = await fetch("/api/business");
-      if (response.ok) {
-        const data = await response.json();
-        if (data.businesses?.length > 0) {
-          const businessId = data.businesses[0].id;
-          setSelectedBusiness(businessId);
-          localStorage.setItem("selectedBusinessId", businessId);
-          fetchInvoices(businessId);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch businesses:", error);
-      setLoading(false);
-    }
-  };
 
   const fetchInvoices = async (businessId: string) => {
     try {
@@ -272,6 +253,24 @@ export default function InvoicesPage() {
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!currentBusiness) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">No Business Selected</h3>
+            <p className="text-muted-foreground mb-4">
+              Please select a business from the top bar or create a new one.
+            </p>
+            <Link href="/dashboard/businesses/new">
+              <Button>Create Your First Business</Button>
+            </Link>
+          </div>
         </div>
       </DashboardLayout>
     );

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { useBusinessContext } from "@/components/business-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,45 +62,24 @@ interface Product {
 
 export default function ProductsPage() {
   const { data: session } = useSession();
+  const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedBusiness, setSelectedBusiness] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
 
   useEffect(() => {
-    // Get selected business from localStorage or fetch businesses
-    const businessId = localStorage.getItem("selectedBusinessId");
-    if (businessId) {
-      setSelectedBusiness(businessId);
-      fetchProducts(businessId);
-    } else {
-      fetchBusinesses();
+    if (currentBusiness?.id) {
+      fetchProducts(currentBusiness.id);
+    } else if (!businessLoading) {
+      setLoading(false);
     }
-  }, []);
+  }, [currentBusiness?.id, businessLoading]);
 
   useEffect(() => {
     filterProducts();
   }, [products, searchTerm, selectedCategory]);
-
-  const fetchBusinesses = async () => {
-    try {
-      const response = await fetch("/api/business");
-      if (response.ok) {
-        const data = await response.json();
-        if (data.businesses?.length > 0) {
-          const businessId = data.businesses[0].id;
-          setSelectedBusiness(businessId);
-          localStorage.setItem("selectedBusinessId", businessId);
-          fetchProducts(businessId);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch businesses:", error);
-      setLoading(false);
-    }
-  };
 
   const fetchProducts = async (businessId: string) => {
     try {
@@ -183,6 +163,24 @@ export default function ProductsPage() {
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!currentBusiness) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">No Business Selected</h3>
+            <p className="text-muted-foreground mb-4">
+              Please select a business from the top bar or create a new one.
+            </p>
+            <Link href="/dashboard/businesses/new">
+              <Button>Create Your First Business</Button>
+            </Link>
+          </div>
         </div>
       </DashboardLayout>
     );
