@@ -187,261 +187,293 @@ export default function ProductsPage() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-            <p className="text-muted-foreground">
-              Manage your product catalog and inventory
-            </p>
+ <DashboardLayout>
+  <div className="space-y-8">
+    {/* Header */}
+    <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-md">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Products</h1>
+        <p className="opacity-90 text-sm">
+          Manage your product catalog and inventory
+        </p>
+      </div>
+      <Link href="/dashboard/products/new">
+        <Button className="bg-white text-blue-700 hover:bg-blue-50 shadow-sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Product
+        </Button>
+      </Link>
+    </div>
+
+    {/* Search and Filters */}
+    <Card className="border border-gray-100 shadow-sm rounded-xl">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg font-semibold text-gray-900">
+          Product Catalog
+        </CardTitle>
+        <CardDescription>Search and manage your products</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col sm:flex-row gap-4 mb-5">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search products by name, description, or SKU..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
           </div>
-          <Link href="/dashboard/products/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Button>
-          </Link>
+          {categories.length > 0 && (
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3 py-2 border border-gray-300 bg-white rounded-md text-sm shadow-sm"
+            >
+              <option value="">All Categories</option>
+              {categories.map((category) => (
+                <option key={category} value={category || ""}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
-        {/* Search and Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Product Catalog</CardTitle>
-            <CardDescription>
-              Search and manage your products
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-4 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search products by name, description, or SKU..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              {categories.length > 0 && (
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-3 py-2 border border-input bg-background rounded-md text-sm"
-                >
-                  <option value="">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category} value={category || ""}>{category}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Products Table */}
-            {filteredProducts.length > 0 ? (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Stock</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Tax System</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+        {/* Products Table */}
+        {filteredProducts.length > 0 ? (
+          <div className="overflow-hidden border border-gray-200 rounded-lg">
+            <Table>
+              <TableHeader className="bg-gray-50">
+                <TableRow>
+                  <TableHead className="font-semibold text-gray-700">
+                    Product
+                  </TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Price</TableHead>
+                  <TableHead>Stock</TableHead>
+                  <TableHead>Category</TableHead>
+                  <TableHead>Tax System</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProducts.map((product) => {
+                  const stockStatus = getStockStatus(product);
+                  return (
+                    <TableRow
+                      key={product.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <TableCell>
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {product.name}
+                          </div>
+                          {product.description && (
+                            <div className="text-sm text-gray-500 line-clamp-1">
+                              {product.description}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {product.sku && (
+                          <div className="flex items-center text-sm text-gray-700">
+                            <Hash className="h-3 w-3 mr-1 text-gray-400" />
+                            {product.sku}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center text-gray-900">
+                          <DollarSign className="h-3 w-3 mr-1 text-gray-400" />
+                          {formatCurrency(product.price)}
+                        </div>
+                        {product.cost && (
+                          <div className="text-xs text-gray-500">
+                            Cost: {formatCurrency(product.cost)}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          {product.stockQuantity !== null ? (
+                            <>
+                              <span className="font-medium text-gray-900">
+                                {product.stockQuantity}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {product.unit}
+                              </span>
+                              {stockStatus.status === "Low stock" && (
+                                <AlertTriangle className="h-3 w-3 text-yellow-500" />
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-sm text-gray-500">
+                              Not tracked
+                            </span>
+                          )}
+                        </div>
+                        <Badge
+                          variant={stockStatus.variant}
+                          className="text-xs mt-1"
+                        >
+                          {stockStatus.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {product.category && (
+                          <Badge variant="outline" className="text-xs">
+                            {product.category}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {product.taxSystem && (
+                          <div className="text-sm text-gray-800">
+                            <div className="font-medium">
+                              {product.taxSystem.name}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {(product.taxSystem.rate * 100).toFixed(2)}%
+                            </div>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={product.isActive ? "default" : "secondary"}
+                          className="text-xs"
+                        >
+                          {product.isActive ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <Link href={`/dashboard/products/${product.id}`}>
+                              <DropdownMenuItem>
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Details
+                              </DropdownMenuItem>
+                            </Link>
+                            <Link href={`/dashboard/products/${product.id}/edit`}>
+                              <DropdownMenuItem>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit Product
+                              </DropdownMenuItem>
+                            </Link>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleDeleteProduct(product.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProducts.map((product) => {
-                      const stockStatus = getStockStatus(product);
-                      return (
-                        <TableRow key={product.id}>
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{product.name}</div>
-                              {product.description && (
-                                <div className="text-sm text-muted-foreground line-clamp-1">
-                                  {product.description}
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {product.sku && (
-                              <div className="flex items-center text-sm">
-                                <Hash className="h-3 w-3 mr-1 text-muted-foreground" />
-                                {product.sku}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <DollarSign className="h-3 w-3 mr-1 text-muted-foreground" />
-                              {formatCurrency(product.price)}
-                            </div>
-                            {product.cost && (
-                              <div className="text-xs text-muted-foreground">
-                                Cost: {formatCurrency(product.cost)}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              {product.stockQuantity !== null ? (
-                                <>
-                                  <span className="font-medium">{product.stockQuantity}</span>
-                                  <span className="text-xs text-muted-foreground">{product.unit}</span>
-                                  {stockStatus.status === "Low stock" && (
-                                    <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                                  )}
-                                </>
-                              ) : (
-                                <span className="text-sm text-muted-foreground">Not tracked</span>
-                              )}
-                            </div>
-                            <Badge variant={stockStatus.variant} className="text-xs mt-1">
-                              {stockStatus.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {product.category && (
-                              <Badge variant="outline" className="text-xs">
-                                {product.category}
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {product.taxSystem && (
-                              <div className="text-sm">
-                                <div className="font-medium">{product.taxSystem.name}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {(product.taxSystem.rate * 100).toFixed(2)}%
-                                </div>
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant={product.isActive ? "default" : "secondary"}>
-                              {product.isActive ? "Active" : "Inactive"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <Link href={`/dashboard/products/${product.id}`}>
-                                  <DropdownMenuItem>
-                                    <Eye className="h-4 w-4 mr-2" />
-                                    View Details
-                                  </DropdownMenuItem>
-                                </Link>
-                                <Link href={`/dashboard/products/${product.id}/edit`}>
-                                  <DropdownMenuItem>
-                                    <Edit className="h-4 w-4 mr-2" />
-                                    Edit Product
-                                  </DropdownMenuItem>
-                                </Link>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem 
-                                  onClick={() => handleDeleteProduct(product.id)}
-                                  className="text-red-600"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
-                  <Package className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">
-                  {searchTerm || selectedCategory ? "No products found" : "No products yet"}
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  {searchTerm || selectedCategory
-                    ? "Try adjusting your search terms or filters" 
-                    : "Get started by adding your first product"
-                  }
-                </p>
-                {!(searchTerm || selectedCategory) && (
-                  <Link href="/dashboard/products/new">
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Your First Product
-                    </Button>
-                  </Link>
-                )}
-              </div>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        ) : (
+          <div className="text-center py-14">
+            <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <Package className="h-8 w-8 text-gray-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {searchTerm || selectedCategory
+                ? "No products found"
+                : "No products yet"}
+            </h3>
+            <p className="text-gray-500 mb-4">
+              {searchTerm || selectedCategory
+                ? "Try adjusting your search terms or filters."
+                : "Get started by adding your first product."}
+            </p>
+            {!(searchTerm || selectedCategory) && (
+              <Link href="/dashboard/products/new">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your First Product
+                </Button>
+              </Link>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Summary Stats */}
-        {products.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{products.length}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Active Products</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {products.filter(p => p.isActive).length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-yellow-600">
-                  {products.filter(p => 
-                    p.stockQuantity !== null && 
-                    p.minStockLevel !== null && 
-                    typeof p.stockQuantity === 'number' &&
-                    typeof p.minStockLevel === 'number' &&
-                    p.stockQuantity <= p.minStockLevel
-                  ).length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Categories</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{categories.length}</div>
-              </CardContent>
-            </Card>
           </div>
         )}
+      </CardContent>
+    </Card>
+
+    {/* Summary Stats */}
+    {products.length > 0 && (
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          {
+            title: "Total Products",
+            value: products.length,
+          },
+          {
+            title: "Active Products",
+            value: products.filter((p) => p.isActive).length,
+          },
+          {
+            title: "Low Stock Items",
+            value: products.filter(
+              (p) =>
+                p.stockQuantity !== null &&
+                p.minStockLevel !== null &&
+                typeof p.stockQuantity === "number" &&
+                typeof p.minStockLevel === "number" &&
+                p.stockQuantity <= p.minStockLevel
+            ).length,
+            color: "text-yellow-600",
+          },
+          {
+            title: "Categories",
+            value: categories.length,
+          },
+        ].map((stat, i) => (
+          <Card
+            key={i}
+            className="border border-gray-100 shadow-sm rounded-xl hover:shadow-md transition-shadow"
+          >
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-gray-700">
+                {stat.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div
+                className={`text-3xl font-semibold ${
+                  stat.color || "text-gray-900"
+                }`}
+              >
+                {stat.value}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
-    </DashboardLayout>
+    )}
+  </div>
+</DashboardLayout>
+
   );
 }
