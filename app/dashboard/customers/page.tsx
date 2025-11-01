@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
+import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,23 +101,32 @@ export default function CustomersPage() {
     }
   };
 
-  const handleDeleteCustomer = async (customerId: string) => {
-    if (!confirm("Are you sure you want to delete this customer?")) return;
+  const handleDeleteCustomer = (customerId: string) => {
+    showConfirm(
+      "Delete Customer",
+      "Are you sure you want to delete this customer? This action cannot be undone.",
+      async () => {
+        try {
+          const response = await fetch(`/api/customers/${customerId}`, {
+            method: "DELETE",
+          });
 
-    try {
-      const response = await fetch(`/api/customers/${customerId}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setCustomers(customers.filter(c => c.id !== customerId));
-      } else {
-        alert("Failed to delete customer");
+          if (response.ok) {
+            setCustomers(customers.filter(c => c.id !== customerId));
+            showSuccess("Success", "Customer deleted successfully");
+          } else {
+            showError("Error", "Failed to delete customer");
+          }
+        } catch (error) {
+          console.error("Error deleting customer:", error);
+          showError("Error", "Error deleting customer");
+        }
+      },
+      {
+        confirmText: "Delete",
+        cancelText: "Cancel"
       }
-    } catch (error) {
-      console.error("Error deleting customer:", error);
-      alert("Error deleting customer");
-    }
+    );
   };
 
   const formatDate = (dateString: string) => {

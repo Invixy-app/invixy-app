@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
+import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -135,26 +136,46 @@ export default function InvoicesPage() {
     setFilteredInvoices(filtered);
   };
 
-  const handleDeleteInvoice = async (invoiceId: string) => {
-    if (!confirm("Are you sure you want to delete this invoice?")) return;
-
-    try {
-      const response = await fetch(`/api/invoices/${invoiceId}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setInvoices(invoices.filter(i => i.id !== invoiceId));
-      } else {
-        alert("Failed to delete invoice");
-      }
-    } catch (error) {
-      console.error("Error deleting invoice:", error);
-      alert("Error deleting invoice");
+  const handleDeleteInvoice = (invoiceId: string) => {
+    if (!currentBusiness?.id) {
+      showError("Error", "No business selected");
+      return;
     }
+
+    showConfirm(
+      "Delete Invoice",
+      "Are you sure you want to delete this invoice? This action cannot be undone.",
+      async () => {
+        try {
+          const response = await fetch(`/api/invoices/${invoiceId}?businessId=${currentBusiness.id}`, {
+            method: "DELETE",
+          });
+
+          if (response.ok) {
+            setInvoices(invoices.filter(i => i.id !== invoiceId));
+            showSuccess("Success", "Invoice deleted successfully");
+          } else {
+            const errorData = await response.json();
+            showError("Error", errorData.error || "Failed to delete invoice");
+          }
+        } catch (error) {
+          console.error("Error deleting invoice:", error);
+          showError("Error", "Error deleting invoice");
+        }
+      },
+      {
+        confirmText: "Delete",
+        cancelText: "Cancel"
+      }
+    );
   };
 
   const handleStatusUpdate = async (invoiceId: string, newStatus: string) => {
+    if (!currentBusiness?.id) {
+      showError("Error", "No business selected");
+      return;
+    }
+
     try {
       const response = await fetch(`/api/invoices/${invoiceId}/status`, {
         method: "PATCH",
@@ -169,12 +190,76 @@ export default function InvoicesPage() {
         setInvoices(invoices.map(inv => 
           inv.id === invoiceId ? { ...inv, status: updatedInvoice.status } : inv
         ));
+        showSuccess("Success", "Invoice status updated successfully");
       } else {
-        alert("Failed to update invoice status");
+        const errorData = await response.json();
+        showError("Error", errorData.error || "Failed to update invoice status");
       }
     } catch (error) {
       console.error("Error updating invoice status:", error);
-      alert("Error updating invoice status");
+      showError("Error", "Error updating invoice status");
+    }
+  };
+
+  const handleDownloadPDF = async (invoiceId: string) => {
+    if (!currentBusiness?.id) {
+      showError("Error", "No business selected");
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/invoices/${invoiceId}/pdf?businessId=${currentBusiness.id}`);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `invoice-${invoiceId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showSuccess("Success", "Invoice PDF downloaded successfully");
+      } else {
+        const errorData = await response.json();
+        showError("Error", errorData.error || "Failed to download PDF");
+      }
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      showError("Error", "Error downloading PDF");
+    }
+  };
+
+  const handleSendToCustomer = async (invoiceId: string) => {
+    if (!currentBusiness?.id) {
+      showError("Error", "No business selected");
+      return;
+    }
+
+    try {
+      // For now, we'll just show a placeholder message
+      // In a real implementation, this would open an email compose dialog or send directly
+      showSuccess("Info", "Send to customer feature will be implemented soon");
+    } catch (error) {
+      console.error("Error sending to customer:", error);
+      showError("Error", "Error sending to customer");
+    }
+  };
+
+  const handleDuplicateInvoice = async (invoiceId: string) => {
+    if (!currentBusiness?.id) {
+      showError("Error", "No business selected");
+      return;
+    }
+
+    try {
+      // For now, we'll just show a placeholder message
+      // In a real implementation, this would copy the invoice and redirect to edit
+      showSuccess("Info", "Duplicate invoice feature will be implemented soon");
+    } catch (error) {
+      console.error("Error duplicating invoice:", error);
+      showError("Error", "Error duplicating invoice");
     }
   };
 
@@ -492,16 +577,16 @@ export default function InvoicesPage() {
                                       Edit Invoice
                                     </DropdownMenuItem>
                                   </Link>
-                                  <DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDuplicateInvoice(invoice.id)}>
                                     <Copy className="h-4 w-4 mr-2" />
                                     Duplicate
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDownloadPDF(invoice.id)}>
                                     <Download className="h-4 w-4 mr-2" />
                                     Download PDF
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleSendToCustomer(invoice.id)}>
                                     <Send className="h-4 w-4 mr-2" />
                                     Send to Customer
                                   </DropdownMenuItem>

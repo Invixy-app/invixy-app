@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { useBusinessContext } from "@/components/business-context";
+import { showError, showSuccess } from "@/lib/alert-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +43,7 @@ interface TaxSystem {
 export default function NewProductPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const { currentBusiness } = useBusinessContext();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
@@ -115,12 +118,12 @@ export default function NewProductPage() {
 
     setLoading(true);
     try {
-      // Get selected business ID
-      const businessId = localStorage.getItem("selectedBusinessId");
-      if (!businessId) {
-        alert("Please select a business first");
+      // Get current business ID
+      if (!currentBusiness?.id) {
+        showError("No Business", "Please select a business first");
         return;
       }
+      const businessId = currentBusiness.id;
 
       const response = await fetch("/api/products", {
         method: "POST",
@@ -134,14 +137,15 @@ export default function NewProductPage() {
       });
 
       if (response.ok) {
+        showSuccess("Success", "Product created successfully");
         router.push("/dashboard/products");
       } else {
         const errorData = await response.json();
-        alert(errorData.error || "Failed to create product");
+        showError("Error", errorData.error || "Failed to create product");
       }
     } catch (error) {
       console.error("Error creating product:", error);
-      alert("Error creating product");
+      showError("Error", "Error creating product");
     } finally {
       setLoading(false);
     }

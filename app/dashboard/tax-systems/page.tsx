@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -105,23 +106,32 @@ export default function TaxSystemsPage() {
     }
   };
 
-  const handleDeleteTaxSystem = async (taxSystemId: string) => {
-    if (!confirm("Are you sure you want to delete this tax system?")) return;
+  const handleDeleteTaxSystem = (taxSystemId: string) => {
+    showConfirm(
+      "Delete Tax System",
+      "Are you sure you want to delete this tax system? This action cannot be undone.",
+      async () => {
+        try {
+          const response = await fetch(`/api/tax-systems/${taxSystemId}`, {
+            method: "DELETE",
+          });
 
-    try {
-      const response = await fetch(`/api/tax-systems/${taxSystemId}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setTaxSystems(taxSystems.filter(t => t.id !== taxSystemId));
-      } else {
-        alert("Failed to delete tax system");
+          if (response.ok) {
+            setTaxSystems(taxSystems.filter(t => t.id !== taxSystemId));
+            showSuccess("Success", "Tax system deleted successfully");
+          } else {
+            showError("Error", "Failed to delete tax system");
+          }
+        } catch (error) {
+          console.error("Error deleting tax system:", error);
+          showError("Error", "Error deleting tax system");
+        }
+      },
+      {
+        confirmText: "Delete",
+        cancelText: "Cancel"
       }
-    } catch (error) {
-      console.error("Error deleting tax system:", error);
-      alert("Error deleting tax system");
-    }
+    );
   };
 
   const formatDate = (dateString: string) => {

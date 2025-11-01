@@ -89,14 +89,18 @@ export function Topbar({ className, showBusinessSwitcher = true }: TopbarProps) 
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Profile
+              <DropdownMenuItem asChild>
+                <a href="/dashboard/settings" className="flex items-center cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </a>
               </DropdownMenuItem>
               
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
+              <DropdownMenuItem asChild>
+                <a href="/dashboard/settings" className="flex items-center cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </a>
               </DropdownMenuItem>
               
               <DropdownMenuSeparator />

@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Topbar } from "@/components/topbar";
 import { BusinessSwitcher } from "@/components/business-switcher";
+import { GlobalAlert } from "@/components/global-alert";
 import {
   Building2,
   Users,
@@ -37,12 +38,10 @@ interface DashboardLayoutProps {
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: Building2 },
-  { name: "Businesses", href: "/dashboard/businesses", icon: Building2 },
   { name: "Products", href: "/dashboard/products", icon: Package },
   { name: "Customers", href: "/dashboard/customers", icon: Users },
   { name: "Invoices", href: "/dashboard/invoices", icon: FileText },
   { name: "Tax Systems", href: "/dashboard/tax-systems", icon: Calculator },
-  { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -187,6 +186,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </div>
       </main>
+
+      {/* Global Alert Dialog */}
+      <GlobalAlert />
     </div>
   );
 }

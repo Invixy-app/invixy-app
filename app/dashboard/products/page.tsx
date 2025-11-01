@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
+import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,23 +118,38 @@ export default function ProductsPage() {
     setFilteredProducts(filtered);
   };
 
-  const handleDeleteProduct = async (productId: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
-
-    try {
-      const response = await fetch(`/api/products/${productId}`, {
-        method: "DELETE",
-      });
-
-      if (response.ok) {
-        setProducts(products.filter(p => p.id !== productId));
-      } else {
-        alert("Failed to delete product");
-      }
-    } catch (error) {
-      console.error("Error deleting product:", error);
-      alert("Error deleting product");
+  const handleDeleteProduct = (productId: string) => {
+    if (!currentBusiness?.id) {
+      showError("Error", "No business selected");
+      return;
     }
+
+    showConfirm(
+      "Delete Product",
+      "Are you sure you want to delete this product? This action cannot be undone.",
+      async () => {
+        try {
+          const response = await fetch(`/api/products/${productId}?businessId=${currentBusiness.id}`, {
+            method: "DELETE",
+          });
+
+          if (response.ok) {
+            setProducts(products.filter(p => p.id !== productId));
+            showSuccess("Success", "Product deleted successfully");
+          } else {
+            const errorData = await response.json();
+            showError("Error", errorData.error || "Failed to delete product");
+          }
+        } catch (error) {
+          console.error("Error deleting product:", error);
+          showError("Error", "Error deleting product");
+        }
+      },
+      {
+        confirmText: "Delete",
+        cancelText: "Cancel"
+      }
+    );
   };
 
   const formatCurrency = (amount: number) => {
