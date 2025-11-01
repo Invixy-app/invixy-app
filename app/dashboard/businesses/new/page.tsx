@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, ArrowLeft } from "lucide-react";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { CURRENCY_OPTIONS, TIMEZONE_OPTIONS } from "@/lib/business";
 
@@ -81,33 +82,38 @@ export default function NewBusinessPage() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="max-w-2xl mx-auto space-y-6">
+  <DashboardLayout>
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="max-w-3xl mx-auto space-y-6 bg-gradient-to-br from-white via-gray-50 to-gray-100 p-8 rounded-2xl shadow-md"
+      >
         {/* Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 border-b pb-4">
           <Button variant="outline" size="icon" asChild>
             <Link href="/dashboard">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Create New Business</h1>
-            <p className="text-gray-600">
+            <h1 className="text-3xl font-bold text-gray-900">Create New Business</h1>
+            <p className="text-gray-600 text-sm">
               Set up your business profile to start managing invoices
             </p>
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Business Information</CardTitle>
+        <Card className="shadow-sm border border-gray-200">
+          <CardHeader className="bg-gray-50 rounded-t-xl">
+            <CardTitle className="text-xl font-semibold">Business Information</CardTitle>
             <CardDescription>
               Provide basic information about your business
             </CardDescription>
           </CardHeader>
-          
+
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-6 pt-6">
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -191,8 +197,10 @@ export default function NewBusinessPage() {
               </div>
 
               {/* Address Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Address Information</h3>
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Address Information
+                </h3>
 
                 <div>
                   <Label htmlFor="billingAddress">Billing Address *</Label>
@@ -232,8 +240,10 @@ export default function NewBusinessPage() {
               </div>
 
               {/* Business Settings */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Business Settings</h3>
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Business Settings
+                </h3>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
@@ -276,8 +286,12 @@ export default function NewBusinessPage() {
                 </div>
               </div>
 
-              <div className="flex gap-4 pt-4">
-                <Button type="submit" disabled={isLoading} className="flex-1">
+              <div className="flex gap-4 pt-6">
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Business
                 </Button>
@@ -288,7 +302,7 @@ export default function NewBusinessPage() {
             </CardContent>
           </form>
         </Card>
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }
