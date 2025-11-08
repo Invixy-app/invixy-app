@@ -1,0 +1,428 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { DashboardLayout } from "@/components/dashboard-layout";
+import { useBusinessContext } from "@/components/business-context";
+import { showError, showSuccess } from "@/lib/alert-store";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, Save, Package, DollarSign, Hash, Calculator } from "lucide-react";
+import Link from "next/link";
+import { z } from "zod";
+const createProductSchema = z.object({
+  businessId: z.string(),
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  sku: z.string().optional(),
+  price: z.coerce.number().min(0, "Price must be positive"),
+  cost: z.coerce.number().min(0).nullable().transform(val => val ?? undefined),
+  category: z.string().optional(),
+  unit: z.string().default("pcs"),
+  stockQuantity: z.coerce.number().int().nullable().transform(val => val ?? undefined),
+  minStockLevel: z.coerce.number().int().nullable().transform(val => val ?? undefined),
+  taxSystemId: z.string().nullable().transform(val => val === "none" || !val ? undefined : val)
+});
+
+type ProductFormData = z.infer<typeof createProductSchema>;
+
+interface TaxSystem {
+  id: string;
+  name: string;
+  taxId: string;
+  rate: number;
+  taxType: string;
+}
+
+export default function NewProductPage() {
+  const router = useRouter();
+  const { data: session } = useSession();
+  const { currentBusiness } = useBusinessContext();
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
+  const [formData, setFormData] = useState<ProductFormData>({
+    businessId: "",
+    name: "",
+    description: "",
+    sku: "",
+    price: 0,
+    cost: 0,
+    category: "",
+    unit: "pcs",
+    stockQuantity: 0,
+    minStockLevel: 0,
+    taxSystemId: "none"
+  });
+
+  useEffect(() => {
+    const businessId = localStorage.getItem("selectedBusinessId");
+    if (businessId) {
+      setFormData(prev => ({ ...prev, businessId }));
+    }
+    fetchTaxSystems();
+  }, []);
+
+  const fetchTaxSystems = async () => {
+    try {
+      const businessId = localStorage.getItem("selectedBusinessId");
+      if (!businessId) return;
+
+      const response = await fetch(`/api/tax-systems?businessId=${businessId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTaxSystems(data);
+      }
+    } catch (error) {
+      console.error("Error fetching tax systems:", error);
+    }
+  };
+
+  const handleInputChange = (field: keyof ProductFormData, value: string | number) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    try {
+      createProductSchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        error.issues.forEach((err) => {
+          if (err.path[0]) {
+            newErrors[err.path[0] as string] = err.message;
+          }
+        });
+        setErrors(newErrors);
+      }
+      return false;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      // Get current business ID
+      if (!currentBusiness?.id) {
+        showError("No Business", "Please select a business first");
+        return;
+      }
+      const businessId = currentBusiness.id;
+
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          businessId
+        }),
+      });
+
+      if (response.ok) {
+        showSuccess("Success", "Product created successfully");
+        router.push("/dashboard/products");
+      } else {
+        const errorData = await response.json();
+        showError("Error", errorData.error || "Failed to create product");
+      }
+    } catch (error) {
+      console.error("Error creating product:", error);
+      showError("Error", "Error creating product");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const unitOptions = [
+    { value: "pcs", label: "Pieces" },
+    { value: "kg", label: "Kilograms" },
+    { value: "g", label: "Grams" },
+    { value: "lb", label: "Pounds" },
+    { value: "oz", label: "Ounces" },
+    { value: "l", label: "Liters" },
+    { value: "ml", label: "Milliliters" },
+    { value: "m", label: "Meters" },
+    { value: "cm", label: "Centimeters" },
+    { value: "ft", label: "Feet" },
+    { value: "in", label: "Inches" },
+    { value: "box", label: "Boxes" },
+    { value: "pack", label: "Packs" },
+    { value: "set", label: "Sets" },
+    { value: "hrs", label: "Hours" },
+    { value: "days", label: "Days" }
+  ];
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center space-x-4">
+          <Link href="/dashboard/products">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Products
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Add New Product</h1>
+            <p className="text-muted-foreground">
+              Create a new product for your catalog
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Basic Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Package className="h-5 w-5 mr-2" />
+                  Basic Information
+                </CardTitle>
+                <CardDescription>
+                  Essential product details
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Product Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="Enter product name"
+                    value={formData.name}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    className={errors.name ? "border-red-500" : ""}
+                  />
+                  {errors.name && (
+                    <p className="text-sm text-red-500">{errors.name}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    placeholder="Product description"
+                    value={formData.description}
+                    onChange={(e) => handleInputChange("description", e.target.value)}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="sku">SKU</Label>
+                    <div className="relative">
+                      <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="sku"
+                        placeholder="Stock keeping unit"
+                        value={formData.sku}
+                        onChange={(e) => handleInputChange("sku", e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="category">Category</Label>
+                    <Input
+                      id="category"
+                      placeholder="Product category"
+                      value={formData.category}
+                      onChange={(e) => handleInputChange("category", e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="unit">Unit of Measure</Label>
+                  <Select value={formData.unit} onValueChange={(value) => handleInputChange("unit", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {unitOptions.map((unit) => (
+                        <SelectItem key={unit.value} value={unit.value}>
+                          {unit.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pricing & Tax */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <DollarSign className="h-5 w-5 mr-2" />
+                  Pricing & Tax
+                </CardTitle>
+                <CardDescription>
+                  Set pricing and tax information
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Selling Price *</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={formData.price || ""}
+                        onChange={(e) => handleInputChange("price", parseFloat(e.target.value) || 0)}
+                        className={`pl-10 ${errors.price ? "border-red-500" : ""}`}
+                      />
+                    </div>
+                    {errors.price && (
+                      <p className="text-sm text-red-500">{errors.price}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="cost">Cost Price</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="cost"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={formData.cost || ""}
+                        onChange={(e) => handleInputChange("cost", parseFloat(e.target.value) || 0)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="taxSystem">Tax System</Label>
+                  <Select value={formData.taxSystemId} onValueChange={(value) => handleInputChange("taxSystemId", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select tax system (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No tax system</SelectItem>
+                      {taxSystems.map((tax) => (
+                        <SelectItem key={tax.id} value={tax.id}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{tax.name}</span>
+                            <span className="text-sm text-muted-foreground ml-2">
+                              ({(tax.rate * 100).toFixed(2)}%)
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.price > 0 && formData.cost && formData.cost > 0 && (
+                  <div className="p-3 bg-muted rounded-md">
+                    <div className="text-sm font-medium">Profit Margin</div>
+                    <div className="text-lg font-bold">
+                      ${(formData.price - formData.cost).toFixed(2)} 
+                      <span className="text-sm font-normal text-muted-foreground ml-2">
+                        ({(((formData.price - formData.cost) / formData.price) * 100).toFixed(1)}%)
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Inventory Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Calculator className="h-5 w-5 mr-2" />
+                Inventory Management
+              </CardTitle>
+              <CardDescription>
+                Track stock levels and set alerts
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="stockQuantity">Current Stock</Label>
+                  <Input
+                    id="stockQuantity"
+                    type="number"
+                    min="0"
+                    placeholder="Leave empty if not tracking stock"
+                    value={formData.stockQuantity || ""}
+                    onChange={(e) => handleInputChange("stockQuantity", parseInt(e.target.value) || 0)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="minStockLevel">Minimum Stock Level</Label>
+                  <Input
+                    id="minStockLevel"
+                    type="number"
+                    min="0"
+                    placeholder="Alert threshold"
+                    value={formData.minStockLevel || ""}
+                    onChange={(e) => handleInputChange("minStockLevel", parseInt(e.target.value) || 0)}
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Form Actions */}
+          <div className="flex justify-end space-x-4">
+            <Link href="/dashboard/products">
+              <Button variant="outline" type="button">
+                Cancel
+              </Button>
+            </Link>
+            <Button type="submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Create Product
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+    </DashboardLayout>
+  );
+}
