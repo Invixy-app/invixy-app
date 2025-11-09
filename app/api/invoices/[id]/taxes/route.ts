@@ -59,35 +59,61 @@ export async function POST(
       );
     }
 
-    // Remove existing taxes for this invoice
+    // Remove existing taxes for this invoice (both invoice-level and item-level)
     await db.invoiceTax.deleteMany({
       where: { invoiceId: id }
     });
 
-    // Calculate subtotal from items
-    const subtotal = Number(invoice.subtotal);
+    // Get all item IDs for this invoice
+    const itemIds = invoice.items.map(item => item.id);
+    
+    await db.invoiceItemTax.deleteMany({
+      where: { 
+        invoiceItemId: { 
+          in: itemIds 
+        } 
+      }
+    });
 
-    // Apply new tax systems
-    const taxEntries = [];
+    // Apply new tax systems at item level
+    const itemTaxEntries = [];
     let totalTax = 0;
 
-    for (const taxSystem of taxSystems) {
-      const taxAmount = subtotal * Number(taxSystem.rate);
-      totalTax += taxAmount;
+    for (const item of invoice.items) {
+      const itemSubtotal = Number(item.lineTotal);
+      let itemTotalTax = 0;
 
-      taxEntries.push({
-        invoiceId: id,
-        taxSystemId: taxSystem.id,
-        taxableAmount: subtotal,
-        taxRate: Number(taxSystem.rate),
-        taxAmount: taxAmount
+      for (const taxSystem of taxSystems) {
+        const taxAmount = itemSubtotal * Number(taxSystem.rate);
+        itemTotalTax += taxAmount;
+
+        itemTaxEntries.push({
+          invoiceItemId: item.id,
+          taxSystemId: taxSystem.id,
+          taxableAmount: itemSubtotal,
+          taxRate: Number(taxSystem.rate),
+          taxAmount: taxAmount
+        });
+      }
+
+      // Update the item's tax amount
+      await db.invoiceItem.update({
+        where: { id: item.id },
+        data: { taxAmount: itemTotalTax }
+      });
+
+      totalTax += itemTotalTax;
+    }
+
+    // Create new item tax entries
+    if (itemTaxEntries.length > 0) {
+      await db.invoiceItemTax.createMany({
+        data: itemTaxEntries
       });
     }
 
-    // Create new tax entries
-    await db.invoiceTax.createMany({
-      data: taxEntries
-    });
+    // Calculate subtotal
+    const subtotal = Number(invoice.subtotal);
 
     // Update invoice totals
     const newTotalAmount = subtotal + totalTax;
@@ -102,7 +128,12 @@ export async function POST(
         customer: true,
         items: {
           include: {
-            product: true
+            product: true,
+            itemTaxes: {
+              include: {
+                taxSystem: true
+              }
+            }
           }
         },
         taxes: {

@@ -10,7 +10,8 @@ const invoiceItemSchema = z.object({
   description: z.string().min(1, "Description is required"),
   quantity: z.number().min(0.001, "Quantity must be positive"),
   unitPrice: z.number().min(0, "Unit price must be positive"),
-  discount: z.number().min(0).default(0)
+  discount: z.number().min(0).default(0),
+  taxSystemIds: z.array(z.string()).default([]) // Item-level tax systems
 });
 
 const createInvoiceSchema = z.object({

@@ -1,9 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { getInvoiceById } from "@/lib/invoice";
+import { getInvoiceById, updateInvoice } from "@/lib/invoice";
 import { InvoiceStatus } from "@prisma/client";
 import prisma from "@/lib/db";
 import { authOptions } from "@/lib/auth-config";
+import { z } from "zod";
+
+const invoiceItemSchema = z.object({
+  id: z.string().optional(),
+  productId: z.string().optional(),
+  description: z.string().min(1, "Description is required"),
+  quantity: z.number().min(0.001, "Quantity must be positive"),
+  unitPrice: z.number().min(0, "Unit price must be positive"),
+  discount: z.number().min(0).default(0),
+  taxSystemIds: z.array(z.string()).default([])
+});
+
+const updateInvoiceSchema = z.object({
+  customerId: z.string().optional(),
+  issueDate: z.string().transform((str) => new Date(str)).optional(),
+  dueDate: z.string().transform((str) => new Date(str)).optional(),
+  notes: z.string().optional(),
+  terms: z.string().optional(),
+  currency: z.string().optional(),
+  items: z.array(invoiceItemSchema).optional()
+});
 
 export async function GET(
   request: NextRequest,
@@ -53,93 +74,30 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { businessId, ...updateData } = body;
-
-    if (!businessId) {
-      return NextResponse.json({ error: "Business ID is required" }, { status: 400 });
-    }
-
+    const validatedData = updateInvoiceSchema.parse(body);
     const { id } = await params;
-    // Verify user has access to this business and invoice
-    const userRole = await prisma.businessUserRole.findUnique({
-      where: {
-        userId_businessId: {
-          userId: session.user.id,
-          businessId
-        }
-      }
-    });
 
-    if (!userRole || userRole.role === "VIEWER") {
-      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
-    }
+    // Update invoice using the lib function
+    const updatedInvoice = await updateInvoice(id, validatedData, session.user.id);
 
-    // Check if invoice exists and belongs to the business
-    const existingInvoice = await prisma.invoice.findFirst({
-      where: {
-        id: id,
-        businessId: businessId
-      }
-    });
-
-    if (!existingInvoice) {
-      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
-    }
-
-    // Update the invoice
-    const updatedInvoice = await prisma.invoice.update({
-      where: { id: id },
-      data: {
-        ...updateData,
-        updatedAt: new Date()
-      },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            phone: true,
-            billingAddress: true
-          }
-        },
-        items: {
-          orderBy: { sortOrder: 'asc' }
-        },
-        taxes: true,
-        payments: {
-          orderBy: { paymentDate: 'desc' }
-        }
-      }
-    });
-
-    return NextResponse.json({
-      ...updatedInvoice,
-      subtotal: Number(updatedInvoice.subtotal),
-      totalTax: Number(updatedInvoice.totalTax),
-      totalAmount: Number(updatedInvoice.totalAmount),
-      paidAmount: Number(updatedInvoice.paidAmount),
-      exchangeRate: updatedInvoice.exchangeRate ? Number(updatedInvoice.exchangeRate) : null,
-      items: updatedInvoice.items.map(item => ({
-        ...item,
-        quantity: Number(item.quantity),
-        unitPrice: Number(item.unitPrice),
-        discount: Number(item.discount),
-        lineTotal: Number(item.lineTotal)
-      })),
-      taxes: updatedInvoice.taxes.map(tax => ({
-        taxSystemId: tax.taxSystemId,
-        taxableAmount: Number(tax.taxableAmount),
-        taxRate: Number(tax.taxRate),
-        taxAmount: Number(tax.taxAmount)
-      })),
-      payments: updatedInvoice.payments.map(payment => ({
-        ...payment,
-        amount: Number(payment.amount)
-      }))
-    });
+    return NextResponse.json(updatedInvoice);
   } catch (error: any) {
     console.error("Error updating invoice:", error);
+    if (error.name === "ZodError") {
+      return NextResponse.json(
+        { error: "Validation error", details: error.errors },
+        { status: 400 }
+      );
+    }
+    if (error.message === "Invoice not found") {
+      return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+    }
+    if (error.message === "Insufficient permissions") {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+    }
+    if (error.message === "Can only edit draft invoices") {
+      return NextResponse.json({ error: "Can only edit draft invoices" }, { status: 400 });
+    }
     return NextResponse.json(
       { error: error.message || "Failed to update invoice" },
       { status: 500 }
@@ -205,6 +163,13 @@ export async function DELETE(
 
     // Delete related records first
     await prisma.$transaction([
+      prisma.invoiceItemTax.deleteMany({
+        where: { 
+          invoiceItem: {
+            invoiceId: id
+          }
+        }
+      }),
       prisma.invoiceItem.deleteMany({
         where: { invoiceId: id }
       }),

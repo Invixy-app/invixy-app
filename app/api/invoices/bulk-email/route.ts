@@ -44,7 +44,12 @@ export async function POST(request: NextRequest) {
         customer: true,
         items: {
           include: {
-            product: true
+            product: true,
+            itemTaxes: {
+              include: {
+                taxSystem: true
+              }
+            }
           }
         },
         taxes: {
@@ -104,7 +109,13 @@ export async function POST(request: NextRequest) {
             description: item.description,
             quantity: Number(item.quantity),
             unitPrice: Number(item.unitPrice),
+            discount: Number(item.discount),
+            taxAmount: Number(item.taxAmount),
             total: Number(item.lineTotal),
+            itemTaxes: item.itemTaxes?.map(tax => ({
+              taxRate: Number(tax.taxRate),
+              taxAmount: Number(tax.taxAmount)
+            })),
             product: item.product ? {
               name: item.product.name,
               sku: item.product.sku || undefined

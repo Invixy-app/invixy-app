@@ -65,7 +65,14 @@ interface InvoiceItem {
   quantity: number;
   unitPrice: number;
   discount: number;
+  taxAmount: number;
   lineTotal: number;
+  itemTaxes?: {
+    taxSystemId: string;
+    taxableAmount: number;
+    taxRate: number;
+    taxAmount: number;
+  }[];
   product?: {
     id: string;
     name: string;
@@ -279,6 +286,14 @@ export default function InvoiceDetailPage() {
     }
   };
 
+  const copyPublicLink = () => {
+    if (invoice?.id) {
+      const publicUrl = `${window.location.origin}/invoices/${invoice.id}`;
+      navigator.clipboard.writeText(publicUrl);
+      // You could add a toast notification here
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -382,6 +397,11 @@ export default function InvoiceDetailPage() {
                   <Copy className="h-4 w-4 mr-2" />
                   Copy Invoice Number
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={copyPublicLink}>
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy Public Link
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <Download className="h-4 w-4 mr-2" />
                   Download PDF
@@ -469,6 +489,7 @@ export default function InvoiceDetailPage() {
                       <TableHead className="text-right">Qty</TableHead>
                       <TableHead className="text-right">Unit Price</TableHead>
                       <TableHead className="text-right">Discount</TableHead>
+                      <TableHead className="text-right">Tax</TableHead>
                       <TableHead className="text-right">Total</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -481,6 +502,16 @@ export default function InvoiceDetailPage() {
                             {item.product && (
                               <div className="text-sm text-muted-foreground">
                                 Product: {item.product.name}
+                              </div>
+                            )}
+                            {item.itemTaxes && item.itemTaxes.length > 0 && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Taxes: {item.itemTaxes.map((tax, idx) => (
+                                  <span key={tax.taxSystemId}>
+                                    {idx > 0 && ", "}
+                                    {(tax.taxRate * 100).toFixed(2)}%
+                                  </span>
+                                ))}
                               </div>
                             )}
                           </div>
@@ -499,8 +530,11 @@ export default function InvoiceDetailPage() {
                         <TableCell className="text-right">
                           {item.discount > 0 ? formatCurrency(item.discount) : "-"}
                         </TableCell>
+                        <TableCell className="text-right">
+                          {item.taxAmount > 0 ? formatCurrency(item.taxAmount) : "-"}
+                        </TableCell>
                         <TableCell className="text-right font-medium">
-                          {formatCurrency(item.lineTotal)}
+                          {formatCurrency(item.lineTotal + item.taxAmount)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -659,6 +693,19 @@ export default function InvoiceDetailPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Last Updated:</span>
                     <span>{formatDate(invoice.updatedAt)}</span>
+                  </div>
+                  <Separator className="my-3" />
+                  <div>
+                    <span className="text-muted-foreground block mb-2">Public Link:</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={copyPublicLink}
+                    >
+                      <Copy className="h-3 w-3 mr-2" />
+                      Copy Link to Share
+                    </Button>
                   </div>
                 </div>
               </CardContent>

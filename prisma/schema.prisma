@@ -13,25 +13,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
-  password      String?   // Only if using credentials provider
+  password      String? // Only if using credentials provider
   emailVerified DateTime?
   image         String?
 
-  accounts      Account[]
-  sessions      Session[]
-  createdAt     DateTime  @default(now())
+  accounts         Account[]
+  sessions         Session[]
+  createdAt        DateTime           @default(now())
   BusinessUserRole BusinessUserRole[]
-  createdInvoices Invoice[] @relation("InvoiceCreator")
-  createdPayments Payment[] @relation("PaymentCreator")
+  createdInvoices  Invoice[]          @relation("InvoiceCreator")
+  createdPayments  Payment[]          @relation("PaymentCreator")
 }
 
 model Account {
-  id                String   @id @default(cuid())
+  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -44,7 +43,7 @@ model Account {
   id_token          String?
   session_state     String?
 
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -53,7 +52,7 @@ model Session {
   userId       String
   expires      DateTime
 
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -65,22 +64,22 @@ model VerificationToken {
 }
 
 model Business {
-  id          String   @id @default(cuid())
-  name        String
-  description String? 
-  billingAddress String
-  shippingAddress String
+  id                    String   @id @default(cuid())
+  name                  String
+  description           String?
+  billingAddress        String
+  shippingAddress       String
   taxRegistrationNumber String?
-  phone       String
-  email       String
-  website     String?
-  logo        String?
-  currency    String   @default("USD")
-  timezone    String   @default("UTC")
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  phone                 String
+  email                 String
+  website               String?
+  logo                  String?
+  currency              String   @default("USD")
+  timezone              String   @default("UTC")
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
   BusinessUserRole BusinessUserRole[]
   customers        Customer[]
   products         Product[]
@@ -88,13 +87,14 @@ model Business {
   invoices         Invoice[]
 }
 
-model BusinessUserRole{
+model BusinessUserRole {
   id         String   @id @default(cuid())
   userId     String
   businessId String
   role       Role     @default(EMPLOYEE)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
   @@unique([userId, businessId])
 }
 
@@ -107,139 +107,154 @@ enum Role {
 }
 
 model Customer {
-  id                String   @id @default(cuid())
-  businessId        String
-  name              String
-  email             String?
-  phone             String?
-  billingAddress    String?
-  shippingAddress   String?
-  taxId             String?
-  notes             String?
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  invoices          Invoice[]
+  id              String   @id @default(cuid())
+  businessId      String
+  name            String
+  email           String?
+  phone           String?
+  billingAddress  String?
+  shippingAddress String?
+  taxId           String?
+  notes           String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
 }
 
 model Product {
-  id                String   @id @default(cuid())
-  businessId        String
-  name              String
-  description       String?
-  sku               String?
-  price             Decimal  @db.Decimal(10, 2)
-  cost              Decimal? @db.Decimal(10, 2)
-  category          String?
-  unit              String   @default("pcs")
-  stockQuantity     Int?
-  minStockLevel     Int?
-  taxSystemId       String?
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  business          Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  taxSystem         TaxSystem? @relation(fields: [taxSystemId], references: [id])
-  invoiceItems      InvoiceItem[]
-  
+  id            String   @id @default(cuid())
+  businessId    String
+  name          String
+  description   String?
+  sku           String?
+  price         Decimal  @db.Decimal(10, 2)
+  cost          Decimal? @db.Decimal(10, 2)
+  category      String?
+  unit          String   @default("pcs")
+  stockQuantity Int?
+  minStockLevel Int?
+  taxSystemId   String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  taxSystem    TaxSystem?    @relation(fields: [taxSystemId], references: [id])
+  invoiceItems InvoiceItem[]
+
   @@unique([businessId, sku])
 }
 
 model TaxSystem {
-  id                String   @id @default(cuid())
-  businessId        String
-  name              String
-  description       String?
-  taxId             String   @unique // Unique tax identifier for linking
-  taxType           TaxType
-  rate              Decimal  @db.Decimal(5, 4) // e.g., 0.1825 for 18.25%
-  isCompound        Boolean  @default(false) // For compound tax calculations
-  isActive          Boolean  @default(true)
-  validFrom         DateTime @default(now())
-  validTo           DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  products          Product[]
-  invoiceTaxes      InvoiceTax[]
-  
+  id          String    @id @default(cuid())
+  businessId  String
+  name        String
+  description String?
+  taxId       String    @unique // Unique tax identifier for linking
+  taxType     TaxType
+  rate        Decimal   @db.Decimal(5, 4) // e.g., 0.1825 for 18.25%
+  isCompound  Boolean   @default(false) // For compound tax calculations
+  isActive    Boolean   @default(true)
+  validFrom   DateTime  @default(now())
+  validTo     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  business         Business         @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  products         Product[]
+  invoiceTaxes     InvoiceTax[]
+  invoiceItemTaxes InvoiceItemTax[]
+
   @@unique([businessId, taxId])
 }
 
 model Invoice {
-  id                String        @id @default(cuid())
-  businessId        String
-  customerId        String
-  invoiceNumber     String
-  status            InvoiceStatus @default(DRAFT)
-  issueDate         DateTime      @default(now())
-  dueDate           DateTime?
-  subtotal          Decimal       @db.Decimal(10, 2)
-  totalTax          Decimal       @db.Decimal(10, 2) @default(0)
-  totalAmount       Decimal       @db.Decimal(10, 2)
-  paidAmount        Decimal       @db.Decimal(10, 2) @default(0)
-  notes             String?
-  terms             String?
-  currency          String        @default("USD")
-  exchangeRate      Decimal?      @db.Decimal(10, 4)
-  createdBy         String        // User ID who created the invoice
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  
-  business          Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  customer          Customer      @relation(fields: [customerId], references: [id])
-  creator           User          @relation("InvoiceCreator", fields: [createdBy], references: [id])
-  items             InvoiceItem[]
-  taxes             InvoiceTax[]
-  payments          Payment[]
-  
+  id            String        @id @default(cuid())
+  businessId    String
+  customerId    String
+  invoiceNumber String
+  status        InvoiceStatus @default(DRAFT)
+  issueDate     DateTime      @default(now())
+  dueDate       DateTime?
+  subtotal      Decimal       @db.Decimal(10, 2)
+  totalTax      Decimal       @default(0) @db.Decimal(10, 2)
+  totalAmount   Decimal       @db.Decimal(10, 2)
+  paidAmount    Decimal       @default(0) @db.Decimal(10, 2)
+  notes         String?
+  terms         String?
+  currency      String        @default("USD")
+  exchangeRate  Decimal?      @db.Decimal(10, 4)
+  createdBy     String // User ID who created the invoice
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  business Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer Customer      @relation(fields: [customerId], references: [id])
+  creator  User          @relation("InvoiceCreator", fields: [createdBy], references: [id])
+  items    InvoiceItem[]
+  taxes    InvoiceTax[]
+  payments Payment[]
+
   @@unique([businessId, invoiceNumber])
 }
 
 model InvoiceItem {
-  id                String   @id @default(cuid())
-  invoiceId         String
-  productId         String?
-  description       String
-  quantity          Decimal  @db.Decimal(10, 3)
-  unitPrice         Decimal  @db.Decimal(10, 2)
-  discount          Decimal  @db.Decimal(10, 2) @default(0)
-  lineTotal         Decimal  @db.Decimal(10, 2)
-  sortOrder         Int      @default(0)
-  
-  invoice           Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  product           Product? @relation(fields: [productId], references: [id])
+  id          String  @id @default(cuid())
+  invoiceId   String
+  productId   String?
+  description String
+  quantity    Decimal @db.Decimal(10, 3)
+  unitPrice   Decimal @db.Decimal(10, 2)
+  discount    Decimal @default(0) @db.Decimal(10, 2)
+  taxAmount   Decimal @default(0) @db.Decimal(10, 2)
+  lineTotal   Decimal @db.Decimal(10, 2)
+  sortOrder   Int     @default(0)
+
+  invoice   Invoice          @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product   Product?         @relation(fields: [productId], references: [id])
+  itemTaxes InvoiceItemTax[]
 }
 
 model InvoiceTax {
-  id                String    @id @default(cuid())
-  invoiceId         String
-  taxSystemId       String
-  taxableAmount     Decimal   @db.Decimal(10, 2)
-  taxRate           Decimal   @db.Decimal(5, 4)
-  taxAmount         Decimal   @db.Decimal(10, 2)
-  
-  invoice           Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  taxSystem         TaxSystem @relation(fields: [taxSystemId], references: [id])
+  id            String  @id @default(cuid())
+  invoiceId     String
+  taxSystemId   String
+  taxableAmount Decimal @db.Decimal(10, 2)
+  taxRate       Decimal @db.Decimal(5, 4)
+  taxAmount     Decimal @db.Decimal(10, 2)
+
+  invoice   Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  taxSystem TaxSystem @relation(fields: [taxSystemId], references: [id])
+}
+
+model InvoiceItemTax {
+  id            String  @id @default(cuid())
+  invoiceItemId String
+  taxSystemId   String
+  taxableAmount Decimal @db.Decimal(10, 2)
+  taxRate       Decimal @db.Decimal(5, 4)
+  taxAmount     Decimal @db.Decimal(10, 2)
+
+  invoiceItem InvoiceItem @relation(fields: [invoiceItemId], references: [id], onDelete: Cascade)
+  taxSystem   TaxSystem   @relation(fields: [taxSystemId], references: [id])
 }
 
 model Payment {
-  id                String        @id @default(cuid())
-  invoiceId         String
-  amount            Decimal       @db.Decimal(10, 2)
-  paymentDate       DateTime      @default(now())
-  paymentMethod     PaymentMethod @default(CASH)
-  reference         String?
-  notes             String?
-  createdBy         String        // User ID who recorded the payment
-  createdAt         DateTime      @default(now())
-  
-  invoice           Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  creator           User          @relation("PaymentCreator", fields: [createdBy], references: [id])
+  id            String        @id @default(cuid())
+  invoiceId     String
+  amount        Decimal       @db.Decimal(10, 2)
+  paymentDate   DateTime      @default(now())
+  paymentMethod PaymentMethod @default(CASH)
+  reference     String?
+  notes         String?
+  createdBy     String // User ID who recorded the payment
+  createdAt     DateTime      @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  creator User    @relation("PaymentCreator", fields: [createdBy], references: [id])
 }
 
 enum TaxType {

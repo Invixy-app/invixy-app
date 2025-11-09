@@ -31,7 +31,13 @@ interface InvoiceData {
     description: string;
     quantity: number;
     unitPrice: number;
+    discount?: number;
+    taxAmount: number;
     total: number;
+    itemTaxes?: Array<{
+      taxRate: number;
+      taxAmount: number;
+    }>;
     product?: {
       name: string;
       sku?: string;
@@ -434,6 +440,8 @@ export class InvoicePDFService {
                   <th>Description</th>
                   <th style="text-align: center;">Qty</th>
                   <th style="text-align: right;">Unit Price</th>
+                  <th style="text-align: right;">Discount</th>
+                  <th style="text-align: right;">Tax</th>
                   <th style="text-align: right;">Total</th>
                 </tr>
               </thead>
@@ -443,10 +451,15 @@ export class InvoicePDFService {
                     <td>
                       <div class="item-description">${item.description}</div>
                       ${item.product ? `<div class="item-product">${item.product.name}${item.product.sku ? ` (${item.product.sku})` : ''}</div>` : ''}
+                      ${item.itemTaxes && item.itemTaxes.length > 0 ? `
+                        <div class="item-product">Taxes: ${item.itemTaxes.map(tax => `${(tax.taxRate * 100).toFixed(2)}%`).join(', ')}</div>
+                      ` : ''}
                     </td>
                     <td style="text-align: center;">${item.quantity}</td>
                     <td style="text-align: right;">${formatCurrency(item.unitPrice)}</td>
-                    <td style="text-align: right;">${formatCurrency(item.total)}</td>
+                    <td style="text-align: right;">${item.discount && item.discount > 0 ? formatCurrency(item.discount) : '-'}</td>
+                    <td style="text-align: right;">${item.taxAmount > 0 ? formatCurrency(item.taxAmount) : '-'}</td>
+                    <td style="text-align: right;">${formatCurrency(item.total + item.taxAmount)}</td>
                   </tr>
                 `).join('')}
               </tbody>
