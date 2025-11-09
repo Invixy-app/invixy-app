@@ -74,6 +74,7 @@ interface InvoiceItem {
   unitPrice: number;
   discount: number;
   lineTotal: number;
+  taxSystemIds: string[]; // Tax systems for this item
   tempId?: string; // For new items before saving
 }
 
@@ -114,7 +115,8 @@ export default function EditInvoicePage() {
     description: "",
     quantity: 1,
     unitPrice: 0,
-    discount: 0
+    discount: 0,
+    taxSystemIds: []
   });
 
   useEffect(() => {
@@ -149,7 +151,8 @@ export default function EditInvoicePage() {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           discount: item.discount,
-          lineTotal: item.lineTotal
+          lineTotal: item.lineTotal,
+          taxSystemIds: item.itemTaxes?.map((t: any) => t.taxSystemId) || []
         }))
       });
 
@@ -226,7 +229,8 @@ export default function EditInvoicePage() {
       quantity: newItem.quantity || 0,
       unitPrice: newItem.unitPrice || 0,
       discount: newItem.discount || 0,
-      lineTotal
+      lineTotal,
+      taxSystemIds: newItem.taxSystemIds || []
     };
 
     if (editingItemIndex !== null) {
@@ -242,7 +246,8 @@ export default function EditInvoicePage() {
       description: "",
       quantity: 1,
       unitPrice: 0,
-      discount: 0
+      discount: 0,
+      taxSystemIds: []
     });
     setShowProductDialog(false);
   };
@@ -254,7 +259,8 @@ export default function EditInvoicePage() {
       description: item.description,
       quantity: item.quantity,
       unitPrice: item.unitPrice,
-      discount: item.discount
+      discount: item.discount,
+      taxSystemIds: item.taxSystemIds || []
     });
     setEditingItemIndex(index);
     setShowProductDialog(true);
@@ -280,17 +286,34 @@ export default function EditInvoicePage() {
         ...prev,
         productId: product.id,
         description: product.name,
-        unitPrice: product.price
+        unitPrice: product.price,
+        taxSystemIds: product.taxSystemId ? [product.taxSystemId] : []
       }));
     }
+  };
+
+  const toggleItemTax = (taxId: string) => {
+    setNewItem(prev => {
+      const currentTaxes = prev.taxSystemIds || [];
+      const newTaxes = currentTaxes.includes(taxId)
+        ? currentTaxes.filter(id => id !== taxId)
+        : [...currentTaxes, taxId];
+      return { ...prev, taxSystemIds: newTaxes };
+    });
   };
 
   const calculateTotals = () => {
     const subtotal = formData.items.reduce((sum, item) => sum + item.lineTotal, 0);
     
-    // Calculate tax (simplified - using first tax system for demo)
-    const taxRate = taxSystems.length > 0 ? taxSystems[0].rate : 0;
-    const taxAmount = subtotal * taxRate;
+    // Calculate tax per item based on selected tax systems
+    const taxAmount = formData.items.reduce((totalTax, item) => {
+      const itemTax = (item.taxSystemIds || []).reduce((itemTaxSum, taxId) => {
+        const tax = taxSystems.find(t => t.id === taxId);
+        return itemTaxSum + (tax ? item.lineTotal * tax.rate : 0);
+      }, 0);
+      return totalTax + itemTax;
+    }, 0);
+    
     const total = subtotal + taxAmount;
 
     return { subtotal, taxAmount, total };
@@ -313,7 +336,9 @@ export default function EditInvoicePage() {
   };
 
   const handleSave = async () => {
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      return;
+    }
 
     setSaving(true);
     try {
@@ -330,7 +355,8 @@ export default function EditInvoicePage() {
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           discount: item.discount,
-          lineTotal: item.lineTotal
+          lineTotal: item.lineTotal,
+          taxSystemIds: item.taxSystemIds || []
         }))
       };
 
@@ -559,6 +585,19 @@ export default function EditInvoicePage() {
                         <TableRow key={item.id || item.tempId}>
                           <TableCell>
                             <div className="font-medium">{item.description}</div>
+                            {item.taxSystemIds && item.taxSystemIds.length > 0 && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Taxes: {item.taxSystemIds.map((taxId, idx) => {
+                                  const tax = taxSystems.find(t => t.id === taxId);
+                                  return tax ? (
+                                    <span key={taxId}>
+                                      {idx > 0 && ", "}
+                                      {(tax.rate * 100).toFixed(2)}%
+                                    </span>
+                                  ) : null;
+                                })}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">{item.quantity}</TableCell>
                           <TableCell className="text-right">
@@ -646,11 +685,28 @@ export default function EditInvoicePage() {
                     <span className="font-medium">${subtotal.toFixed(2)}</span>
                   </div>
 
-                  {taxSystems.length > 0 && (
+                  {taxAmount > 0 && (
                     <>
-                      <div className="flex justify-between text-sm">
-                        <span>Tax ({(taxSystems[0].rate * 100).toFixed(2)}%):</span>
-                        <span>${taxAmount.toFixed(2)}</span>
+                      <div className="space-y-1">
+                        {formData.items.map((item, idx) => {
+                          const itemTaxes = (item.taxSystemIds || []).map(taxId => {
+                            const tax = taxSystems.find(t => t.id === taxId);
+                            return tax ? { tax, amount: item.lineTotal * tax.rate } : null;
+                          }).filter(Boolean);
+                          
+                          if (itemTaxes.length === 0) return null;
+                          
+                          return (
+                            <div key={idx} className="text-sm text-muted-foreground">
+                              {itemTaxes.map((taxInfo: any, tIdx) => (
+                                <div key={tIdx} className="flex justify-between">
+                                  <span>{taxInfo.tax.name}:</span>
+                                  <span>${taxInfo.amount.toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
                       </div>
                       <Separator />
                     </>
@@ -793,6 +849,50 @@ export default function EditInvoicePage() {
                   </div>
                 </div>
               </div>
+
+              {/* Tax Selection */}
+              {taxSystems.length > 0 && (
+                <div className="space-y-2 pt-2 border-t">
+                  <Label className="text-sm font-medium">Applicable Taxes</Label>
+                  <div className="grid grid-cols-1 gap-2">
+                    {taxSystems.map((tax) => (
+                      <div key={tax.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`tax-${tax.id}`}
+                          checked={(newItem.taxSystemIds || []).includes(tax.id)}
+                          onChange={() => toggleItemTax(tax.id)}
+                          className="rounded"
+                        />
+                        <label 
+                          htmlFor={`tax-${tax.id}`} 
+                          className="flex-1 flex items-center justify-between text-sm cursor-pointer"
+                        >
+                          <span>{tax.name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {(tax.rate * 100).toFixed(2)}%
+                          </Badge>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {(newItem.taxSystemIds || []).length > 0 && (
+                    <div className="text-sm text-muted-foreground pt-1">
+                      Tax on this item: ${
+                        (newItem.taxSystemIds || []).reduce((sum, taxId) => {
+                          const tax = taxSystems.find(t => t.id === taxId);
+                          const lineTotal = calculateLineTotal(
+                            newItem.quantity || 0,
+                            newItem.unitPrice || 0,
+                            newItem.discount || 0
+                          );
+                          return sum + (tax ? lineTotal * tax.rate : 0);
+                        }, 0).toFixed(2)
+                      }
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <DialogFooter>
