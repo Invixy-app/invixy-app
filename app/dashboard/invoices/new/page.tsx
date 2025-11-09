@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,20 +13,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
   ArrowLeft, 
   Save, 
   Send, 
   Plus, 
-  Trash2, 
-  Calculator,
+  Trash2,
   User,
   FileText
 } from "lucide-react";
@@ -65,6 +56,7 @@ type InvoiceFormData = {
     unitPrice: number;
     discount: number;
     lineTotal: number;
+    taxSystemIds: string[]; // Tax systems for this specific item
   }[];
 };
 
@@ -102,7 +94,6 @@ function NewInvoiceContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
-  const [selectedTaxSystems, setSelectedTaxSystems] = useState<string[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
   const [formData, setFormData] = useState<InvoiceFormData>({
@@ -117,7 +108,8 @@ function NewInvoiceContent() {
       quantity: 1,
       unitPrice: 0,
       discount: 0,
-      lineTotal: 0
+      lineTotal: 0,
+      taxSystemIds: []
     }]
   });
 
@@ -165,7 +157,8 @@ function NewInvoiceContent() {
           quantity: 1,
           unitPrice: 0,
           discount: 0,
-          lineTotal: 0
+          lineTotal: 0,
+          taxSystemIds: []
         }
       ]
     }));
@@ -224,12 +217,36 @@ function NewInvoiceContent() {
     }
   };
 
+  const toggleItemTax = (itemIndex: number, taxId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) => {
+        if (i === itemIndex) {
+          const taxSystemIds = item.taxSystemIds.includes(taxId)
+            ? item.taxSystemIds.filter(id => id !== taxId)
+            : [...item.taxSystemIds, taxId];
+          return { ...item, taxSystemIds };
+        }
+        return item;
+      })
+    }));
+  };
+
   const subtotal = formData.items.reduce((sum, item) => sum + item.lineTotal, 0);
-  const totalTax = selectedTaxSystems.reduce((sum, taxId) => {
-    const tax = taxSystems.find(t => t.id === taxId);
-    return sum + (tax ? subtotal * tax.rate : 0);
+  
+  // Calculate tax per item based on selected tax systems for each item
+  const totalTax = formData.items.reduce((totalTaxAmount, item) => {
+    const itemTax = item.taxSystemIds.reduce((itemTaxSum, taxId) => {
+      const tax = taxSystems.find(t => t.id === taxId);
+      return itemTaxSum + (tax ? item.lineTotal * tax.rate : 0);
+    }, 0);
+    return totalTaxAmount + itemTax;
   }, 0);
+  
   const total = subtotal + totalTax;
+  
+  // Get all unique tax systems used across all items for summary display
+  const usedTaxSystems = Array.from(new Set(formData.items.flatMap(item => item.taxSystemIds)));
 
   const handleSubmit = async (e: React.FormEvent, saveAs: 'draft' | 'sent' = 'draft') => {
     e.preventDefault();
@@ -265,7 +282,8 @@ function NewInvoiceContent() {
           description: item.description,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
-          discount: item.discount
+          discount: item.discount,
+          taxSystemIds: item.taxSystemIds // Include item-level taxes
         }))
       };
 
@@ -280,18 +298,7 @@ function NewInvoiceContent() {
       if (response.ok) {
         const invoice = await response.json();
         
-        // Apply tax systems if selected
-        if (selectedTaxSystems.length > 0) {
-          await fetch(`/api/invoices/${invoice.id}/taxes`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ taxSystemIds: selectedTaxSystems }),
-          });
-        }
-
-        // Update status if sending
+        // Update status if sending (no longer need separate tax application)
         if (saveAs === 'sent') {
           await fetch(`/api/invoices/${invoice.id}/status`, {
             method: "PATCH",
@@ -535,6 +542,45 @@ function NewInvoiceContent() {
                             </div>
                           </div>
                         </div>
+
+                        {/* Tax selection for this item */}
+                        {taxSystems.length > 0 && (
+                          <div className="space-y-2 pt-2 border-t">
+                            <Label className="text-sm font-medium">Applicable Taxes</Label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                              {taxSystems.map((tax) => (
+                                <div key={tax.id} className="flex items-center space-x-2">
+                                  <input
+                                    type="checkbox"
+                                    id={`tax-${index}-${tax.id}`}
+                                    checked={item.taxSystemIds.includes(tax.id)}
+                                    onChange={() => toggleItemTax(index, tax.id)}
+                                    className="rounded"
+                                  />
+                                  <label 
+                                    htmlFor={`tax-${index}-${tax.id}`} 
+                                    className="flex-1 flex items-center justify-between text-sm cursor-pointer"
+                                  >
+                                    <span>{tax.name}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {(tax.rate * 100).toFixed(2)}%
+                                    </Badge>
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
+                            {item.taxSystemIds.length > 0 && (
+                              <div className="text-sm text-muted-foreground pt-1">
+                                Tax on this item: {formatCurrency(
+                                  item.taxSystemIds.reduce((sum, taxId) => {
+                                    const tax = taxSystems.find(t => t.id === taxId);
+                                    return sum + (tax ? item.lineTotal * tax.rate : 0);
+                                  }, 0)
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                     {errors.items && (
@@ -543,51 +589,6 @@ function NewInvoiceContent() {
                   </div>
                 </CardContent>
               </Card>
-
-              {/* Tax Systems */}
-              {taxSystems.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center">
-                      <Calculator className="h-5 w-5 mr-2" />
-                      Tax Systems
-                    </CardTitle>
-                    <CardDescription>
-                      Select applicable tax systems for this invoice
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {taxSystems.map((tax) => (
-                        <div key={tax.id} className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            id={`tax-${tax.id}`}
-                            checked={selectedTaxSystems.includes(tax.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedTaxSystems([...selectedTaxSystems, tax.id]);
-                              } else {
-                                setSelectedTaxSystems(selectedTaxSystems.filter(id => id !== tax.id));
-                              }
-                            }}
-                            className="rounded"
-                          />
-                          <label htmlFor={`tax-${tax.id}`} className="flex-1 flex items-center justify-between">
-                            <div>
-                              <div className="font-medium">{tax.name}</div>
-                              <div className="text-sm text-muted-foreground">{tax.taxId}</div>
-                            </div>
-                            <Badge variant="outline">
-                              {(tax.rate * 100).toFixed(2)}%
-                            </Badge>
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
 
               {/* Notes & Terms */}
               <Card>
@@ -658,12 +659,18 @@ function NewInvoiceContent() {
                       <span className="font-medium">{formatCurrency(subtotal)}</span>
                     </div>
 
-                    {selectedTaxSystems.length > 0 && (
+                    {usedTaxSystems.length > 0 && (
                       <>
-                        {selectedTaxSystems.map(taxId => {
+                        {usedTaxSystems.map(taxId => {
                           const tax = taxSystems.find(t => t.id === taxId);
                           if (!tax) return null;
-                          const taxAmount = subtotal * tax.rate;
+                          // Calculate tax across all items that have this tax
+                          const taxAmount = formData.items.reduce((sum, item) => {
+                            if (item.taxSystemIds.includes(taxId)) {
+                              return sum + (item.lineTotal * tax.rate);
+                            }
+                            return sum;
+                          }, 0);
                           return (
                             <div key={taxId} className="flex justify-between text-sm">
                               <span>{tax.name} ({(tax.rate * 100).toFixed(2)}%):</span>
