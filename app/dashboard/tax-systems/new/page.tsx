@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { useBusinessContext } from "@/components/business-context";
+import { showError, showSuccess } from "@/lib/alert-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,6 +94,7 @@ function NewTaxSystemContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [loading, setLoading] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -164,16 +167,15 @@ function NewTaxSystemContent() {
       return;
     }
 
+    if (!currentBusiness?.id) {
+      showError("No Business", "Please select a business first");
+      return;
+    }
+
     setLoading(true);
     try {
-      const businessId = localStorage.getItem("selectedBusinessId");
-      if (!businessId) {
-        alert("Please select a business first");
-        return;
-      }
-
       const taxSystemData = {
-        businessId,
+        businessId: currentBusiness.id,
         name: formData.name,
         description: formData.description || undefined,
         taxId: formData.taxId,
@@ -194,14 +196,15 @@ function NewTaxSystemContent() {
       });
 
       if (response.ok) {
+        showSuccess("Success", "Tax system created successfully");
         router.push("/dashboard/tax-systems");
       } else {
         const errorData = await response.json();
-        alert(errorData.error || "Failed to create tax system");
+        showError("Error", errorData.error || "Failed to create tax system");
       }
     } catch (error) {
       console.error("Error creating tax system:", error);
-      alert("Error creating tax system");
+      showError("Error", "Error creating tax system");
     } finally {
       setLoading(false);
     }
@@ -210,16 +213,15 @@ function NewTaxSystemContent() {
   const createMultipleRates = async () => {
     if (!selectedTemplate || !taxTemplates[selectedTemplate as keyof typeof taxTemplates]) return;
     
+    if (!currentBusiness?.id) {
+      showError("No Business", "Please select a business first");
+      return;
+    }
+    
     const template = taxTemplates[selectedTemplate as keyof typeof taxTemplates];
     setLoading(true);
     
     try {
-      const businessId = localStorage.getItem("selectedBusinessId");
-      if (!businessId) {
-        alert("Please select a business first");
-        return;
-      }
-
       const promises = template.rates.map(rate => 
         fetch("/api/tax-systems", {
           method: "POST",
@@ -227,7 +229,7 @@ function NewTaxSystemContent() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            businessId,
+            businessId: currentBusiness.id,
             name: rate.name,
             description: rate.description,
             taxId: `${template.taxId}_${(rate.rate * 100).toString().replace('.', '_')}`,
@@ -244,13 +246,14 @@ function NewTaxSystemContent() {
       const failures = results.filter(r => !r.ok);
       
       if (failures.length === 0) {
+        showSuccess("Success", "All tax rates created successfully");
         router.push("/dashboard/tax-systems");
       } else {
-        alert(`Failed to create ${failures.length} tax rates`);
+        showError("Error", `Failed to create ${failures.length} tax rates`);
       }
     } catch (error) {
       console.error("Error creating multiple tax rates:", error);
-      alert("Error creating tax systems");
+      showError("Error", "Error creating tax systems");
     } finally {
       setLoading(false);
     }
@@ -262,6 +265,34 @@ function NewTaxSystemContent() {
   };
 
   const templateInfo = getTemplateInfo();
+
+  if (businessLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!currentBusiness) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">No Business Selected</h3>
+            <p className="text-muted-foreground mb-4">
+              Please select a business from the top bar or create a new one.
+            </p>
+            <Link href="/dashboard/businesses/new">
+              <Button>Create Your First Business</Button>
+            </Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

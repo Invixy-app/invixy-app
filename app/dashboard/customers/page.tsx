@@ -107,7 +107,7 @@ export default function CustomersPage() {
       "Are you sure you want to delete this customer? This action cannot be undone.",
       async () => {
         try {
-          const response = await fetch(`/api/customers/${customerId}`, {
+          const response = await fetch(`/api/customers/${customerId}?businessId=${currentBusiness?.id}`, {
             method: "DELETE",
           });
 
@@ -115,7 +115,8 @@ export default function CustomersPage() {
             setCustomers(customers.filter(c => c.id !== customerId));
             showSuccess("Success", "Customer deleted successfully");
           } else {
-            showError("Error", "Failed to delete customer");
+            const errorData = await response.json();
+            showError("Error", errorData.error || "Failed to delete customer");
           }
         } catch (error) {
           console.error("Error deleting customer:", error);

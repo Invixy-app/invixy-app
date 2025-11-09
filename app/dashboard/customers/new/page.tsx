@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { useBusinessContext } from "@/components/business-context";
+import { showError, showSuccess } from "@/lib/alert-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +31,7 @@ type CustomerFormData = z.infer<typeof customerSchema>;
 export default function NewCustomerPage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<CustomerFormData>({
@@ -80,15 +83,13 @@ export default function NewCustomerPage() {
     
     if (!validateForm()) return;
 
+    if (!currentBusiness?.id) {
+      showError("No Business", "Please select a business first");
+      return;
+    }
+
     setLoading(true);
     try {
-      // Get selected business ID
-      const businessId = localStorage.getItem("selectedBusinessId");
-      if (!businessId) {
-        alert("Please select a business first");
-        return;
-      }
-
       const response = await fetch("/api/customers", {
         method: "POST",
         headers: {
@@ -96,24 +97,53 @@ export default function NewCustomerPage() {
         },
         body: JSON.stringify({
           ...formData,
-          businessId,
+          businessId: currentBusiness.id,
           email: formData.email || null
         }),
       });
 
       if (response.ok) {
+        showSuccess("Success", "Customer created successfully");
         router.push("/dashboard/customers");
       } else {
         const errorData = await response.json();
-        alert(errorData.error || "Failed to create customer");
+        showError("Error", errorData.error || "Failed to create customer");
       }
     } catch (error) {
       console.error("Error creating customer:", error);
-      alert("Error creating customer");
+      showError("Error", "Error creating customer");
     } finally {
       setLoading(false);
     }
   };
+
+  if (businessLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!currentBusiness) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">No Business Selected</h3>
+            <p className="text-muted-foreground mb-4">
+              Please select a business from the top bar or create a new one.
+            </p>
+            <Link href="/dashboard/businesses/new">
+              <Button>Create Your First Business</Button>
+            </Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

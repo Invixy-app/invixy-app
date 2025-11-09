@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { useBusinessContext } from "@/components/business-context";
+import { showError, showSuccess, showConfirm } from "@/lib/alert-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +71,7 @@ export default function EditTaxSystemPage() {
   const router = useRouter();
   const params = useParams();
   const { data: session } = useSession();
+  const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -90,16 +93,19 @@ export default function EditTaxSystemPage() {
   });
 
   useEffect(() => {
-    if (params?.id) {
+    if (params?.id && currentBusiness?.id) {
       fetchTaxSystem();
+    } else if (!businessLoading) {
+      setLoading(false);
     }
-  }, [params?.id]);
+  }, [params?.id, currentBusiness?.id, businessLoading]);
 
   const fetchTaxSystem = async () => {
+    if (!currentBusiness?.id) return;
+    
     try {
       setLoading(true);
-      const businessId = localStorage.getItem("selectedBusinessId");
-      const response = await fetch(`/api/tax-systems/${params?.id}?businessId=${businessId}`);
+      const response = await fetch(`/api/tax-systems/${params?.id}?businessId=${currentBusiness.id}`);
       
       if (response.ok) {
         const data = await response.json();

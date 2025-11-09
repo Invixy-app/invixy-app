@@ -43,7 +43,7 @@ interface TaxSystem {
 export default function NewProductPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const { currentBusiness } = useBusinessContext();
+  const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
@@ -62,19 +62,17 @@ export default function NewProductPage() {
   });
 
   useEffect(() => {
-    const businessId = localStorage.getItem("selectedBusinessId");
-    if (businessId) {
-      setFormData(prev => ({ ...prev, businessId }));
+    if (currentBusiness?.id) {
+      setFormData(prev => ({ ...prev, businessId: currentBusiness.id }));
+      fetchTaxSystems();
     }
-    fetchTaxSystems();
-  }, []);
+  }, [currentBusiness?.id]);
 
   const fetchTaxSystems = async () => {
-    try {
-      const businessId = localStorage.getItem("selectedBusinessId");
-      if (!businessId) return;
+    if (!currentBusiness?.id) return;
 
-      const response = await fetch(`/api/tax-systems?businessId=${businessId}`);
+    try {
+      const response = await fetch(`/api/tax-systems?businessId=${currentBusiness.id}`);
       if (response.ok) {
         const data = await response.json();
         setTaxSystems(data);
@@ -169,6 +167,34 @@ export default function NewProductPage() {
     { value: "hrs", label: "Hours" },
     { value: "days", label: "Days" }
   ];
+
+  if (businessLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!currentBusiness) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">No Business Selected</h3>
+            <p className="text-muted-foreground mb-4">
+              Please select a business from the top bar or create a new one.
+            </p>
+            <Link href="/dashboard/businesses/new">
+              <Button>Create Your First Business</Button>
+            </Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

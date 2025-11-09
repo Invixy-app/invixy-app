@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { useBusinessContext } from "@/components/business-context";
+import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -80,6 +82,7 @@ export default function TaxSystemDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { data: session } = useSession();
+  const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [loading, setLoading] = useState(true);
   const [taxSystem, setTaxSystem] = useState<TaxSystem | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
@@ -92,20 +95,23 @@ export default function TaxSystemDetailPage() {
   });
 
   useEffect(() => {
-    if (params?.id) {
+    if (params?.id && currentBusiness?.id) {
       fetchTaxSystemDetails();
+    } else if (!businessLoading) {
+      setLoading(false);
     }
-  }, [params?.id]);
+  }, [params?.id, currentBusiness?.id, businessLoading]);
 
   const fetchTaxSystemDetails = async () => {
+    if (!currentBusiness?.id) return;
+    
     try {
       setLoading(true);
-      const businessId = localStorage.getItem("selectedBusinessId");
       
       const [taxSystemRes, productsRes, usageRes] = await Promise.all([
-        fetch(`/api/tax-systems/${params?.id}?businessId=${businessId}`),
-        fetch(`/api/products?businessId=${businessId}&taxSystemId=${params?.id}`),
-        fetch(`/api/tax-systems/${params?.id}/usage?businessId=${businessId}`)
+        fetch(`/api/tax-systems/${params?.id}?businessId=${currentBusiness.id}`),
+        fetch(`/api/products?businessId=${currentBusiness.id}&taxSystemId=${params?.id}`),
+        fetch(`/api/tax-systems/${params?.id}/usage?businessId=${currentBusiness.id}`)
       ]);
       
       if (taxSystemRes.ok) {
@@ -188,11 +194,29 @@ export default function TaxSystemDetailPage() {
     );
   };
 
-  if (loading) {
+  if (loading || businessLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!currentBusiness) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">No Business Selected</h3>
+            <p className="text-muted-foreground mb-4">
+              Please select a business from the top bar or create a new one.
+            </p>
+            <Link href="/dashboard/businesses/new">
+              <Button>Create Your First Business</Button>
+            </Link>
+          </div>
         </div>
       </DashboardLayout>
     );

@@ -4,6 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { useBusinessContext } from "@/components/business-context";
+import { showError, showSuccess } from "@/lib/alert-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,6 +92,7 @@ function NewInvoiceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -114,18 +117,19 @@ function NewInvoiceContent() {
   });
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (currentBusiness?.id) {
+      fetchData();
+    }
+  }, [currentBusiness?.id]);
 
   const fetchData = async () => {
-    try {
-      const businessId = localStorage.getItem("selectedBusinessId");
-      if (!businessId) return;
+    if (!currentBusiness?.id) return;
 
+    try {
       const [customersRes, productsRes, taxSystemsRes] = await Promise.all([
-        fetch(`/api/customers?businessId=${businessId}`),
-        fetch(`/api/products?businessId=${businessId}`),
-        fetch(`/api/tax-systems?businessId=${businessId}`)
+        fetch(`/api/customers?businessId=${currentBusiness.id}`),
+        fetch(`/api/products?businessId=${currentBusiness.id}`),
+        fetch(`/api/tax-systems?businessId=${currentBusiness.id}`)
       ]);
 
       if (customersRes.ok) {
@@ -261,16 +265,15 @@ function NewInvoiceContent() {
       return;
     }
 
+    if (!currentBusiness?.id) {
+      showError("No Business", "Please select a business first");
+      return;
+    }
+
     setLoading(true);
     try {
-      const businessId = localStorage.getItem("selectedBusinessId");
-      if (!businessId) {
-        alert("Please select a business first");
-        return;
-      }
-
       const invoiceData = {
-        businessId,
+        businessId: currentBusiness.id,
         customerId: formData.customerId,
         issueDate: formData.issueDate ? new Date(formData.issueDate) : new Date(),
         dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
@@ -309,14 +312,15 @@ function NewInvoiceContent() {
           });
         }
 
+        showSuccess("Success", `Invoice ${saveAs === 'sent' ? 'created and sent' : 'created as draft'} successfully`);
         router.push(`/dashboard/invoices/${invoice.id}`);
       } else {
         const errorData = await response.json();
-        alert(errorData.error || "Failed to create invoice");
+        showError("Error", errorData.error || "Failed to create invoice");
       }
     } catch (error) {
       console.error("Error creating invoice:", error);
-      alert("Error creating invoice");
+      showError("Error", "Error creating invoice");
     } finally {
       setLoading(false);
     }
@@ -330,6 +334,34 @@ function NewInvoiceContent() {
   };
 
   const selectedCustomer = customers.find(c => c.id === formData.customerId);
+
+  if (businessLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!currentBusiness) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">No Business Selected</h3>
+            <p className="text-muted-foreground mb-4">
+              Please select a business from the top bar or create a new one.
+            </p>
+            <Link href="/dashboard/businesses/new">
+              <Button>Create Your First Business</Button>
+            </Link>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

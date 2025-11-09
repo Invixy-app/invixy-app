@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { useBusinessContext } from "@/components/business-context";
 import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,38 +57,17 @@ interface TaxSystem {
 
 export default function TaxSystemsPage() {
   const { data: session } = useSession();
+  const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
-  const [selectedBusiness, setSelectedBusiness] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get selected business from localStorage or fetch businesses
-    const businessId = localStorage.getItem("selectedBusinessId");
-    if (businessId) {
-      setSelectedBusiness(businessId);
-      fetchTaxSystems(businessId);
-    } else {
-      fetchBusinesses();
-    }
-  }, []);
-
-  const fetchBusinesses = async () => {
-    try {
-      const response = await fetch("/api/business");
-      if (response.ok) {
-        const data = await response.json();
-        if (data.businesses?.length > 0) {
-          const businessId = data.businesses[0].id;
-          setSelectedBusiness(businessId);
-          localStorage.setItem("selectedBusinessId", businessId);
-          fetchTaxSystems(businessId);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch businesses:", error);
+    if (currentBusiness?.id) {
+      fetchTaxSystems(currentBusiness.id);
+    } else if (!businessLoading) {
       setLoading(false);
     }
-  };
+  }, [currentBusiness?.id, businessLoading]);
 
   const fetchTaxSystems = async (businessId: string) => {
     try {
@@ -178,11 +158,29 @@ export default function TaxSystemsPage() {
   const activeTaxSystems = taxSystems.filter(tax => tax.isActive && !isExpired(tax.validTo));
   const inactiveTaxSystems = taxSystems.filter(tax => !tax.isActive || isExpired(tax.validTo));
 
-  if (loading) {
+  if (loading || businessLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!currentBusiness) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">No Business Selected</h3>
+            <p className="text-muted-foreground mb-4">
+              Please select a business from the top bar or create a new one.
+            </p>
+            <Link href="/dashboard/businesses/new">
+              <Button>Create Your First Business</Button>
+            </Link>
+          </div>
         </div>
       </DashboardLayout>
     );
