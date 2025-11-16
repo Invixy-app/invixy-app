@@ -87,6 +87,7 @@ export default function InvoicesPage() {
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<string>("all");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -99,7 +100,7 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     filterInvoices();
-  }, [invoices, searchTerm, statusFilter]);
+  }, [invoices, searchTerm, statusFilter, activeTab]);
 
   const fetchInvoices = async (businessId: string) => {
     try {
@@ -121,6 +122,18 @@ export default function InvoicesPage() {
   const filterInvoices = () => {
     let filtered = invoices;
 
+    // Filter by active tab
+    if (activeTab !== "all") {
+      const tabStatusMap: Record<string, string> = {
+        draft: "DRAFT",
+        sent: "SENT",
+        paid: "PAID",
+        overdue: "OVERDUE"
+      };
+      filtered = filtered.filter(invoice => invoice.status === tabStatusMap[activeTab]);
+    }
+
+    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(invoice =>
         invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,6 +142,7 @@ export default function InvoicesPage() {
       );
     }
 
+    // Filter by status dropdown (additional filter)
     if (statusFilter) {
       filtered = filtered.filter(invoice => invoice.status === statusFilter);
     }
@@ -451,7 +465,7 @@ export default function InvoicesPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="all" className="space-y-4">
+            <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
               <TabsList>
                 <TabsTrigger value="all">All ({stats.total})</TabsTrigger>
                 <TabsTrigger value="draft">Draft ({stats.draft})</TabsTrigger>
@@ -650,10 +664,166 @@ export default function InvoicesPage() {
               {/* Additional tab contents for different statuses */}
               {["draft", "sent", "paid", "overdue"].map((status) => (
                 <TabsContent key={status} value={status} className="space-y-4">
-                  <div className="text-sm text-muted-foreground">
-                    Showing {status} invoices
-                  </div>
-                  {/* Same table structure as "all" tab but filtered by status */}
+                  {filteredInvoices.length > 0 ? (
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Invoice</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Due Date</TableHead>
+                            <TableHead>Created</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredInvoices.map((invoice) => (
+                            <TableRow key={invoice.id}>
+                              <TableCell>
+                                <div className="flex items-center space-x-2">
+                                  {getStatusIcon(invoice.status)}
+                                  <div>
+                                    <div className="font-medium">{invoice.invoiceNumber}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {invoice.items.length} item{invoice.items.length !== 1 ? 's' : ''}
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div>
+                                  <div className="font-medium">{invoice.customer.name}</div>
+                                  {invoice.customer.email && (
+                                    <div className="text-sm text-muted-foreground">
+                                      {invoice.customer.email}
+                                    </div>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">
+                                  {formatCurrency(invoice.totalAmount, invoice.currency)}
+                                </div>
+                                {invoice.paidAmount > 0 && (
+                                  <div className="text-sm text-green-600">
+                                    {formatCurrency(invoice.paidAmount, invoice.currency)} paid
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={getStatusBadgeVariant(invoice.status)}>
+                                  {invoice.status.replace('_', ' ')}
+                                </Badge>
+                                {invoice.status === "OVERDUE" && invoice.dueDate && (
+                                  <div className="text-xs text-red-600 mt-1">
+                                    {getDaysOverdue(invoice.dueDate)} days overdue
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {invoice.dueDate ? (
+                                  <div className="text-sm">
+                                    {formatDate(invoice.dueDate)}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground text-sm">No due date</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {formatDate(invoice.createdAt)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <Link href={`/dashboard/invoices/${invoice.id}`}>
+                                      <DropdownMenuItem>
+                                        <Eye className="h-4 w-4 mr-2" />
+                                        View Invoice
+                                      </DropdownMenuItem>
+                                    </Link>
+                                    <Link href={`/dashboard/invoices/${invoice.id}/edit`}>
+                                      <DropdownMenuItem>
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Edit Invoice
+                                      </DropdownMenuItem>
+                                    </Link>
+                                    <DropdownMenuItem onClick={() => handleDuplicateInvoice(invoice.id)}>
+                                      <Copy className="h-4 w-4 mr-2" />
+                                      Duplicate
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleDownloadPDF(invoice.id)}>
+                                      <Download className="h-4 w-4 mr-2" />
+                                      Download PDF
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleSendToCustomer(invoice.id)}>
+                                      <Send className="h-4 w-4 mr-2" />
+                                      Send to Customer
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    {invoice.status === "DRAFT" && (
+                                      <DropdownMenuItem 
+                                        onClick={() => handleStatusUpdate(invoice.id, "SENT")}
+                                      >
+                                        <Send className="h-4 w-4 mr-2" />
+                                        Mark as Sent
+                                      </DropdownMenuItem>
+                                    )}
+                                    {invoice.status !== "PAID" && invoice.totalAmount > invoice.paidAmount && (
+                                      <Link href={`/dashboard/invoices/${invoice.id}/payment`}>
+                                        <DropdownMenuItem>
+                                          <DollarSign className="h-4 w-4 mr-2" />
+                                          Record Payment
+                                        </DropdownMenuItem>
+                                      </Link>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem 
+                                      onClick={() => handleDeleteInvoice(invoice.id)}
+                                      className="text-red-600"
+                                    >
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold mb-2">
+                        No {status} invoices found
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        {searchTerm || statusFilter
+                          ? "Try adjusting your search terms or filters" 
+                          : `You don't have any ${status} invoices yet`
+                        }
+                      </p>
+                      {!(searchTerm || statusFilter) && (
+                        <Link href="/dashboard/invoices/new">
+                          <Button>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create Invoice
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
+                  )}
                 </TabsContent>
               ))}
             </Tabs>

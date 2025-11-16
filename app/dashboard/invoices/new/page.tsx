@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { showError, showSuccess } from "@/lib/alert-store";
@@ -14,6 +13,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   ArrowLeft, 
   Save, 
@@ -21,7 +28,9 @@ import {
   Plus, 
   Trash2,
   User,
-  FileText
+  FileText,
+  UserPlus,
+  PackagePlus
 } from "lucide-react";
 import Link from "next/link";
 import { z } from "zod";
@@ -88,16 +97,57 @@ interface TaxSystem {
   rate: number;
 }
 
+interface ProductHistory {
+  hasHistory: boolean;
+  lastPrice: number | null;
+  lastQuantity?: number;
+  lastDiscount?: number;
+  lastInvoice?: {
+    number: string;
+    date: string;
+    status: string;
+  };
+}
+
 function NewInvoiceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [productHistories, setProductHistories] = useState<Record<string, ProductHistory>>({});
+  
+  // Quick add dialogs
+  const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
+  const [showAddProductDialog, setShowAddProductDialog] = useState(false);
+  const [savingCustomer, setSavingCustomer] = useState(false);
+  const [savingProduct, setSavingProduct] = useState(false);
+  
+  const [newCustomer, setNewCustomer] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    billingAddress: "",
+    shippingAddress: "",
+    taxId: "",
+    notes: ""
+  });
+  
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    description: "",
+    sku: "",
+    price: 0,
+    cost: 0,
+    category: "",
+    unit: "pcs",
+    stockQuantity: 0,
+    minStockLevel: 0,
+    taxSystemId: ""
+  });
   
   const [formData, setFormData] = useState<InvoiceFormData>({
     customerId: searchParams?.get("customerId") || "",
@@ -201,6 +251,11 @@ function NewInvoiceContent() {
   const selectProduct = (index: number, productId: string) => {
     const product = products.find(p => p.id === productId);
     if (product) {
+      // Fetch historical price if customer is selected
+      if (formData.customerId && currentBusiness?.id) {
+        fetchProductHistory(productId, formData.customerId);
+      }
+
       setFormData(prev => ({
         ...prev,
         items: prev.items.map((item, i) => {
@@ -209,7 +264,9 @@ function NewInvoiceContent() {
               ...item,
               productId: productId,
               description: product.name,
-              unitPrice: product.price
+              unitPrice: product.price,
+              // Automatically add product's default tax if it exists
+              taxSystemIds: product.taxSystem?.id ? [product.taxSystem.id] : []
             };
             // Recalculate line total
             updatedItem.lineTotal = (updatedItem.quantity * updatedItem.unitPrice) - updatedItem.discount;
@@ -218,6 +275,136 @@ function NewInvoiceContent() {
           return item;
         })
       }));
+    }
+  };
+
+  const fetchProductHistory = async (productId: string, customerId: string) => {
+    if (!currentBusiness?.id) return;
+
+    try {
+      const response = await fetch(
+        `/api/products/${productId}/history?customerId=${customerId}&businessId=${currentBusiness.id}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setProductHistories(prev => ({
+          ...prev,
+          [productId]: data
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching product history:", error);
+    }
+  };
+
+  const handleAddCustomer = async () => {
+    if (!newCustomer.name.trim()) {
+      showError("Validation Error", "Customer name is required");
+      return;
+    }
+
+    if (!currentBusiness?.id) {
+      showError("Error", "No business selected");
+      return;
+    }
+
+    setSavingCustomer(true);
+    try {
+      const response = await fetch("/api/customers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...newCustomer,
+          businessId: currentBusiness.id,
+        }),
+      });
+
+      if (response.ok) {
+        const createdCustomer = await response.json();
+        setCustomers(prev => [...prev, createdCustomer]);
+        setFormData(prev => ({ ...prev, customerId: createdCustomer.id }));
+        setNewCustomer({
+          name: "",
+          email: "",
+          phone: "",
+          billingAddress: "",
+          shippingAddress: "",
+          taxId: "",
+          notes: ""
+        });
+        setShowAddCustomerDialog(false);
+        showSuccess("Success", "Customer created successfully");
+      } else {
+        const error = await response.json();
+        showError("Error", error.error || "Failed to create customer");
+      }
+    } catch (error) {
+      console.error("Error creating customer:", error);
+      showError("Error", "Failed to create customer");
+    } finally {
+      setSavingCustomer(false);
+    }
+  };
+
+  const handleAddProduct = async () => {
+    if (!newProduct.name.trim()) {
+      showError("Validation Error", "Product name is required");
+      return;
+    }
+
+    if (newProduct.price <= 0) {
+      showError("Validation Error", "Product price must be greater than 0");
+      return;
+    }
+
+    if (!currentBusiness?.id) {
+      showError("Error", "No business selected");
+      return;
+    }
+
+    setSavingProduct(true);
+    try {
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...newProduct,
+          businessId: currentBusiness.id,
+          taxSystemId: newProduct.taxSystemId || null,
+        }),
+      });
+
+      if (response.ok) {
+        const createdProduct = await response.json();
+        setProducts(prev => [...prev, createdProduct]);
+        setNewProduct({
+          name: "",
+          description: "",
+          sku: "",
+          price: 0,
+          cost: 0,
+          category: "",
+          unit: "pcs",
+          stockQuantity: 0,
+          minStockLevel: 0,
+          taxSystemId: ""
+        });
+        setShowAddProductDialog(false);
+        showSuccess("Success", "Product created successfully");
+      } else {
+        const error = await response.json();
+        showError("Error", error.error || "Failed to create product");
+      }
+    } catch (error) {
+      console.error("Error creating product:", error);
+      showError("Error", "Failed to create product");
+    } finally {
+      setSavingProduct(false);
     }
   };
 
@@ -397,7 +584,19 @@ function NewInvoiceContent() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="customer">Customer *</Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="customer">Customer *</Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowAddCustomerDialog(true)}
+                          className="h-8 text-xs"
+                        >
+                          <UserPlus className="h-3 w-3 mr-1" />
+                          Add New
+                        </Button>
+                      </div>
                       <Select value={formData.customerId} onValueChange={(value) => setFormData(prev => ({ ...prev, customerId: value }))}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a customer" />
@@ -496,7 +695,19 @@ function NewInvoiceContent() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label>Product (Optional)</Label>
+                            <div className="flex items-center justify-between">
+                              <Label>Product (Optional)</Label>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setShowAddProductDialog(true)}
+                                className="h-8 text-xs"
+                              >
+                                <PackagePlus className="h-3 w-3 mr-1" />
+                                Add New
+                              </Button>
+                            </div>
                             <Select
                               value={item.productId || ""}
                               onValueChange={(value) => value && value !== "custom" ? selectProduct(index, value) : updateItem(index, "productId", "")}
@@ -518,6 +729,20 @@ function NewInvoiceContent() {
                                 ))}
                               </SelectContent>
                             </Select>
+                            {item.productId && productHistories[item.productId]?.hasHistory && (
+                              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md text-sm">
+                                <div className="font-medium text-blue-900">Last Purchase Price</div>
+                                <div className="text-blue-700">
+                                  {formatCurrency(productHistories[item.productId].lastPrice || 0)}
+                                  {productHistories[item.productId].lastInvoice && (
+                                    <span className="text-xs text-blue-600 ml-1">
+                                      (Invoice {productHistories[item.productId].lastInvoice?.number})
+                                    </span>
+                                  )}
+                                </div>
+                                
+                              </div>
+                            )}
                           </div>
 
                           <div className="space-y-2">
@@ -766,6 +991,291 @@ function NewInvoiceContent() {
             </div>
           </div>
         </form>
+
+        {/* Add Customer Dialog */}
+        <Dialog open={showAddCustomerDialog} onOpenChange={setShowAddCustomerDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Customer</DialogTitle>
+              <DialogDescription>
+                Create a new customer to add to this invoice
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="customerName">Customer Name *</Label>
+                <Input
+                  id="customerName"
+                  value={newCustomer.name}
+                  onChange={(e) => setNewCustomer(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter customer name"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="customerEmail">Email</Label>
+                  <Input
+                    id="customerEmail"
+                    type="email"
+                    value={newCustomer.email}
+                    onChange={(e) => setNewCustomer(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="customer@example.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="customerPhone">Phone</Label>
+                  <Input
+                    id="customerPhone"
+                    value={newCustomer.phone}
+                    onChange={(e) => setNewCustomer(prev => ({ ...prev, phone: e.target.value }))}
+                    placeholder="+1 (555) 000-0000"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="customerBillingAddress">Billing Address</Label>
+                <Textarea
+                  id="customerBillingAddress"
+                  value={newCustomer.billingAddress}
+                  onChange={(e) => setNewCustomer(prev => ({ ...prev, billingAddress: e.target.value }))}
+                  placeholder="Enter billing address"
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="customerShippingAddress">Shipping Address</Label>
+                <Textarea
+                  id="customerShippingAddress"
+                  value={newCustomer.shippingAddress}
+                  onChange={(e) => setNewCustomer(prev => ({ ...prev, shippingAddress: e.target.value }))}
+                  placeholder="Enter shipping address (leave empty if same as billing)"
+                  rows={2}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="customerTaxId">Tax ID</Label>
+                  <Input
+                    id="customerTaxId"
+                    value={newCustomer.taxId}
+                    onChange={(e) => setNewCustomer(prev => ({ ...prev, taxId: e.target.value }))}
+                    placeholder="Tax identification number"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="customerNotes">Notes</Label>
+                <Textarea
+                  id="customerNotes"
+                  value={newCustomer.notes}
+                  onChange={(e) => setNewCustomer(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Additional notes about the customer"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAddCustomerDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleAddCustomer}
+                disabled={savingCustomer}
+              >
+                {savingCustomer ? "Creating..." : "Create Customer"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Product Dialog */}
+        <Dialog open={showAddProductDialog} onOpenChange={setShowAddProductDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Product</DialogTitle>
+              <DialogDescription>
+                Create a new product to add to your catalog
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="productName">Product Name *</Label>
+                  <Input
+                    id="productName"
+                    value={newProduct.name}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter product name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="productSKU">SKU</Label>
+                  <Input
+                    id="productSKU"
+                    value={newProduct.sku}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, sku: e.target.value }))}
+                    placeholder="Product SKU"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="productDescription">Description</Label>
+                <Textarea
+                  id="productDescription"
+                  value={newProduct.description}
+                  onChange={(e) => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Product description"
+                  rows={2}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="productPrice">Price *</Label>
+                  <Input
+                    id="productPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newProduct.price || ""}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="productCost">Cost</Label>
+                  <Input
+                    id="productCost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newProduct.cost || ""}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, cost: parseFloat(e.target.value) || 0 }))}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="productUnit">Unit</Label>
+                  <Select
+                    value={newProduct.unit}
+                    onValueChange={(value) => setNewProduct(prev => ({ ...prev, unit: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pcs">Pieces</SelectItem>
+                      <SelectItem value="kg">Kilogram</SelectItem>
+                      <SelectItem value="g">Gram</SelectItem>
+                      <SelectItem value="lb">Pound</SelectItem>
+                      <SelectItem value="l">Liter</SelectItem>
+                      <SelectItem value="ml">Milliliter</SelectItem>
+                      <SelectItem value="m">Meter</SelectItem>
+                      <SelectItem value="ft">Feet</SelectItem>
+                      <SelectItem value="box">Box</SelectItem>
+                      <SelectItem value="pack">Pack</SelectItem>
+                      <SelectItem value="hrs">Hours</SelectItem>
+                      <SelectItem value="days">Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="productCategory">Category</Label>
+                  <Input
+                    id="productCategory"
+                    value={newProduct.category}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, category: e.target.value }))}
+                    placeholder="Product category"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="productStock">Stock Quantity</Label>
+                  <Input
+                    id="productStock"
+                    type="number"
+                    min="0"
+                    value={newProduct.stockQuantity || ""}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, stockQuantity: parseInt(e.target.value) || 0 }))}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="productMinStock">Min Stock Level</Label>
+                  <Input
+                    id="productMinStock"
+                    type="number"
+                    min="0"
+                    value={newProduct.minStockLevel || ""}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, minStockLevel: parseInt(e.target.value) || 0 }))}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              {taxSystems.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="productTax">Default Tax</Label>
+                  <Select
+                    value={newProduct.taxSystemId || "none"}
+                    onValueChange={(value) => setNewProduct(prev => ({ ...prev, taxSystemId: value === "none" ? "" : value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select default tax (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No default tax</SelectItem>
+                      {taxSystems.map((tax) => (
+                        <SelectItem key={tax.id} value={tax.id}>
+                          {tax.name} ({(tax.rate * 100).toFixed(2)}%)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAddProductDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleAddProduct}
+                disabled={savingProduct}
+              >
+                {savingProduct ? "Creating..." : "Create Product"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

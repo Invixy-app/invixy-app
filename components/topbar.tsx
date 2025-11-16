@@ -15,9 +15,9 @@ import { BusinessSwitcher } from "@/components/business-switcher";
 import { 
   ChevronDown, 
   LogOut, 
-  Settings, 
   User,
-  Bell
+  Bell,
+  Building2
 } from "lucide-react";
 
 interface TopbarProps {
@@ -92,14 +92,14 @@ export function Topbar({ className, showBusinessSwitcher = true }: TopbarProps) 
               <DropdownMenuItem asChild>
                 <a href="/dashboard/settings" className="flex items-center cursor-pointer">
                   <User className="mr-2 h-4 w-4" />
-                  Profile
+                  Profile Settings
                 </a>
               </DropdownMenuItem>
               
               <DropdownMenuItem asChild>
-                <a href="/dashboard/settings" className="flex items-center cursor-pointer">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                <a href="/dashboard/business-settings" className="flex items-center cursor-pointer">
+                  <Building2 className="mr-2 h-4 w-4" />
+                  Business Settings
                 </a>
               </DropdownMenuItem>
               

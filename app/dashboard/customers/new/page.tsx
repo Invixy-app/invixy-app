@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { showError, showSuccess } from "@/lib/alert-store";
@@ -30,7 +29,6 @@ type CustomerFormData = z.infer<typeof customerSchema>;
 
 export default function NewCustomerPage() {
   const router = useRouter();
-  const { data: session } = useSession();
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});

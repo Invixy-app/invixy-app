@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { showError, showSuccess } from "@/lib/alert-store";
@@ -93,14 +92,11 @@ const taxTemplates = {
 function NewTaxSystemContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [loading, setLoading] = useState(false);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(
-    searchParams?.get("template") || null
-  );
+  const selectedTemplate = searchParams?.get("template") || null;
   const [multipleRates, setMultipleRates] = useState(false);
   
   const [formData, setFormData] = useState<TaxSystemFormData>({

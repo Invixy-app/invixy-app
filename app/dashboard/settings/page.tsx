@@ -28,13 +28,11 @@ import {
   Bell, 
   Trash2, 
   Save,
-  Mail,
-  Phone,
-  MapPin,
   Shield,
   Settings,
   Eye,
-  EyeOff
+  EyeOff,
+  ArrowLeft
 } from "lucide-react";
 import { useAlert } from "@/lib/alert-store";
 
@@ -295,6 +293,17 @@ export default function UserSettingsPage() {
     <div className="container mx-auto py-6 max-w-4xl">
       <div className="space-y-6">
         {/* Header */}
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => router.push('/dashboard')}
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Account Settings</h1>
           <p className="text-muted-foreground">

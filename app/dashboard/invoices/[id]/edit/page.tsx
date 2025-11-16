@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -38,7 +37,6 @@ import {
   User,
   FileText,
   AlertTriangle,
-  X,
   Edit
 } from "lucide-react";
 import Link from "next/link";
@@ -66,6 +64,18 @@ interface TaxSystem {
   rate: number;
 }
 
+interface ProductHistory {
+  hasHistory: boolean;
+  lastPrice: number | null;
+  lastQuantity?: number;
+  lastDiscount?: number;
+  lastInvoice?: {
+    number: string;
+    date: string;
+    status: string;
+  };
+}
+
 interface InvoiceItem {
   id?: string;
   productId?: string;
@@ -90,7 +100,6 @@ interface InvoiceFormData {
 export default function EditInvoicePage() {
   const router = useRouter();
   const params = useParams();
-  const { data: session } = useSession();
   const { currentBusiness } = useBusinessContext();
   
   const [invoice, setInvoice] = useState<any>(null);
@@ -99,6 +108,7 @@ export default function EditInvoicePage() {
   const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [productHistories, setProductHistories] = useState<Record<string, ProductHistory>>({});
   
   const [formData, setFormData] = useState<InvoiceFormData>({
     customerId: "",
@@ -282,6 +292,11 @@ export default function EditInvoicePage() {
   const selectProduct = (productId: string) => {
     const product = products.find(p => p.id === productId);
     if (product) {
+      // Fetch historical price if customer is selected
+      if (formData.customerId && currentBusiness?.id) {
+        fetchProductHistory(productId, formData.customerId);
+      }
+
       setNewItem(prev => ({
         ...prev,
         productId: product.id,
@@ -289,6 +304,26 @@ export default function EditInvoicePage() {
         unitPrice: product.price,
         taxSystemIds: product.taxSystemId ? [product.taxSystemId] : []
       }));
+    }
+  };
+
+  const fetchProductHistory = async (productId: string, customerId: string) => {
+    if (!currentBusiness?.id) return;
+
+    try {
+      const response = await fetch(
+        `/api/products/${productId}/history?customerId=${customerId}&businessId=${currentBusiness.id}`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setProductHistories(prev => ({
+          ...prev,
+          [productId]: data
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching product history:", error);
     }
   };
 
@@ -783,6 +818,34 @@ export default function EditInvoicePage() {
                     ))}
                   </SelectContent>
                 </Select>
+                {newItem.productId && productHistories[newItem.productId]?.hasHistory && (
+                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm">
+                    <div className="font-medium text-blue-900 mb-1">Last Purchase Price for This Customer</div>
+                    <div className="text-blue-700 font-semibold text-lg">
+                      ${productHistories[newItem.productId].lastPrice?.toFixed(2) || '0.00'}
+                    </div>
+                    {productHistories[newItem.productId].lastInvoice && (
+                      <div className="text-xs text-blue-600 mt-1">
+                        From Invoice #{productHistories[newItem.productId].lastInvoice?.number} 
+                        {' '}({new Date(productHistories[newItem.productId].lastInvoice?.date || '').toLocaleDateString()})
+                      </div>
+                    )}
+                    {(() => {
+                      const currentProduct = products.find(p => p.id === newItem.productId);
+                      const lastPrice = productHistories[newItem.productId].lastPrice || 0;
+                      return currentProduct && lastPrice !== currentProduct.price && (
+                        <div className="text-xs text-blue-700 mt-2 pt-2 border-t border-blue-200">
+                          Current catalog price: ${currentProduct.price.toFixed(2)}
+                          {lastPrice > currentProduct.price ? (
+                            <span className="text-green-600 ml-1">(↓ Price decreased)</span>
+                          ) : (
+                            <span className="text-orange-600 ml-1">(↑ Price increased)</span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
 
               <Separator />

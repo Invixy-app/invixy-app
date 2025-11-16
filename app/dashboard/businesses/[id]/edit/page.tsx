@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import {
   Card,
@@ -34,7 +33,6 @@ import {
   Phone,
   Mail,
   Globe,
-  FileText,
 } from "lucide-react";
 import { showError, showSuccess, showConfirm } from "@/lib/alert-store";
 
@@ -84,7 +82,6 @@ export default function EditBusinessPage() {
   const params = useParams();
   const router = useRouter();
   const businessId = params.id as string;
-  const { data: session } = useSession();
   
   const [business, setBusiness] = useState<any>(null);
   const [formData, setFormData] = useState<BusinessFormData>({
@@ -140,12 +137,12 @@ export default function EditBusinessPage() {
         });
       } else {
         showError("Error", "Failed to load business details");
-        router.push("/dashboard/businesses");
+        router.push("/dashboard");
       }
     } catch (error) {
       console.error("Failed to fetch business:", error);
       showError("Error", "Failed to load business details");
-      router.push("/dashboard/businesses");
+      router.push("/dashboard");
     } finally {
       setLoading(false);
     }
@@ -192,7 +189,7 @@ export default function EditBusinessPage() {
       if (response.ok) {
         showSuccess("Success", "Business updated successfully");
         setHasChanges(false);
-        router.push(`/dashboard/businesses/${businessId}`);
+        router.push(`/dashboard`);
       } else {
         const error = await response.json();
         showError("Error", error.message || "Failed to update business");
@@ -210,14 +207,14 @@ export default function EditBusinessPage() {
       showConfirm(
         "Unsaved Changes",
         "You have unsaved changes. Are you sure you want to leave without saving?",
-        () => router.push(`/dashboard/businesses/${businessId}`),
+        () => router.push(`/dashboard`),
         {
           confirmText: "Leave",
           cancelText: "Stay"
         }
       );
     } else {
-      router.push(`/dashboard/businesses/${businessId}`);
+      router.push(`/dashboard`);
     }
   };
 
@@ -273,8 +270,8 @@ export default function EditBusinessPage() {
             </p>
             <div className="mt-6">
               <Button asChild>
-                <Link href={`/dashboard/businesses/${businessId}`}>
-                  Back to Business
+                <Link href="/dashboard">
+                  Back to Dashboard
                 </Link>
               </Button>
             </div>
