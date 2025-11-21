@@ -139,7 +139,7 @@ export async function GET(
   } catch (error) {
     console.error("[INVOICE_PDF_GET]", error);
     return NextResponse.json(
-      { error: "Failed to generate PDF" },
+      { error: error },
       { status: 500 }
     );
   }
