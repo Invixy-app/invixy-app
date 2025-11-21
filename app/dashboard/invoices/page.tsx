@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InvoiceEmailDialog } from "@/components/invoices/invoice-email-dialog";
 import { 
   Search, 
   Plus, 
@@ -89,6 +90,8 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [selectedInvoiceForEmail, setSelectedInvoiceForEmail] = useState<Invoice | null>(null);
 
   useEffect(() => {
     if (currentBusiness?.id) {
@@ -251,14 +254,22 @@ export default function InvoicesPage() {
       return;
     }
 
-    try {
-      // For now, we'll just show a placeholder message
-      // In a real implementation, this would open an email compose dialog or send directly
-      showSuccess("Info", "Send to customer feature will be implemented soon");
-    } catch (error) {
-      console.error("Error sending to customer:", error);
-      showError("Error", "Error sending to customer");
+    // Find the invoice
+    const invoice = invoices.find(inv => inv.id === invoiceId);
+    if (!invoice) {
+      showError("Error", "Invoice not found");
+      return;
     }
+
+    // Check if customer has email
+    if (!invoice.customer.email) {
+      showError("Error", "Customer does not have an email address");
+      return;
+    }
+
+    // Open email dialog
+    setSelectedInvoiceForEmail(invoice);
+    setEmailDialogOpen(true);
   };
 
   const handleDuplicateInvoice = async (invoiceId: string) => {
@@ -830,6 +841,25 @@ export default function InvoicesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Email Dialog */}
+      {selectedInvoiceForEmail && (
+        <InvoiceEmailDialog
+          invoiceId={selectedInvoiceForEmail.id}
+          invoiceNumber={selectedInvoiceForEmail.invoiceNumber}
+          customerEmail={selectedInvoiceForEmail.customer.email || ""}
+          customerName={selectedInvoiceForEmail.customer.name}
+          open={emailDialogOpen}
+          onOpenChange={setEmailDialogOpen}
+          onSuccess={() => {
+            // Refresh invoices after successful email
+            if (currentBusiness?.id) {
+              fetchInvoices(currentBusiness.id);
+            }
+            showSuccess("Success", "Invoice emailed successfully");
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 }

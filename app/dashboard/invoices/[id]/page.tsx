@@ -55,6 +55,7 @@ import {
   Printer
 } from "lucide-react";
 import Link from "next/link";
+import { InvoiceEmailDialog } from "@/components/invoices/invoice-email-dialog";
 
 interface InvoiceItem {
   id: string;
@@ -146,6 +147,7 @@ export default function InvoiceDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [paymentForm, setPaymentForm] = useState({
     amount: "",
     paymentDate: new Date().toISOString().split('T')[0],
@@ -282,7 +284,7 @@ export default function InvoiceDetailPage() {
   const copyInvoiceNumber = () => {
     if (invoice?.invoiceNumber) {
       navigator.clipboard.writeText(invoice.invoiceNumber);
-      // You could add a toast notification here
+      alert("Invoice number copied to clipboard!");
     }
   };
 
@@ -290,7 +292,32 @@ export default function InvoiceDetailPage() {
     if (invoice?.id) {
       const publicUrl = `${window.location.origin}/invoices/${invoice.id}`;
       navigator.clipboard.writeText(publicUrl);
-      // You could add a toast notification here
+      alert("Public link copied to clipboard!");
+    }
+  };
+
+  const downloadPDF = async () => {
+    if (!invoice?.id) return;
+    
+    try {
+      const response = await fetch(`/api/invoices/${invoice.id}/pdf`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to download PDF");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Invoice-${invoice.invoiceNumber}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      alert("Failed to download PDF");
     }
   };
 
@@ -385,6 +412,16 @@ export default function InvoiceDetailPage() {
               </Button>
             )}
 
+            {invoice.customer.email && (
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEmailDialog(true)}
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Email Invoice
+              </Button>
+            )}
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" disabled={actionLoading}>
@@ -402,11 +439,11 @@ export default function InvoiceDetailPage() {
                   Copy Public Link
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={downloadPDF}>
                   <Download className="h-4 w-4 mr-2" />
                   Download PDF
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowEmailDialog(true)}>
                   <Mail className="h-4 w-4 mr-2" />
                   Send Email
                 </DropdownMenuItem>
@@ -845,6 +882,17 @@ export default function InvoiceDetailPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Email Dialog */}
+        <InvoiceEmailDialog
+          invoiceId={invoice.id}
+          invoiceNumber={invoice.invoiceNumber}
+          customerEmail={invoice.customer.email || ""}
+          customerName={invoice.customer.name}
+          open={showEmailDialog}
+          onOpenChange={setShowEmailDialog}
+          onSuccess={fetchInvoice}
+        />
       </div>
     </DashboardLayout>
   );

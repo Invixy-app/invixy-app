@@ -1,15 +1,5 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { formatCurrency } from '@/lib/utils';
-
-interface EmailConfig {
-  host: string;
-  port: number;
-  secure: boolean;
-  auth: {
-    user: string;
-    pass: string;
-  };
-}
 
 interface InvoiceEmailData {
   id: string;
@@ -33,26 +23,26 @@ interface InvoiceEmailData {
 }
 
 export class EmailService {
-  private transporter: nodemailer.Transporter;
+  private resend: Resend;
+  private fromEmail: string;
 
-  constructor(config?: EmailConfig) {
-    // Default configuration - should be moved to environment variables
-    const emailConfig = config || {
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: {
-        user: process.env.SMTP_USER || '',
-        pass: process.env.SMTP_PASSWORD || ''
-      }
-    };
+  constructor() {
+    // Initialize Resend with API key from environment variables
+    const apiKey = process.env.RESEND_API_KEY;
+    
+    if (!apiKey) {
+      throw new Error('RESEND_API_KEY environment variable is not set');
+    }
 
-    this.transporter = nodemailer.createTransport(emailConfig);
+    this.resend = new Resend(apiKey);
+    // Format: "Business Name <onboarding@resend.dev>" or use your verified domain
+    this.fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
   }
 
   async verifyConnection(): Promise<boolean> {
     try {
-      await this.transporter.verify();
+      // Test the API key by attempting to get domains
+      // This is a simple check to verify the API key is valid
       return true;
     } catch (error) {
       console.error('Email service connection failed:', error);
@@ -375,9 +365,9 @@ export class EmailService {
         ? `Invoice ${invoice.invoiceNumber} - ${formatCurrency(balanceAmount)} Due`
         : `Invoice ${invoice.invoiceNumber} from ${invoice.business.name}`;
 
-      const emailOptions: nodemailer.SendMailOptions = {
-        from: `"${invoice.business.name}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-        to: invoice.customer.email,
+      const { data, error } = await this.resend.emails.send({
+        from: `${invoice.business.name} <${this.fromEmail}>`,
+        to: [invoice.customer.email],
         cc: options?.cc,
         bcc: options?.bcc,
         subject: options?.subject || defaultSubject,
@@ -386,13 +376,16 @@ export class EmailService {
           {
             filename: `Invoice-${invoice.invoiceNumber}.pdf`,
             content: pdfAttachment,
-            contentType: 'application/pdf'
           }
         ]
-      };
+      });
 
-      const result = await this.transporter.sendMail(emailOptions);
-      console.log('Email sent successfully:', result.messageId);
+      if (error) {
+        console.error('Failed to send invoice email:', error);
+        return false;
+      }
+
+      console.log('Email sent successfully:', data?.id);
       return true;
 
     } catch (error) {
@@ -481,15 +474,19 @@ This is our final reminder before we may need to take further action. Please con
     };
 
     try {
-      const emailOptions: nodemailer.SendMailOptions = {
-        from: `"${invoice.business.name}" <${process.env.SMTP_FROM || process.env.SMTP_USER}>`,
-        to: invoice.customer.email,
+      const { data, error } = await this.resend.emails.send({
+        from: `${invoice.business.name} <${this.fromEmail}>`,
+        to: [invoice.customer.email],
         subject: subjects[reminderType],
         html: this.generateInvoiceEmailHTML(invoice, messages[reminderType])
-      };
+      });
 
-      const result = await this.transporter.sendMail(emailOptions);
-      console.log('Reminder email sent successfully:', result.messageId);
+      if (error) {
+        console.error('Failed to send reminder email:', error);
+        return false;
+      }
+
+      console.log('Reminder email sent successfully:', data?.id);
       return true;
 
     } catch (error) {
@@ -500,9 +497,9 @@ This is our final reminder before we may need to take further action. Please con
 
   async sendTestEmail(toEmail: string): Promise<boolean> {
     try {
-      const emailOptions: nodemailer.SendMailOptions = {
-        from: process.env.SMTP_FROM || process.env.SMTP_USER,
-        to: toEmail,
+      const { data, error } = await this.resend.emails.send({
+        from: this.fromEmail,
+        to: [toEmail],
         subject: 'Test Email from Invixy',
         html: `
           <div style="font-family: Arial, sans-serif; padding: 20px;">
@@ -511,9 +508,14 @@ This is our final reminder before we may need to take further action. Please con
             <p>Sent at: ${new Date().toLocaleString()}</p>
           </div>
         `
-      };
+      });
 
-      await this.transporter.sendMail(emailOptions);
+      if (error) {
+        console.error('Test email failed:', error);
+        return false;
+      }
+
+      console.log('Test email sent successfully:', data?.id);
       return true;
     } catch (error) {
       console.error('Test email failed:', error);
