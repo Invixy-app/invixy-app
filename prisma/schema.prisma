@@ -156,7 +156,7 @@ model TaxSystem {
   businessId  String
   name        String
   description String?
-  taxId       String    @unique // Unique tax identifier for linking
+  taxId       String    // Unique tax identifier for linking
   taxType     TaxType
   rate        Decimal   @db.Decimal(5, 4) // e.g., 0.1825 for 18.25%
   isCompound  Boolean   @default(false) // For compound tax calculations
