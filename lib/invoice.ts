@@ -45,7 +45,7 @@ export interface InvoiceData {
   terms?: string | null;
   currency: string;
   exchangeRate?: number | null;
-  createdBy: string;
+  createdBy: string | null;
   createdAt: Date;
   updatedAt: Date;
   customer: {
