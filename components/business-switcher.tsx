@@ -92,7 +92,7 @@ export function BusinessSwitcher({ className }: BusinessSwitcherProps) {
 
   if (businesses.length === 0) {
     return (
-      <Button variant="outline" className={className} asChild>
+      <Button variant="outline" className={`${className} w-full`} asChild>
         <Link href="/dashboard/businesses/new">
           <Building2 className="mr-2 h-4 w-4" />
           Create Your First Business
@@ -105,21 +105,21 @@ export function BusinessSwitcher({ className }: BusinessSwitcherProps) {
     <div className={`flex items-center gap-2 ${className}`}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="flex items-center gap-2 min-w-[200px] justify-between">
+          <Button variant="outline" className="flex items-center gap-2 min-w-[200px] w-full justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               <div className="flex flex-col items-start">
                 <span className="text-sm font-medium truncate max-w-[120px]">
                   {currentBusiness?.name || "Select Business"}
                 </span>
-                {currentBusiness && (
+                {/* {currentBusiness && (
                   <Badge
                     variant="secondary"
                     className={`text-xs px-1 py-0 ${getRoleColor(currentBusiness.role)}`}
                   >
                     {currentBusiness.role}
                   </Badge>
-                )}
+                )} */}
               </div>
             </div>
             <ChevronDown className="h-4 w-4" />

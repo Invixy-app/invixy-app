@@ -27,6 +27,7 @@ model User {
   BusinessUserRole BusinessUserRole[]
   createdInvoices  Invoice[]          @relation("InvoiceCreator")
   createdPayments  Payment[]          @relation("PaymentCreator")
+  settings         UserSettings?
 }
 
 model Account {
@@ -94,6 +95,8 @@ model BusinessUserRole {
   role       Role     @default(EMPLOYEE)
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 
   @@unique([userId, businessId])
 }
@@ -187,13 +190,13 @@ model Invoice {
   terms         String?
   currency      String        @default("USD")
   exchangeRate  Decimal?      @db.Decimal(10, 4)
-  createdBy     String // User ID who created the invoice
+  createdBy     String? // User ID who created the invoice
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   business Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   customer Customer      @relation(fields: [customerId], references: [id])
-  creator  User          @relation("InvoiceCreator", fields: [createdBy], references: [id])
+  creator  User?         @relation("InvoiceCreator", fields: [createdBy], references: [id], onDelete: SetNull)
   items    InvoiceItem[]
   taxes    InvoiceTax[]
   payments Payment[]
@@ -250,11 +253,30 @@ model Payment {
   paymentMethod PaymentMethod @default(CASH)
   reference     String?
   notes         String?
-  createdBy     String // User ID who recorded the payment
+  createdBy     String? // User ID who recorded the payment
   createdAt     DateTime      @default(now())
 
   invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  creator User    @relation("PaymentCreator", fields: [createdBy], references: [id])
+  creator User?   @relation("PaymentCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+}
+
+model UserSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  phone     String?
+  address   String?
+  timezone  String   @default("UTC")
+  language  String   @default("en")
+  
+  emailNotifications   Boolean @default(true)
+  invoiceReminders     Boolean @default(true)
+  paymentNotifications Boolean @default(true)
+  marketingEmails      Boolean @default(false)
+  securityAlerts       Boolean @default(true)
+  
+  updatedAt DateTime @updatedAt
 }
 
 enum TaxType {

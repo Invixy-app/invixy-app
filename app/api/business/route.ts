@@ -29,6 +29,7 @@ export async function POST(req: Request) {
             phone:parsedBody.data.phone,
             email:parsedBody.data.email,
             website:parsedBody.data.website,
+            currency:parsedBody.data.currency,
             createdAt:new Date(),
             updatedAt:new Date(),
             
@@ -72,6 +73,7 @@ export async function GET(req: Request) {
             phone:bur.business.phone,
             email:bur.business.email,
             website:bur.business.website,
+            currency:bur.business.currency,
             role:bur.role,
             createdAt:bur.business.createdAt,
             updatedAt:bur.business.updatedAt

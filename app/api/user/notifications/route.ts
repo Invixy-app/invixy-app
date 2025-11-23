@@ -19,14 +19,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // For now, return default notification settings
-    // In a real app, these would be stored in a UserSettings model
+    const userSettings = await db.userSettings.findUnique({
+      where: { userId: session.user.id }
+    });
+
     const notifications = {
-      emailNotifications: true,
-      invoiceReminders: true,
-      paymentNotifications: true,
-      marketingEmails: false,
-      securityAlerts: true
+      emailNotifications: userSettings?.emailNotifications ?? true,
+      invoiceReminders: userSettings?.invoiceReminders ?? true,
+      paymentNotifications: userSettings?.paymentNotifications ?? true,
+      marketingEmails: userSettings?.marketingEmails ?? false,
+      securityAlerts: userSettings?.securityAlerts ?? true
     };
 
     return NextResponse.json({ notifications });
@@ -50,8 +52,16 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const notifications = notificationsSchema.parse(body);
 
-    // In a real app, you would save these to a UserSettings model
-    // For now, we'll just validate and return success
+    await db.userSettings.upsert({
+      where: { userId: session.user.id },
+      create: {
+        userId: session.user.id,
+        ...notifications
+      },
+      update: {
+        ...notifications
+      }
+    });
     
     return NextResponse.json({
       success: true,

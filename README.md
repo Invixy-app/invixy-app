@@ -127,9 +127,11 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 - `PATCH /api/business/[id]` - Update business
 - `DELETE /api/business/[id]` - Delete business (soft)
 - `POST /api/business/switch` - Switch active business
-- `GET /api/business/dashboard` - Dashboard data
-- `GET /api/business/users` - List business users
-- `POST /api/business/users` - Invite user to business
+- `GET /api/business/[id]/dashboard` - Dashboard data
+- `GET /api/business/[id]/users` - List business users
+- `POST /api/business/[id]/users` - Invite user to business
+- `PATCH /api/business/[id]/users/[memberId]` - Update user role
+- `DELETE /api/business/[id]/users/[memberId]` - Remove user from business
 
 ## 🧪 Development
 

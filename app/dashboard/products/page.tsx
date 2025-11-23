@@ -204,17 +204,17 @@ export default function ProductsPage() {
 
   return (
  <DashboardLayout>
-  <div className="space-y-8">
+  <div className="space-y-6">
     {/* Header */}
-    <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-md">
+    <div className="flex justify-between items-center">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-        <p className="opacity-90 text-sm">
+        <p className="text-muted-foreground">
           Manage your product catalog and inventory
         </p>
       </div>
       <Link href="/dashboard/products/new">
-        <Button className="bg-white text-blue-700 hover:bg-blue-50 shadow-sm">
+        <Button>
           <Plus className="h-4 w-4 mr-2" />
           Add Product
         </Button>

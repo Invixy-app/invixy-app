@@ -2,301 +2,314 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
-import { motion, type Variants } from "framer-motion";
+import { ArrowRight, CheckCircle2, BarChart3, Shield, Zap, Globe } from "lucide-react";
 
-export default function Home() {
-  const fadeIn = (delay = 0): Variants => ({
-    hidden: { opacity: 0, y: 30 },
-    show: { 
-      opacity: 1, 
-      y: 0, 
-      transition: { 
-        delay, 
-        duration: 0.6
-      } 
-    },
-  });
-
+export default function LandingPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-white to-indigo-50 text-gray-900">
-      {/* Navbar */}
-      <header className="border-b bg-white/70 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-3xl font-extrabold text-indigo-600 tracking-tight">Invixy</h1>
-            <div className="flex items-center space-x-3">
-              <Button variant="ghost" asChild>
-                <Link href="/auth/signin">Sign In</Link>
-              </Button>
-              <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white transition-all">
-                <Link href="/auth/signup">Get Started</Link>
-              </Button>
+    <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
+      {/* Navigation */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
+          <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
+              IV
             </div>
+            <span>Invixy</span>
+          </div>
+          <nav className="hidden md:flex gap-8 text-sm font-medium text-muted-foreground">
+            <Link href="#features" className="hover:text-foreground transition-colors">
+              Features
+            </Link>
+            <Link href="#pricing" className="hover:text-foreground transition-colors">
+              Pricing
+            </Link>
+            <Link href="#about" className="hover:text-foreground transition-colors">
+              About
+            </Link>
+          </nav>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/auth/signin"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link href="/auth/signup">
+              <Button size="sm" className="font-semibold">
+                Get Started
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <main className="flex-grow flex items-center justify-center py-20">
-        <section className="grid lg:grid-cols-2 gap-16 items-center max-w-7xl mx-auto px-6 sm:px-8">
-          {/* Text */}
-          <motion.div
-            variants={fadeIn(0.1)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            className="space-y-6 text-center lg:text-left"
-          >
-            <h1 className="text-5xl sm:text-6xl font-extrabold leading-tight">
-              Simplify Your{" "}
-              <span className="bg-gradient-to-r from-indigo-600 to-blue-500 bg-clip-text text-transparent">
-                Invoicing Workflow
-              </span>
-            </h1>
-            <p className="text-lg sm:text-xl text-gray-600 max-w-xl mx-auto lg:mx-0">
-              Automate invoices, manage taxes, and track payments effortlessly —
-              all from a single intelligent dashboard.
-            </p>
-
-            <div className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 mt-8">
-              <Button
-                size="lg"
-                asChild
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-6 text-lg shadow-md"
-              >
-                <Link href="/auth/signup" className="flex items-center space-x-2">
-                  <span>Start Free Trial</span>
-                  <ArrowRight className="h-5 w-5" />
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="relative pt-24 pb-32 overflow-hidden">
+          <div className="container mx-auto px-4 md:px-6 relative z-10">
+            <div className="flex flex-col items-center text-center space-y-8 max-w-4xl mx-auto">
+              <div className="inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium bg-muted/50 text-muted-foreground backdrop-blur-sm">
+                <span className="flex h-2 w-2 rounded-full bg-primary mr-2"></span>
+                v2.0 is now live
+              </div>
+              <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-foreground">
+                Invoicing for the <br className="hidden md:block" />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/60">
+                  modern business
+                </span>
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Streamline your financial operations with a platform designed for speed, accuracy, and growth.
+                Create, send, and track invoices in seconds.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 w-full justify-center pt-4">
+                <Link href="/auth/signup">
+                  <Button size="lg" className="h-12 px-8 text-base w-full sm:w-auto">
+                    Start for free <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </Link>
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                asChild
-                className="px-8 py-6 text-lg border-indigo-600 text-indigo-600 hover:bg-indigo-50"
-              >
-                <Link href="/learn-more">See How It Works</Link>
-              </Button>
+                <Link href="#demo">
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    className="h-12 px-8 text-base w-full sm:w-auto"
+                  >
+                    View Demo
+                  </Button>
+                </Link>
+              </div>
             </div>
-          </motion.div>
 
-          {/* Hero Illustration */}
-          <motion.div
-            variants={fadeIn(0.3)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-            className="relative group"
-          >
-            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-100 to-blue-50 rounded-3xl blur-3xl opacity-70 group-hover:opacity-90 transition-all"></div>
-            <img
-              src="https://cdn.dribbble.com/users/1162077/screenshots/15694429/media/09a2b7f6c4821b44215f16cf67924b7c.png?compress=1&resize=1200x900"
-              alt="Dashboard Preview"
-              className="relative rounded-2xl shadow-xl border border-gray-200 transition-transform duration-500 group-hover:scale-[1.02]"
-            />
-          </motion.div>
+            {/* Hero Image / Dashboard Preview */}
+            <div className="mt-20 relative mx-auto max-w-6xl">
+              <div className="rounded-xl border bg-card shadow-2xl overflow-hidden">
+                <div className="h-12 bg-muted/30 border-b flex items-center px-4 gap-2">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/30"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/30"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/30"></div>
+                  </div>
+                  <div className="mx-auto w-1/3 h-6 bg-muted/50 rounded-md text-[10px] flex items-center justify-center text-muted-foreground font-mono">
+                    invixy.app/dashboard
+                  </div>
+                </div>
+                <div className="aspect-[16/9] bg-muted/10 p-8 flex items-center justify-center text-muted-foreground">
+                  {/* Placeholder for actual dashboard screenshot */}
+                  <div className="text-center space-y-2">
+                    <BarChart3 className="h-16 w-16 mx-auto opacity-20" />
+                    <p className="text-sm font-medium">Dashboard Preview</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Decorative elements */}
+              <div className="absolute -top-12 -left-12 w-64 h-64 bg-primary/10 rounded-full blur-3xl -z-10"></div>
+              <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -z-10"></div>
+            </div>
+          </div>
+        </section>
+
+        {/* Features Grid */}
+        <section id="features" className="py-24 bg-muted/30 border-y">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+              <h2 className="text-3xl font-bold tracking-tight">
+                Everything you need to run your business
+              </h2>
+              <p className="text-muted-foreground text-lg">
+                Powerful features packaged in a simple, intuitive interface.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                {
+                  icon: Zap,
+                  title: "Lightning Fast",
+                  description:
+                    "Built on modern infrastructure for instant page loads and real-time updates.",
+                },
+                {
+                  icon: Shield,
+                  title: "Bank-Grade Security",
+                  description: "Your data is encrypted at rest and in transit. We take security seriously.",
+                },
+                {
+                  icon: Globe,
+                  title: "Global Ready",
+                  description:
+                    "Support for multiple currencies, languages, and tax regulations worldwide.",
+                },
+                {
+                  icon: CheckCircle2,
+                  title: "Automated Workflows",
+                  description: "Set up recurring invoices and payment reminders to save time.",
+                },
+                {
+                  icon: BarChart3,
+                  title: "Advanced Analytics",
+                  description:
+                    "Gain insights into your revenue, expenses, and cash flow with detailed reports.",
+                },
+                {
+                  icon: FileText, // Using FileText instead of Users for variety, though Users was imported
+                  title: "Custom Templates",
+                  description: "Create professional invoices that match your brand identity perfectly.",
+                },
+              ].map((feature, i) => (
+                <div
+                  key={i}
+                  className="bg-card p-8 rounded-xl border shadow-sm hover:shadow-md transition-shadow"
+                >
+                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary mb-6">
+                    <feature.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {feature.description}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-24">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="bg-primary text-primary-foreground rounded-3xl p-12 md:p-24 text-center relative overflow-hidden">
+              <div className="relative z-10 max-w-3xl mx-auto space-y-8">
+                <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+                  Ready to transform your invoicing?
+                </h2>
+                <p className="text-primary-foreground/80 text-xl max-w-2xl mx-auto">
+                  Join thousands of businesses that trust Invixy for their financial operations.
+                </p>
+                <Link href="/auth/signup" className="inline-block">
+                  <Button
+                    size="lg"
+                    variant="secondary"
+                    className="h-14 px-8 text-lg font-semibold text-primary"
+                  >
+                    Get Started Now
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Background pattern */}
+              <div className="absolute inset-0 opacity-10">
+                <svg
+                  className="h-full w-full"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                >
+                  <path d="M0 100 C 20 0 50 0 100 100 Z" fill="currentColor" />
+                </svg>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
 
-      {/* Trusted By Section */}
-      <motion.section
-        variants={fadeIn(0.1)}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true }}
-        className="py-12 bg-white border-y"
-      >
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <p className="text-gray-500 mb-6 uppercase tracking-wider text-sm">
-            Trusted by businesses worldwide
-          </p>
-          <div className="flex flex-wrap justify-center items-center gap-8 opacity-80">
-            {[
-              "https://cdn-icons-png.flaticon.com/512/5968/5968705.png",
-              "https://cdn-icons-png.flaticon.com/512/732/732221.png",
-              "https://cdn-icons-png.flaticon.com/512/732/732223.png",
-              "https://cdn-icons-png.flaticon.com/512/732/732212.png",
-              "https://cdn-icons-png.flaticon.com/512/5968/5968700.png",
-            ].map((logo, i) => (
-              <img key={i} src={logo} alt="brand" className="h-10 grayscale hover:grayscale-0 transition" />
-            ))}
+      <footer className="border-t py-12 bg-muted/20">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="grid md:grid-cols-4 gap-8 mb-12">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 font-bold text-xl">
+                <div className="w-6 h-6 rounded bg-primary flex items-center justify-center text-primary-foreground text-xs">
+                  IV
+                </div>
+                <span>Invixy</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Modern invoicing for forward-thinking businesses.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Product</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    Features
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    Pricing
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    API
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    About
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    Blog
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    Careers
+                  </Link>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    Privacy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="#" className="hover:text-foreground">
+                    Terms
+                  </Link>
+                </li>
+              </ul>
+            </div>
           </div>
-        </div>
-      </motion.section>
-
-      {/* Features */}
-      <motion.section
-        variants={fadeIn(0.2)}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true }}
-        className="bg-white py-24"
-      >
-        <div className="max-w-7xl mx-auto px-6 sm:px-8">
-          <h2 className="text-4xl font-bold text-center mb-14">
-            Everything You Need — All In One Place
-          </h2>
-          <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              { icon: "📊", title: "Analytics Dashboard", desc: "Visualize revenue and payment trends." },
-              { icon: "🌍", title: "Multi-Country Tax", desc: "Handle GST, VAT, and regional tax laws easily." },
-              { icon: "🔔", title: "Smart Reminders", desc: "Never miss a due date again." },
-              { icon: "⚡", title: "Quick Invoice Generation", desc: "Create invoices in seconds." },
-              { icon: "🔒", title: "Secure Cloud Storage", desc: "Bank-level data protection." },
-              { icon: "🤝", title: "Team Collaboration", desc: "Add members and assign permissions." },
-            ].map((feature, idx) => (
-              <motion.div
-                key={idx}
-                variants={fadeIn(0.1 + idx * 0.1)}
-                className="p-8 bg-gradient-to-br from-white to-indigo-50 rounded-2xl shadow-md hover:shadow-lg transition transform hover:-translate-y-1"
-              >
-                <div className="text-4xl mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Testimonials */}
-      <motion.section
-        variants={fadeIn(0.1)}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true }}
-        className="py-24 bg-gradient-to-br from-indigo-50 to-blue-50"
-      >
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-14">What Our Users Say</h2>
-          <div className="grid gap-8 md:grid-cols-3">
-            {[
-              {
-                name: "Aarav Mehta",
-                company: "Fintrack Pvt Ltd",
-                quote:
-                  "Invixy has completely streamlined our billing system. The automation features save us hours every week.",
-              },
-              {
-                name: "Sophia Lee",
-                company: "GlobalLedger",
-                quote:
-                  "Managing multiple tax systems used to be chaos. Invixy made it effortless and accurate.",
-              },
-              {
-                name: "Rajesh Patel",
-                company: "BrightBooks India",
-                quote:
-                  "Beautiful interface, powerful analytics — it’s everything our finance team needed in one tool.",
-              },
-            ].map((t, i) => (
-              <motion.div
-                key={i}
-                variants={fadeIn(0.1 + i * 0.1)}
-                className="bg-white p-8 rounded-2xl shadow hover:shadow-lg transition"
-              >
-                <p className="text-gray-700 italic mb-6">“{t.quote}”</p>
-                <h4 className="font-semibold text-indigo-600">{t.name}</h4>
-                <p className="text-sm text-gray-500">{t.company}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Pricing Preview */}
-      <motion.section
-        variants={fadeIn(0.1)}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true }}
-        className="py-24 bg-white"
-      >
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <h2 className="text-4xl font-bold mb-6">Simple, Transparent Pricing</h2>
-          <p className="text-gray-600 mb-12">Choose a plan that fits your business needs.</p>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                title: "Starter",
-                price: "₹0",
-                features: ["Up to 50 invoices", "Basic analytics", "Email support"],
-                highlight: false,
-              },
-              {
-                title: "Pro",
-                price: "₹999/mo",
-                features: ["Unlimited invoices", "Multi-country tax", "Priority support"],
-                highlight: true,
-              },
-              {
-                title: "Enterprise",
-                price: "Custom",
-                features: ["Dedicated manager", "Custom API access", "Onboarding support"],
-                highlight: false,
-              },
-            ].map((plan, i) => (
-              <motion.div
-                key={i}
-                variants={fadeIn(0.1 + i * 0.1)}
-                className={`rounded-2xl p-8 shadow-md hover:shadow-xl transition ${
-                  plan.highlight
-                    ? "bg-gradient-to-br from-indigo-600 to-blue-500 text-white scale-[1.03]"
-                    : "bg-gray-50"
-                }`}
-              >
-                <h3 className="text-2xl font-semibold mb-4">{plan.title}</h3>
-                <p className="text-4xl font-bold mb-6">{plan.price}</p>
-                <ul className="space-y-3 mb-8 text-sm">
-                  {plan.features.map((f, idx) => (
-                    <li key={idx}>{f}</li>
-                  ))}
-                </ul>
-                <Button
-                  asChild
-                  variant={plan.highlight ? "secondary" : "outline"}
-                  className={`w-full ${plan.highlight ? "bg-white text-indigo-600 hover:bg-indigo-50" : ""}`}
-                >
-                  <Link href="/auth/signup">Get Started</Link>
-                </Button>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </motion.section>
-
-      {/* Final CTA */}
-      <motion.section
-        variants={fadeIn(0.1)}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true }}
-        className="py-20 bg-gradient-to-r from-indigo-600 to-blue-500 text-white text-center"
-      >
-        <h2 className="text-4xl font-bold mb-4">Ready to Simplify Your Billing?</h2>
-        <p className="text-lg mb-8 opacity-90">
-          Join hundreds of businesses already growing with Invixy.
-        </p>
-        <Button
-          size="lg"
-          asChild
-          className="bg-white text-indigo-600 hover:bg-indigo-50 px-10 py-6 text-lg font-semibold"
-        >
-          <Link href="/auth/signup">Start Free Trial</Link>
-        </Button>
-      </motion.section>
-
-      {/* Footer */}
-      <footer className="border-t bg-white/70 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 sm:px-8 py-6 flex flex-col sm:flex-row justify-between items-center text-sm text-gray-600">
-          <p>© {new Date().getFullYear()} Invixy. All rights reserved.</p>
-          <div className="space-x-4 mt-2 sm:mt-0">
-            <Link href="/privacy" className="hover:text-indigo-600">Privacy</Link>
-            <Link href="/terms" className="hover:text-indigo-600">Terms</Link>
+          <div className="border-t pt-8 text-center text-sm text-muted-foreground">
+            © {new Date().getFullYear()} Invixy Inc. All rights reserved.
           </div>
         </div>
       </footer>
     </div>
+  );
+}
+
+// Helper component for features
+function FileText(props: any) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" x2="8" y1="13" y2="13" />
+      <line x1="16" x2="8" y1="17" y2="17" />
+      <line x1="10" x2="8" y1="9" y2="9" />
+    </svg>
   );
 }

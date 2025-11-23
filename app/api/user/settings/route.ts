@@ -18,7 +18,8 @@ export async function GET(request: NextRequest) {
         name: true,
         email: true,
         emailVerified: true,
-        image: true
+        image: true,
+        settings: true
       }
     });
 
@@ -28,18 +29,22 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       profile: {
-        ...user,
-        phone: '', // Would come from UserSettings model
-        address: '', // Would come from UserSettings model
-        timezone: 'UTC', // Would come from UserSettings model
-        language: 'en' // Would come from UserSettings model
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        emailVerified: user.emailVerified,
+        image: user.image,
+        phone: user.settings?.phone || '',
+        address: user.settings?.address || '',
+        timezone: user.settings?.timezone || 'UTC',
+        language: user.settings?.language || 'en'
       },
       notifications: {
-        emailNotifications: true,
-        invoiceReminders: true,
-        paymentNotifications: true,
-        marketingEmails: false,
-        securityAlerts: true
+        emailNotifications: user.settings?.emailNotifications ?? true,
+        invoiceReminders: user.settings?.invoiceReminders ?? true,
+        paymentNotifications: user.settings?.paymentNotifications ?? true,
+        marketingEmails: user.settings?.marketingEmails ?? false,
+        securityAlerts: user.settings?.securityAlerts ?? true
       }
     });
 

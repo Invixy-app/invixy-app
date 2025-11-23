@@ -14,39 +14,49 @@ export async function DELETE(request: NextRequest) {
 
     // Start a transaction to delete all related data
     await db.$transaction(async (tx) => {
-      // Delete all business user roles
-      await tx.businessUserRole.deleteMany({
-        where: { userId }
-      });
-
-      // Delete all payments created by the user
-      await tx.payment.updateMany({
-        where: { createdBy: userId },
-        data: { createdBy: 'deleted-user' } // Keep payment records but anonymize
-      });
-
-      // Delete all invoices created by the user (this will cascade delete items, taxes, etc.)
-      await tx.invoice.updateMany({
-        where: { createdBy: userId },
-        data: { createdBy: 'deleted-user' } // Keep invoice records but anonymize
-      });
-
-      // Delete businesses owned by the user (this will cascade delete all related data)
+      // 1. Handle Businesses
+      // Find all businesses where the user is an OWNER
       const ownedBusinesses = await tx.businessUserRole.findMany({
         where: {
           userId,
           role: 'OWNER'
         },
-        select: { businessId: true }
+        include: {
+          business: {
+            include: {
+              BusinessUserRole: {
+                where: {
+                  role: 'OWNER'
+                }
+              }
+            }
+          }
+        }
       });
 
-      for (const { businessId } of ownedBusinesses) {
-        await tx.business.delete({
-          where: { id: businessId }
-        });
+      for (const role of ownedBusinesses) {
+        const business = role.business;
+        const ownerCount = business.BusinessUserRole.length;
+
+        if (ownerCount === 1) {
+          // User is the sole owner, delete the business (cascades to invoices, products, etc.)
+          await tx.business.delete({
+            where: { id: business.id }
+          });
+        }
+        // If there are other owners, the business remains.
+        // The user's role will be deleted when the user is deleted (cascade).
       }
 
-      // Finally, delete the user account
+      // 2. Delete the user
+      // This will cascade delete:
+      // - Account
+      // - Session
+      // - BusinessUserRole
+      // - UserSettings
+      // And set to null (via schema change):
+      // - Invoice.createdBy
+      // - Payment.createdBy
       await tx.user.delete({
         where: { id: userId }
       });

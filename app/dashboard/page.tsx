@@ -118,26 +118,16 @@ export default function DashboardPage() {
   if (!currentBusiness) {
     return (
       <DashboardLayout>
-        <div className="container mx-auto py-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Building2 className="w-6 h-6 mr-2" />
-                No Business Selected
-              </CardTitle>
-              <CardDescription>
-                Please select a business from the top navigation to view the dashboard
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/dashboard/businesses/new">
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create New Business
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold mb-2">No Business Selected</h3>
+            <p className="text-muted-foreground mb-4">
+              Please select a business from the top bar or create a new one.
+            </p>
+            <Link href="/dashboard/businesses/new">
+              <Button>Create Your First Business</Button>
+            </Link>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -172,339 +162,359 @@ export default function DashboardPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header with Business Info and Actions */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center">
-              <Building2 className="w-8 h-8 mr-3 text-primary" />
-              {currentBusiness.name}
-            </h1>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
             <p className="text-muted-foreground mt-1">
-              {currentBusiness.description || "Business Dashboard"}
+              Overview for <span className="font-semibold text-foreground">{currentBusiness.name}</span>
             </p>
           </div>
           <div className="flex gap-2">
             <Link href={`/dashboard/businesses/${currentBusiness.id}/edit`}>
-              <Button variant="outline">
+              <Button variant="outline" size="sm" className="h-9">
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Business
               </Button>
             </Link>
-          <Link href="/dashboard/business-settings">
-            <Button>
-              <SettingsIcon className="w-4 h-4 mr-2" />
-              Business Settings
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Key Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Total Revenue Card */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
-            <div className="flex items-center text-xs text-muted-foreground mt-1">
-              {stats.revenueGrowth >= 0 ? (
-                <>
-                  <TrendingUp className="w-3 h-3 mr-1 text-green-600" />
-                  <span className="text-green-600">+{stats.revenueGrowth.toFixed(1)}%</span>
-                </>
-              ) : (
-                <>
-                  <TrendingDown className="w-3 h-3 mr-1 text-red-600" />
-                  <span className="text-red-600">{stats.revenueGrowth.toFixed(1)}%</span>
-                </>
-              )}
-              <span className="ml-1">from last month</span>
-            </div>
-            <div className="text-xs text-muted-foreground mt-2">
-              Paid: {formatCurrency(stats.paidRevenue)}  Pending: {formatCurrency(stats.pendingRevenue)}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Invoices Card */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalInvoices}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              This month: {stats.thisMonthInvoices}
-            </div>
-            <div className="flex gap-2 mt-2 text-xs">
-              <Badge variant="outline" className="bg-green-500/10 text-green-700">
-                {stats.paidInvoices} Paid
-              </Badge>
-              <Badge variant="outline" className="bg-yellow-500/10 text-yellow-700">
-                {stats.pendingInvoices} Pending
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Customers Card */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalCustomers}</div>
-            <div className="flex items-center text-xs text-muted-foreground mt-1">
-              {stats.customerGrowth >= 0 ? (
-                <>
-                  <ArrowUpRight className="w-3 h-3 mr-1 text-green-600" />
-                  <span className="text-green-600">+{stats.customerGrowth}%</span>
-                </>
-              ) : (
-                <>
-                  <ArrowDownRight className="w-3 h-3 mr-1 text-red-600" />
-                  <span className="text-red-600">{stats.customerGrowth}%</span>
-                </>
-              )}
-              <span className="ml-1">from last month</span>
-            </div>
-            <Link href="/dashboard/customers/new" className="mt-2 inline-block">
-              <Button variant="link" size="sm" className="h-auto p-0 text-xs">
-                <Plus className="w-3 h-3 mr-1" />
-                Add Customer
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        {/* Total Products Card */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Products</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProducts}</div>
-            <div className="text-xs text-muted-foreground mt-1">
-              Avg Invoice Value: {formatCurrency(stats.avgInvoiceValue)}
-            </div>
-            <Link href="/dashboard/products/new" className="mt-2 inline-block">
-              <Button variant="link" size="sm" className="h-auto p-0 text-xs">
-                <Plus className="w-3 h-3 mr-1" />
-                Add Product
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Invoice Status Overview */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-yellow-200 bg-yellow-50/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Invoices</CardTitle>
-            <Clock className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-yellow-700">{stats.pendingInvoices}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Awaiting payment
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-red-200 bg-red-50/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overdue Invoices</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-700">{stats.overdueInvoices}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Require attention
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border-gray-200 bg-gray-50/50">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Draft Invoices</CardTitle>
-            <FileText className="h-4 w-4 text-gray-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-gray-700">{stats.draftInvoices}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Not yet sent
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Invoices and Top Customers */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Recent Invoices */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center">
-                <Activity className="w-5 h-5 mr-2" />
-                Recent Invoices
-              </CardTitle>
-              <Link href="/dashboard/invoices">
-                <Button variant="ghost" size="sm">
-                  View All
-                  <ArrowUpRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
-            <CardDescription>Your latest invoice activity</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading invoices...
-              </div>
-            ) : recentInvoices.length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground mb-3">No invoices yet</p>
-                <Link href="/dashboard/invoices/new">
-                  <Button size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Invoice
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recentInvoices.map((invoice) => (
-                  <div key={invoice.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <Link href={`/dashboard/invoices/${invoice.id}`} className="font-medium hover:underline">
-                          {invoice.invoiceNumber}
-                        </Link>
-                        <Badge variant="outline" className={getStatusColor(invoice.status)}>
-                          {invoice.status}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{invoice.customer.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Due: {formatDate(invoice.dueDate)}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">{formatCurrency(invoice.totalAmount)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Top Customers */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center">
-                <Users className="w-5 h-5 mr-2" />
-                Top Customers
-              </CardTitle>
-              <Link href="/dashboard/customers">
-                <Button variant="ghost" size="sm">
-                  View All
-                  <ArrowUpRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </div>
-            <CardDescription>Your most valuable customers</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading customers...
-              </div>
-            ) : topCustomers.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground mb-3">No customers yet</p>
-                <Link href="/dashboard/customers/new">
-                  <Button size="sm">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Customer
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {topCustomers.map((customer, index) => (
-                  <div key={customer.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center font-semibold text-primary">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <Link href={`/dashboard/customers/${customer.id}`} className="font-medium hover:underline">
-                          {customer.name}
-                        </Link>
-                        <p className="text-xs text-muted-foreground">{customer.email}</p>
-                        <p className="text-xs text-muted-foreground">{customer.invoiceCount} invoices</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold">{formatCurrency(customer.totalSpent)}</p>
-                      <p className="text-xs text-muted-foreground">Total spent</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-          <CardDescription>Common tasks for managing your business</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <Link href="/dashboard/invoices/new">
-              <Button variant="outline" className="w-full justify-start">
-                <Plus className="w-4 h-4 mr-2" />
-                Create Invoice
-              </Button>
-            </Link>
-            <Link href="/dashboard/customers/new">
-              <Button variant="outline" className="w-full justify-start">
-                <Users className="w-4 h-4 mr-2" />
-                Add Customer
-              </Button>
-            </Link>
-            <Link href="/dashboard/products/new">
-              <Button variant="outline" className="w-full justify-start">
-                <Package className="w-4 h-4 mr-2" />
-                Add Product
-              </Button>
-            </Link>
-            <Link href="/dashboard/tax-systems/new">
-              <Button variant="outline" className="w-full justify-start">
-                <Calculator className="w-4 h-4 mr-2" />
-                Add Tax System
+            <Link href="/dashboard/business-settings">
+              <Button variant="outline" size="sm" className="h-9">
+                <SettingsIcon className="w-4 h-4 mr-2" />
+                Settings
               </Button>
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Key Metrics */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {/* Total Revenue Card */}
+          <Card className="overflow-hidden border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-muted/20">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-primary" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+              <div className="flex items-center text-xs text-muted-foreground mt-1">
+                {stats.revenueGrowth >= 0 ? (
+                  <div className="flex items-center text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                    <TrendingUp className="w-3 h-3 mr-1" />
+                    <span>+{stats.revenueGrowth.toFixed(1)}%</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-full">
+                    <TrendingDown className="w-3 h-3 mr-1" />
+                    <span>{stats.revenueGrowth.toFixed(1)}%</span>
+                  </div>
+                )}
+                <span className="ml-2">vs last month</span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Invoices Card */}
+          <Card className="overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-muted/20">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Invoices</CardTitle>
+              <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <FileText className="h-4 w-4 text-blue-500" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="text-2xl font-bold">{stats.totalInvoices}</div>
+              <div className="text-xs text-muted-foreground mt-1 mb-2">
+                {stats.thisMonthInvoices} issued this month
+              </div>
+              <div className="flex gap-2 text-xs">
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                  {stats.paidInvoices} Paid
+                </span>
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                  {stats.pendingInvoices} Pending
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Customers Card */}
+          <Card className="overflow-hidden border-l-4 border-l-violet-500 shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-muted/20">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Total Customers</CardTitle>
+              <div className="h-8 w-8 rounded-full bg-violet-500/10 flex items-center justify-center">
+                <Users className="h-4 w-4 text-violet-500" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="text-2xl font-bold">{stats.totalCustomers}</div>
+              <div className="flex items-center justify-between mt-1">
+                <div className="flex items-center text-xs text-muted-foreground">
+                  {stats.customerGrowth >= 0 ? (
+                    <span className="text-emerald-600 flex items-center">
+                      <ArrowUpRight className="w-3 h-3 mr-1" />
+                      +{stats.customerGrowth}%
+                    </span>
+                  ) : (
+                    <span className="text-rose-600 flex items-center">
+                      <ArrowDownRight className="w-3 h-3 mr-1" />
+                      {stats.customerGrowth}%
+                    </span>
+                  )}
+                  <span className="ml-1">growth</span>
+                </div>
+                <Link href="/dashboard/customers/new">
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Total Products Card */}
+          <Card className="overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-muted/20">
+              <CardTitle className="text-sm font-medium text-muted-foreground">Products</CardTitle>
+              <div className="h-8 w-8 rounded-full bg-orange-500/10 flex items-center justify-center">
+                <Package className="h-4 w-4 text-orange-500" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="text-2xl font-bold">{stats.totalProducts}</div>
+              <div className="flex items-center justify-between mt-1">
+                <div className="text-xs text-muted-foreground">
+                  Avg. Value: {formatCurrency(stats.avgInvoiceValue)}
+                </div>
+                <Link href="/dashboard/products/new">
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
+                    <Plus className="w-3 h-3" />
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Invoice Status Overview */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Pending Payment</p>
+                <h3 className="text-2xl font-bold mt-1">{stats.pendingInvoices}</h3>
+                <p className="text-xs text-muted-foreground mt-1">Invoices awaiting payment</p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-yellow-500/10 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-yellow-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Overdue</p>
+                <h3 className="text-2xl font-bold mt-1">{stats.overdueInvoices}</h3>
+                <p className="text-xs text-muted-foreground mt-1">Invoices past due date</p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-red-600" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Drafts</p>
+                <h3 className="text-2xl font-bold mt-1">{stats.draftInvoices}</h3>
+                <p className="text-xs text-muted-foreground mt-1">Work in progress</p>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-slate-500/10 flex items-center justify-center">
+                <FileText className="h-5 w-5 text-slate-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Invoices and Top Customers */}
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* Recent Invoices */}
+          <Card className="shadow-sm">
+            <CardHeader className="border-b bg-muted/10 pb-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-lg font-semibold flex items-center">
+                    <Activity className="w-5 h-5 mr-2 text-primary" />
+                    Recent Activity
+                  </CardTitle>
+                  <CardDescription>Latest invoices generated</CardDescription>
+                </div>
+                <Link href="/dashboard/invoices">
+                  <Button variant="outline" size="sm" className="h-8">
+                    View All
+                    <ArrowUpRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex items-center justify-center py-12 text-muted-foreground">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mr-2"></div>
+                  Loading...
+                </div>
+              ) : recentInvoices.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                    <FileText className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground">No invoices yet</p>
+                  <p className="text-xs text-muted-foreground mb-4 max-w-[180px]">Create your first invoice to see activity here.</p>
+                  <Link href="/dashboard/invoices/new">
+                    <Button size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create Invoice
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {recentInvoices.map((invoice) => (
+                    <div key={invoice.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-2 h-2 rounded-full ${
+                          invoice.status === 'PAID' ? 'bg-green-500' : 
+                          invoice.status === 'PENDING' ? 'bg-yellow-500' : 
+                          invoice.status === 'OVERDUE' ? 'bg-red-500' : 'bg-gray-400'
+                        }`} />
+                        <div>
+                          <Link href={`/dashboard/invoices/${invoice.id}`} className="font-medium text-sm hover:text-primary transition-colors">
+                            {invoice.invoiceNumber}
+                          </Link>
+                          <p className="text-xs text-muted-foreground">{invoice.customer.name}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-sm">{formatCurrency(invoice.totalAmount)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(invoice.dueDate)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Top Customers */}
+          <Card className="shadow-sm">
+            <CardHeader className="border-b bg-muted/10 pb-4">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-lg font-semibold flex items-center">
+                    <Users className="w-5 h-5 mr-2 text-primary" />
+                    Top Customers
+                  </CardTitle>
+                  <CardDescription>By revenue generated</CardDescription>
+                </div>
+                <Link href="/dashboard/customers">
+                  <Button variant="outline" size="sm" className="h-8">
+                    View All
+                    <ArrowUpRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex items-center justify-center py-12 text-muted-foreground">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mr-2"></div>
+                  Loading...
+                </div>
+              ) : topCustomers.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                    <Users className="w-6 h-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground">No customers yet</p>
+                  <Link href="/dashboard/customers/new">
+                    <Button size="sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Customer
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="divide-y">
+                  {topCustomers.map((customer, index) => (
+                    <div key={customer.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-2 ring-background">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <Link href={`/dashboard/customers/${customer.id}`} className="font-medium text-sm hover:text-primary transition-colors">
+                            {customer.name}
+                          </Link>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{customer.invoiceCount} invoices</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-semibold text-sm">{formatCurrency(customer.totalSpent)}</p>
+                        <div className="w-16 h-1.5 bg-muted rounded-full mt-1 ml-auto overflow-hidden">
+                          <div 
+                            className="h-full bg-primary rounded-full" 
+                            style={{ width: `${Math.min((customer.totalSpent / (topCustomers[0]?.totalSpent || 1)) * 100, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <Card className="bg-muted/20 border-dashed">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-medium">Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+              <Link href="/dashboard/invoices/new">
+                <Button variant="outline" className="w-full justify-start bg-background hover:bg-primary hover:text-primary-foreground transition-colors border-primary/20">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Invoice
+                </Button>
+              </Link>
+              <Link href="/dashboard/customers/new">
+                <Button variant="outline" className="w-full justify-start bg-background hover:bg-primary hover:text-primary-foreground transition-colors">
+                  <Users className="w-4 h-4 mr-2" />
+                  Add Customer
+                </Button>
+              </Link>
+              <Link href="/dashboard/products/new">
+                <Button variant="outline" className="w-full justify-start bg-background hover:bg-primary hover:text-primary-foreground transition-colors">
+                  <Package className="w-4 h-4 mr-2" />
+                  Add Product
+                </Button>
+              </Link>
+              <Link href="/dashboard/tax-systems/new">
+                <Button variant="outline" className="w-full justify-start bg-background hover:bg-primary hover:text-primary-foreground transition-colors">
+                  <Calculator className="w-4 h-4 mr-2" />
+                  Add Tax System
+                </Button>
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   );

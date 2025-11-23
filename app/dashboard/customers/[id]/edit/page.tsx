@@ -158,7 +158,7 @@ export default function EditCustomerPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
@@ -175,97 +175,99 @@ export default function EditCustomerPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Basic Information
-              </CardTitle>
-              <CardDescription>
-                Essential customer details and contact information
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                label="Customer Name"
-                id="name"
-                value={formData.name}
-                onChange={(value) => handleFieldChange("name", value)}
-                required
-                placeholder="Enter customer name"
-              />
-
-              <FormGrid columns={2}>
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Basic Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Basic Information
+                </CardTitle>
+                <CardDescription>
+                  Essential customer details and contact information
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <FormField
-                  label="Email Address"
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(value) => handleFieldChange("email", value)}
-                  placeholder="customer@example.com"
+                  label="Customer Name"
+                  id="name"
+                  value={formData.name}
+                  onChange={(value) => handleFieldChange("name", value)}
+                  required
+                  placeholder="Enter customer name"
                 />
+
+                <FormGrid columns={2}>
+                  <FormField
+                    label="Email Address"
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(value) => handleFieldChange("email", value)}
+                    placeholder="customer@example.com"
+                  />
+                  <FormField
+                    label="Phone Number"
+                    id="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={(value) => handleFieldChange("phone", value)}
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </FormGrid>
+
                 <FormField
-                  label="Phone Number"
-                  id="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(value) => handleFieldChange("phone", value)}
-                  placeholder="+1 (555) 123-4567"
+                  label="Tax ID"
+                  id="taxId"
+                  value={formData.taxId}
+                  onChange={(value) => handleFieldChange("taxId", value)}
+                  placeholder="Tax identification number"
                 />
-              </FormGrid>
+              </CardContent>
+            </Card>
 
-              <FormField
-                label="Tax ID"
-                id="taxId"
-                value={formData.taxId}
-                onChange={(value) => handleFieldChange("taxId", value)}
-                placeholder="Tax identification number"
-              />
-            </CardContent>
-          </Card>
+            {/* Address Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" />
+                  Address Information
+                </CardTitle>
+                <CardDescription>
+                  Billing and shipping addresses
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormTextareaField
+                  label="Billing Address"
+                  id="billingAddress"
+                  value={formData.billingAddress}
+                  onChange={(value) => handleFieldChange("billingAddress", value)}
+                  placeholder="Enter billing address..."
+                  rows={3}
+                />
 
-          {/* Address Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Address Information
-              </CardTitle>
-              <CardDescription>
-                Billing and shipping addresses
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormTextareaField
-                label="Billing Address"
-                id="billingAddress"
-                value={formData.billingAddress}
-                onChange={(value) => handleFieldChange("billingAddress", value)}
-                placeholder="Enter billing address..."
-                rows={3}
-              />
-
-              <div className="flex items-center justify-between">
-                <Label htmlFor="shippingAddress">Shipping Address</Label>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={copyBillingToShipping}
-                >
-                  Copy from Billing
-                </Button>
-              </div>
-              <Textarea
-                id="shippingAddress"
-                value={formData.shippingAddress}
-                onChange={(e) => handleFieldChange("shippingAddress", e.target.value)}
-                placeholder="Enter shipping address..."
-                rows={3}
-              />
-            </CardContent>
-          </Card>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="shippingAddress">Shipping Address</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={copyBillingToShipping}
+                  >
+                    Copy from Billing
+                  </Button>
+                </div>
+                <Textarea
+                  id="shippingAddress"
+                  value={formData.shippingAddress}
+                  onChange={(e) => handleFieldChange("shippingAddress", e.target.value)}
+                  placeholder="Enter shipping address..."
+                  rows={3}
+                />
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Additional Information */}
           <Card>

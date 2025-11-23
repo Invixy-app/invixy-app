@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -52,10 +51,7 @@ import {
   Building2,
   Save,
   Settings as SettingsIcon,
-  Calculator,
   Users,
-  FileText,
-  Bell,
   Trash2,
   AlertTriangle,
   Edit,
@@ -64,17 +60,6 @@ import {
 } from "lucide-react";
 import { useAlert } from "@/lib/alert-store";
 import { useBusinessContext } from "@/components/business-context";
-
-interface BusinessSettings {
-  autoNumberInvoices: boolean;
-  invoicePrefix: string;
-  emailNotifications: boolean;
-  paymentReminders: boolean;
-  reminderDaysBefore: number;
-  defaultPaymentTerms: number;
-  taxInclusive: boolean;
-  currency: string;
-}
 
 interface TeamMember {
   id: string;
@@ -91,7 +76,7 @@ interface TeamMember {
 export default function BusinessSettingsPage() {
   const router = useRouter();
   const { addAlert } = useAlert();
-  const { currentBusiness } = useBusinessContext();
+  const { currentBusiness, refreshBusinesses } = useBusinessContext();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
 
@@ -104,16 +89,13 @@ export default function BusinessSettingsPage() {
   const [newMemberEmail, setNewMemberEmail] = useState("");
   const [newMemberRole, setNewMemberRole] = useState("EMPLOYEE");
 
-  const [settings, setSettings] = useState<BusinessSettings>({
-    autoNumberInvoices: true,
-    invoicePrefix: "INV",
-    emailNotifications: true,
-    paymentReminders: false,
-    reminderDaysBefore: 3,
-    defaultPaymentTerms: 30,
-    taxInclusive: false,
-    currency: "USD"
-  });
+  const roleDescriptions = {
+    OWNER: "Full administrative access. Can manage team members, business settings, and all data.",
+    ACCOUNTANT: "Financial management. Can create, edit, and delete invoices. Can manage tax systems and view all reports.",
+    MANAGER: "Operations management. Can create and edit invoices. Can manage products and customers.",
+    EMPLOYEE: "Standard operations. Can create invoices. Can manage products and customers.",
+    VIEWER: "Read-only access. Can view invoices and reports but cannot make any changes."
+  };
 
   const [businessInfo, setBusinessInfo] = useState({
     name: "",
@@ -122,12 +104,12 @@ export default function BusinessSettingsPage() {
     address: "",
     taxId: "",
     website: "",
-    description: ""
+    description: "",
+    currency: "USD"
   });
 
   useEffect(() => {
     if (currentBusiness) {
-      fetchBusinessSettings();
       setBusinessInfo({
         name: currentBusiness.name || "",
         email: currentBusiness.email || "",
@@ -135,36 +117,34 @@ export default function BusinessSettingsPage() {
         address: currentBusiness.billingAddress || "",
         taxId: currentBusiness.taxRegistrationNumber || "",
         website: currentBusiness.website || "",
-        description: currentBusiness.description || ""
+        description: currentBusiness.description || "",
+        currency: currentBusiness.currency || "USD"
       });
     }
   }, [currentBusiness]);
-
-  const fetchBusinessSettings = async () => {
-    if (!currentBusiness) return;
-
-    try {
-      const response = await fetch(`/api/business/${currentBusiness.id}/settings`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.settings) {
-          setSettings(data.settings);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching business settings:', error);
-    }
-  };
 
   const updateBusinessInfo = async () => {
     if (!currentBusiness) return;
 
     setLoading(true);
     try {
+      // Map frontend state to backend schema
+      const payload = {
+        name: businessInfo.name,
+        email: businessInfo.email,
+        phone: businessInfo.phone,
+        billingAddress: businessInfo.address,
+        shippingAddress: businessInfo.address, // Using same address for now
+        taxRegistrationNumber: businessInfo.taxId,
+        website: businessInfo.website,
+        description: businessInfo.description,
+        currency: businessInfo.currency
+      };
+
       const response = await fetch(`/api/business/${currentBusiness.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(businessInfo)
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -178,44 +158,13 @@ export default function BusinessSettingsPage() {
         message: 'Business information has been updated successfully'
       });
 
+      refreshBusinesses();
+
     } catch (error: any) {
       addAlert({
         type: 'error',
         title: 'Update Failed',
         message: error.message || 'Failed to update business'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateSettings = async () => {
-    if (!currentBusiness) return;
-
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/business/${currentBusiness.id}/settings`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings)
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update settings');
-      }
-
-      addAlert({
-        type: 'success',
-        title: 'Settings Updated',
-        message: 'Your business settings have been updated'
-      });
-
-    } catch (error: any) {
-      addAlert({
-        type: 'error',
-        title: 'Update Failed',
-        message: error.message || 'Failed to update settings'
       });
     } finally {
       setLoading(false);
@@ -439,7 +388,7 @@ export default function BusinessSettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto py-6 max-w-4xl space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center">
@@ -452,9 +401,8 @@ export default function BusinessSettingsPage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="invoicing">Invoicing</TabsTrigger>
             <TabsTrigger value="team">Team</TabsTrigger>
             <TabsTrigger value="advanced">Advanced</TabsTrigger>
           </TabsList>
@@ -545,8 +493,8 @@ export default function BusinessSettingsPage() {
                     <Label htmlFor="currency">Currency</Label>
                     <select 
                       id="currency"
-                      value={settings.currency}
-                      onChange={(e) => setSettings(prev => ({ ...prev, currency: e.target.value }))}
+                      value={businessInfo.currency}
+                      onChange={(e) => setBusinessInfo(prev => ({ ...prev, currency: e.target.value }))}
                       className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <option value="USD">USD - US Dollar</option>
@@ -574,160 +522,6 @@ export default function BusinessSettingsPage() {
                   <Button onClick={updateBusinessInfo} disabled={loading}>
                     <Save className="w-4 h-4 mr-2" />
                     {loading ? 'Saving...' : 'Save Changes'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Invoicing Tab */}
-          <TabsContent value="invoicing" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <FileText className="w-5 h-5 mr-2" />
-                  Invoice Settings
-                </CardTitle>
-                <CardDescription>
-                  Configure default settings for invoices
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="space-y-0.5">
-                    <Label>Auto-number Invoices</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically generate sequential invoice numbers
-                    </p>
-                  </div>
-                  <Switch 
-                    checked={settings.autoNumberInvoices}
-                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, autoNumberInvoices: checked }))}
-                  />
-                </div>
-
-                {settings.autoNumberInvoices && (
-                  <div className="space-y-2 ml-4">
-                    <Label htmlFor="invoicePrefix">Invoice Number Prefix</Label>
-                    <Input
-                      id="invoicePrefix"
-                      value={settings.invoicePrefix}
-                      onChange={(e) => setSettings(prev => ({ ...prev, invoicePrefix: e.target.value }))}
-                      placeholder="INV"
-                      className="max-w-xs"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Example: {settings.invoicePrefix}-001, {settings.invoicePrefix}-002
-                    </p>
-                  </div>
-                )}
-
-                <Separator />
-
-                <div className="space-y-2">
-                  <Label htmlFor="paymentTerms">Default Payment Terms (Days)</Label>
-                  <Input
-                    id="paymentTerms"
-                    type="number"
-                    value={settings.defaultPaymentTerms}
-                    onChange={(e) => setSettings(prev => ({ ...prev, defaultPaymentTerms: Number.parseInt(e.target.value) || 30 }))}
-                    className="max-w-xs"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Default number of days for payment due date
-                  </p>
-                </div>
-
-                <Separator />
-
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="space-y-0.5">
-                    <Label>Tax Inclusive Pricing</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Product prices include tax by default
-                    </p>
-                  </div>
-                  <Switch 
-                    checked={settings.taxInclusive}
-                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, taxInclusive: checked }))}
-                  />
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h4 className="font-medium">Tax Configuration</h4>
-                  <Link href="/dashboard/tax-systems">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Calculator className="w-4 h-4 mr-2" />
-                      Manage Tax Systems
-                    </Button>
-                  </Link>
-                </div>
-
-                <div className="flex justify-end">
-                  <Button onClick={updateSettings} disabled={loading}>
-                    <Save className="w-4 h-4 mr-2" />
-                    {loading ? 'Saving...' : 'Save Settings'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Bell className="w-5 h-5 mr-2" />
-                  Notifications & Reminders
-                </CardTitle>
-                <CardDescription>
-                  Configure email notifications and payment reminders
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="space-y-0.5">
-                    <Label>Email Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Send email when invoice status changes
-                    </p>
-                  </div>
-                  <Switch 
-                    checked={settings.emailNotifications}
-                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, emailNotifications: checked }))}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="space-y-0.5">
-                    <Label>Payment Reminders</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically remind customers of due invoices
-                    </p>
-                  </div>
-                  <Switch 
-                    checked={settings.paymentReminders}
-                    onCheckedChange={(checked) => setSettings(prev => ({ ...prev, paymentReminders: checked }))}
-                  />
-                </div>
-
-                {settings.paymentReminders && (
-                  <div className="space-y-2 ml-4">
-                    <Label htmlFor="reminderDays">Send Reminder (Days Before Due)</Label>
-                    <Input
-                      id="reminderDays"
-                      type="number"
-                      value={settings.reminderDaysBefore}
-                      onChange={(e) => setSettings(prev => ({ ...prev, reminderDaysBefore: Number.parseInt(e.target.value) || 3 }))}
-                      className="max-w-xs"
-                    />
-                  </div>
-                )}
-
-                <div className="flex justify-end">
-                  <Button onClick={updateSettings} disabled={loading}>
-                    <Save className="w-4 h-4 mr-2" />
-                    {loading ? 'Saving...' : 'Save Settings'}
                   </Button>
                 </div>
               </CardContent>
@@ -786,7 +580,7 @@ export default function BusinessSettingsPage() {
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground">
-                          Defines the permissions and access level for this user
+                          {roleDescriptions[newMemberRole as keyof typeof roleDescriptions]}
                         </p>
                       </div>
                     </div>
@@ -844,7 +638,7 @@ export default function BusinessSettingsPage() {
                               </Badge>
                             </TableCell>
                             <TableCell className="text-muted-foreground text-sm">
-                              {new Date(member.createdAt).toLocaleDateString()}
+                              {member.createdAt ? new Date(member.createdAt).toLocaleDateString() : 'N/A'}
                             </TableCell>
                             <TableCell className="text-right">
                               <div className="flex items-center justify-end gap-2">
@@ -903,21 +697,26 @@ export default function BusinessSettingsPage() {
                 {/* Role descriptions */}
                 <div className="mt-6 p-4 bg-muted/50 rounded-lg">
                   <h4 className="font-medium mb-3">Role Permissions</h4>
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-3 text-sm">
                     <div>
-                      <strong>Owner:</strong> Full access to all features and settings. Cannot be removed.
+                      <div className="font-semibold">Owner</div>
+                      <div className="text-muted-foreground">{roleDescriptions.OWNER}</div>
                     </div>
                     <div>
-                      <strong>Manager:</strong> Can manage invoices, customers, products, and view reports.
+                      <div className="font-semibold">Manager</div>
+                      <div className="text-muted-foreground">{roleDescriptions.MANAGER}</div>
                     </div>
                     <div>
-                      <strong>Accountant:</strong> Can create and manage invoices, view financial reports.
+                      <div className="font-semibold">Accountant</div>
+                      <div className="text-muted-foreground">{roleDescriptions.ACCOUNTANT}</div>
                     </div>
                     <div>
-                      <strong>Employee:</strong> Can create invoices and manage customers.
+                      <div className="font-semibold">Employee</div>
+                      <div className="text-muted-foreground">{roleDescriptions.EMPLOYEE}</div>
                     </div>
                     <div>
-                      <strong>Viewer:</strong> Read-only access to invoices and reports.
+                      <div className="font-semibold">Viewer</div>
+                      <div className="text-muted-foreground">{roleDescriptions.VIEWER}</div>
                     </div>
                   </div>
                 </div>
@@ -947,6 +746,9 @@ export default function BusinessSettingsPage() {
                         <SelectItem value="VIEWER">Viewer</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {roleDescriptions[newMemberRole as keyof typeof roleDescriptions]}
+                    </p>
                   </div>
                 </div>
                 <DialogFooter>

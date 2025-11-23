@@ -27,14 +27,29 @@ export async function PATCH(request: NextRequest) {
       where: { id: session.user.id },
       data: {
         name,
-        // Note: phone, address, timezone, language would need to be added to User model
-        // For now, we'll just update the name
+        settings: {
+          upsert: {
+            create: {
+              phone,
+              address,
+              timezone: timezone || 'UTC',
+              language: language || 'en'
+            },
+            update: {
+              phone,
+              address,
+              timezone,
+              language
+            }
+          }
+        }
       },
       select: {
         id: true,
         name: true,
         email: true,
-        image: true
+        image: true,
+        settings: true
       }
     });
 

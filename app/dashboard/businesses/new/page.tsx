@@ -91,33 +91,33 @@ export default function NewBusinessPage() {
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="max-w-3xl mx-auto space-y-6 bg-gradient-to-br from-white via-gray-50 to-gray-100 p-8 rounded-2xl shadow-md"
+        className="max-w-4xl mx-auto space-y-6"
       >
         {/* Header */}
-        <div className="flex items-center gap-4 border-b pb-4">
+        <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
             <Link href="/dashboard">
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Create New Business</h1>
-            <p className="text-gray-600 text-sm">
+            <h1 className="text-3xl font-bold tracking-tight">Create New Business</h1>
+            <p className="text-muted-foreground">
               Set up your business profile to start managing invoices
             </p>
           </div>
         </div>
 
-        <Card className="shadow-sm border border-gray-200">
-          <CardHeader className="bg-gray-50 rounded-t-xl">
-            <CardTitle className="text-xl font-semibold">Business Information</CardTitle>
+        <Card>
+          <CardHeader>
+            <CardTitle>Business Information</CardTitle>
             <CardDescription>
               Provide basic information about your business
             </CardDescription>
           </CardHeader>
 
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-6 pt-6">
+            <CardContent className="space-y-6">
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -201,8 +201,8 @@ export default function NewBusinessPage() {
               </div>
 
               {/* Address Information */}
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="text-lg font-semibold text-gray-800">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">
                   Address Information
                 </h3>
 
@@ -244,8 +244,8 @@ export default function NewBusinessPage() {
               </div>
 
               {/* Business Settings */}
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="text-lg font-semibold text-gray-800">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">
                   Business Settings
                 </h3>
 

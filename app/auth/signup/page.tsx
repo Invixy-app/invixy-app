@@ -75,116 +75,114 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-blue-50 via-white to-indigo-100">
-  {/* Left Side - Illustration / Branding Section */}
-  <div className="hidden md:flex w-1/2 items-center justify-center relative overflow-hidden">
-    <div className="absolute inset-0 bg-gradient-to-tr from-blue-200/40 to-indigo-200/40 backdrop-blur-sm"></div>
+    <div className="min-h-screen grid lg:grid-cols-2">
+      {/* Left Side - Branding Section */}
+      <div className="hidden lg:flex flex-col justify-between bg-primary text-primary-foreground p-10">
+        <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
+          <div className="w-8 h-8 rounded-lg bg-background/20 flex items-center justify-center text-primary-foreground">
+            IV
+          </div>
+          <span>Invixy</span>
+        </div>
+        
+        <div className="space-y-6 max-w-lg">
+          <blockquote className="text-2xl font-medium leading-relaxed">
+            "The best decision we made for our business. Invixy saves us hours every week on billing and collections."
+          </blockquote>
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 rounded-full bg-primary-foreground/20 flex items-center justify-center font-bold">
+              AS
+            </div>
+            <div>
+              <div className="font-semibold">Sarah Miller</div>
+              <div className="text-sm text-primary-foreground/70">Founder, Design Studio</div>
+            </div>
+          </div>
+        </div>
 
-    <div className="relative z-10 text-center px-8 space-y-6">
-      <h1 className="text-5xl font-bold text-gray-800">Welcome to Invixy</h1>
-      <p className="text-lg text-gray-600 max-w-md mx-auto">
-        Simplify your invoicing process with our intelligent management system.  
-        Track payments, manage clients, and grow your business — all in one place.
-      </p>
-      <img
-        src="https://illustrations.popsy.co/blue/finance.svg"
-        alt="Invoice management illustration"
-        className="w-3/4 mx-auto drop-shadow-lg"
-      />
-    </div>
-  </div>
+        <div className="text-sm text-primary-foreground/50">
+          © {new Date().getFullYear()} Invixy Inc.
+        </div>
+      </div>
 
-  {/* Right Side - Signup Form */}
-  <div className="flex w-full md:w-1/2 items-center justify-center px-6 py-12">
-    <Card className="w-full max-w-md shadow-xl border border-gray-200 bg-white/80 backdrop-blur-md transition-all duration-300 hover:shadow-2xl">
-      <CardHeader>
-        <CardTitle className="text-3xl font-bold text-center text-gray-900">
-          Create Account
-        </CardTitle>
-        <CardDescription className="text-center text-gray-600">
-          Sign up to start managing your invoices
-        </CardDescription>
-      </CardHeader>
-
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-gray-700 font-medium">
-              Full Name
-            </Label>
-            <Input
-              id="name"
-              name="name"
-              type="text"
-              placeholder="Enter your full name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-            />
+      {/* Right Side - Signup Form */}
+      <div className="flex items-center justify-center p-8 bg-background">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="flex flex-col space-y-2 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Create an account
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Enter your email below to create your account
+            </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-gray-700 font-medium">
-              Email
-            </Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          <div className="space-y-2">
-            <Label htmlFor="password" className="text-gray-700 font-medium">
-              Password
-            </Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              placeholder="Create a password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="focus:ring-2 focus:ring-blue-500 transition-all duration-200"
-            />
-          </div>
-        </CardContent>
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="John Doe"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                className="bg-background"
+              />
+            </div>
 
-        <CardFooter className="flex flex-col space-y-4">
-          <Button
-            type="submit"
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold transition-all duration-300"
-            disabled={isLoading}
-          >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create Account
-          </Button>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="name@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="bg-background"
+              />
+            </div>
 
-          <p className="text-sm text-gray-600 text-center">
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                className="bg-background"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create Account
+            </Button>
+          </form>
+
+          <div className="text-center text-sm text-muted-foreground">
             Already have an account?{" "}
-            <Link href="/auth/signin" className="text-blue-600 hover:underline font-medium">
+            <Link href="/auth/signin" className="underline underline-offset-4 hover:text-primary">
               Sign in
             </Link>
-          </p>
-        </CardFooter>
-      </form>
-    </Card>
-  </div>
-</div>
-
-
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

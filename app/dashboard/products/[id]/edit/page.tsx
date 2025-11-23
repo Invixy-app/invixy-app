@@ -195,7 +195,7 @@ export default function EditProductPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
           <Button variant="outline" size="icon" asChild>
@@ -212,188 +212,190 @@ export default function EditProductPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Basic Information
-              </CardTitle>
-              <CardDescription>
-                Essential product details and description
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                label="Product Name"
-                id="name"
-                value={formData.name}
-                onChange={(value) => handleFieldChange("name", value)}
-                required
-                placeholder="Enter product name"
-              />
-
-              <FormTextareaField
-                label="Description"
-                id="description"
-                value={formData.description}
-                onChange={(value) => handleFieldChange("description", value)}
-                placeholder="Product description..."
-                rows={3}
-              />
-
-              <FormGrid columns={2}>
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Basic Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Basic Information
+                </CardTitle>
+                <CardDescription>
+                  Essential product details and description
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <FormField
-                  label="SKU"
-                  id="sku"
-                  value={formData.sku}
-                  onChange={(value) => handleFieldChange("sku", value)}
-                  placeholder="Product SKU"
-                />
-                <FormField
-                  label="Category"
-                  id="category"
-                  value={formData.category}
-                  onChange={(value) => handleFieldChange("category", value)}
-                  placeholder="Product category"
-                />
-              </FormGrid>
-            </CardContent>
-          </Card>
-
-          {/* Pricing */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Pricing Information
-              </CardTitle>
-              <CardDescription>
-                Set product pricing and cost details
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormGrid columns={2}>
-                <FormField
-                  label="Selling Price"
-                  id="price"
-                  type="number"
-                  value={formData.price.toString()}
-                  onChange={(value) => handleFieldChange("price", parseFloat(value) || 0)}
+                  label="Product Name"
+                  id="name"
+                  value={formData.name}
+                  onChange={(value) => handleFieldChange("name", value)}
                   required
-                  placeholder="0.00"
+                  placeholder="Enter product name"
                 />
-                <FormField
-                  label="Cost Price"
-                  id="cost"
-                  type="number"
-                  value={formData.cost.toString()}
-                  onChange={(value) => handleFieldChange("cost", parseFloat(value) || 0)}
-                  placeholder="0.00"
+
+                <FormTextareaField
+                  label="Description"
+                  id="description"
+                  value={formData.description}
+                  onChange={(value) => handleFieldChange("description", value)}
+                  placeholder="Product description..."
+                  rows={3}
                 />
-              </FormGrid>
 
-              <div className="space-y-2">
-                <Label htmlFor="unit">Unit of Measurement</Label>
-                <Select 
-                  value={formData.unit} 
-                  onValueChange={(value) => handleFieldChange("unit", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {unitOptions.map((unit) => (
-                      <SelectItem key={unit.value} value={unit.value}>
-                        {unit.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
+                <FormGrid columns={2}>
+                  <FormField
+                    label="SKU"
+                    id="sku"
+                    value={formData.sku}
+                    onChange={(value) => handleFieldChange("sku", value)}
+                    placeholder="Product SKU"
+                  />
+                  <FormField
+                    label="Category"
+                    id="category"
+                    value={formData.category}
+                    onChange={(value) => handleFieldChange("category", value)}
+                    placeholder="Product category"
+                  />
+                </FormGrid>
+              </CardContent>
+            </Card>
 
-          {/* Inventory */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Hash className="h-5 w-5" />
-                Inventory Management
-              </CardTitle>
-              <CardDescription>
-                Stock levels and inventory tracking
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormGrid columns={2}>
-                <FormField
-                  label="Stock Quantity"
-                  id="stockQuantity"
-                  type="number"
-                  value={formData.stockQuantity.toString()}
-                  onChange={(value) => handleFieldChange("stockQuantity", parseInt(value) || 0)}
-                  placeholder="0"
-                />
-                <FormField
-                  label="Minimum Stock Level"
-                  id="minStockLevel"
-                  type="number"
-                  value={formData.minStockLevel.toString()}
-                  onChange={(value) => handleFieldChange("minStockLevel", parseInt(value) || 0)}
-                  placeholder="0"
-                />
-              </FormGrid>
-            </CardContent>
-          </Card>
+            {/* Pricing */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5" />
+                  Pricing Information
+                </CardTitle>
+                <CardDescription>
+                  Set product pricing and cost details
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormGrid columns={2}>
+                  <FormField
+                    label="Selling Price"
+                    id="price"
+                    type="number"
+                    value={formData.price.toString()}
+                    onChange={(value) => handleFieldChange("price", parseFloat(value) || 0)}
+                    required
+                    placeholder="0.00"
+                  />
+                  <FormField
+                    label="Cost Price"
+                    id="cost"
+                    type="number"
+                    value={formData.cost.toString()}
+                    onChange={(value) => handleFieldChange("cost", parseFloat(value) || 0)}
+                    placeholder="0.00"
+                  />
+                </FormGrid>
 
-          {/* Tax & Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calculator className="h-5 w-5" />
-                Tax & Settings
-              </CardTitle>
-              <CardDescription>
-                Tax configuration and product status
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="taxSystemId">Tax System</Label>
-                <Select 
-                  value={formData.taxSystemId || "none"} 
-                  onValueChange={(value) => handleFieldChange("taxSystemId", value === "none" ? "" : value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select tax system (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No Tax</SelectItem>
-                    {taxSystems.map((tax) => (
-                      <SelectItem key={tax.id} value={tax.id}>
-                        {tax.name} ({(tax.rate * 100).toFixed(2)}%)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="isActive">Active Product</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Inactive products won't appear in product lists
-                  </p>
+                <div className="space-y-2">
+                  <Label htmlFor="unit">Unit of Measurement</Label>
+                  <Select 
+                    value={formData.unit} 
+                    onValueChange={(value) => handleFieldChange("unit", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {unitOptions.map((unit) => (
+                        <SelectItem key={unit.value} value={unit.value}>
+                          {unit.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Switch
-                  id="isActive"
-                  checked={formData.isActive}
-                  onCheckedChange={(checked: boolean) => handleFieldChange("isActive", checked)}
-                />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* Inventory */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Hash className="h-5 w-5" />
+                  Inventory Management
+                </CardTitle>
+                <CardDescription>
+                  Stock levels and inventory tracking
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormGrid columns={2}>
+                  <FormField
+                    label="Stock Quantity"
+                    id="stockQuantity"
+                    type="number"
+                    value={formData.stockQuantity.toString()}
+                    onChange={(value) => handleFieldChange("stockQuantity", parseInt(value) || 0)}
+                    placeholder="0"
+                  />
+                  <FormField
+                    label="Minimum Stock Level"
+                    id="minStockLevel"
+                    type="number"
+                    value={formData.minStockLevel.toString()}
+                    onChange={(value) => handleFieldChange("minStockLevel", parseInt(value) || 0)}
+                    placeholder="0"
+                  />
+                </FormGrid>
+              </CardContent>
+            </Card>
+
+            {/* Tax & Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calculator className="h-5 w-5" />
+                  Tax & Settings
+                </CardTitle>
+                <CardDescription>
+                  Tax configuration and product status
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="taxSystemId">Tax System</Label>
+                  <Select 
+                    value={formData.taxSystemId || "none"} 
+                    onValueChange={(value) => handleFieldChange("taxSystemId", value === "none" ? "" : value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select tax system (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No Tax</SelectItem>
+                      {taxSystems.map((tax) => (
+                        <SelectItem key={tax.id} value={tax.id}>
+                          {tax.name} ({(tax.rate * 100).toFixed(2)}%)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="isActive">Active Product</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Inactive products won't appear in product lists
+                    </p>
+                  </div>
+                  <Switch
+                    id="isActive"
+                    checked={formData.isActive}
+                    onCheckedChange={(checked: boolean) => handleFieldChange("isActive", checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Actions */}
           <div className="flex justify-end gap-2">
