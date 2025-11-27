@@ -86,6 +86,8 @@ model Business {
   products         Product[]
   taxSystems       TaxSystem[]
   invoices         Invoice[]
+  subscriptions    Subscription[]
+  transactions     Transaction[]
 }
 
 model BusinessUserRole {
@@ -279,6 +281,43 @@ model UserSettings {
   updatedAt DateTime @updatedAt
 }
 
+model Subscription {
+  id                   String             @id @default(cuid())
+  businessId           String
+  plan                 Plan               @default(FREE)
+  interval             PlanInterval       @default(MONTHLY)
+  status               SubscriptionStatus @default(ACTIVE)
+  startDate            DateTime           @default(now())
+  endDate              DateTime?          // Null for lifetime or ongoing free plans
+  paypalSubscriptionId String?            // External ID from PayPal for recurring billing
+  
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  business             Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  businessId      String
+  amount          Decimal           @db.Decimal(10, 2)
+  currency        String            @default("USD")
+  status          TransactionStatus
+  plan            Plan
+  interval        PlanInterval
+  
+  // Payment Details (Safe Metadata only)
+  paymentMethod   String            @default("PAYPAL") // e.g. "PAYPAL", "CREDIT_CARD"
+  paypalOrderId   String?           // The Order ID from PayPal
+  paypalPayerId   String?           // The Payer ID from PayPal
+  paymentEmail    String?           // The email used for payment
+  last4Digits     String?           // Safe to store (e.g., "4242")
+  
+  createdAt       DateTime          @default(now())
+  
+  business        Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
 enum TaxType {
   PERCENTAGE
   FIXED_AMOUNT
@@ -307,4 +346,30 @@ enum PaymentMethod {
   DIGITAL_WALLET
   CRYPTOCURRENCY
   OTHER
+}
+
+enum Plan{
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+enum PlanInterval{
+  MONTHLY
+  YEARLY
+  QUARTERLY
+}
+
+enum SubscriptionStatus{
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
+enum TransactionStatus{
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
 }
