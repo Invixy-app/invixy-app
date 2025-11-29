@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
-import { createPayPalOrder } from "@/lib/paypal";
+import { createRazorpayOrder } from "@/lib/razorpay";
 
 export async function POST(req: NextRequest) {
   const session = await requireAuth();
@@ -19,23 +19,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create PayPal order
-    const order = await createPayPalOrder(plan, price, "USD", interval);
+    // Create Razorpay order
+    // Using INR as default currency as per schema change
+    const receipt = `receipt_1`;
+    const order = await createRazorpayOrder(price, "INR", receipt);
     
     // Log the order for debugging
-    console.log("PayPal Order Created:", JSON.stringify(order, null, 2));
+    console.log("Razorpay Order Created:", JSON.stringify(order, null, 2));
 
-    // Find the approval URL to redirect the user
-    const approveLink = order.links.find((link: any) => link.rel === "approve");
-
-    if (!approveLink) {
-      console.error("No approval link in response:", order);
-      throw new Error("No approval link found in PayPal response");
-    }
-
-    return NextResponse.json({ approvalUrl: approveLink.href });
+    return NextResponse.json({ 
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+    });
   } catch (error: any) {
-    console.error("PayPal Create Error:", error);
+    console.error("Razorpay Create Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

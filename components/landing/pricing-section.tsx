@@ -89,6 +89,26 @@ export function PricingSection() {
     try {
       setLoadingPlan(tierId)
       
+      // 1. Load Razorpay SDK
+      const loadRazorpayScript = () => {
+        return new Promise((resolve) => {
+          const script = document.createElement('script');
+          script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.body.appendChild(script);
+        });
+      };
+
+      const res = await loadRazorpayScript();
+
+      if (!res) {
+        showError("Payment Error", "Razorpay SDK failed to load. Are you online?");
+        setLoadingPlan(null);
+        return;
+      }
+
+      // 2. Create Order
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: {
@@ -107,11 +127,54 @@ export function PricingSection() {
         throw new Error(data.error || "Failed to create subscription")
       }
 
-      if (data.approvalUrl) {
-        window.location.href = data.approvalUrl
-      } else {
-        throw new Error("No approval URL returned")
-      }
+      // 3. Open Razorpay Modal
+      const options = {
+        key: process.env.NEXT_PUBLIC_RZRPAY_CLIENT_ID   ,
+        amount: data.amount,
+        currency: data.currency,
+        name: 'Invixy App',
+        description: `${tierId} Plan - ${billingCycle}`,
+        order_id: data.orderId,
+        handler: async function (response: any) {
+          // 4. Verify Payment
+          try {
+            const verifyRes = await fetch('/api/payments/razorpay/callback', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                plan: tierId.toUpperCase(),
+                interval: billingCycle,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyData.status === 'success') {
+              // Success!
+              window.location.href = "/dashboard?payment=success";
+            } else {
+              showError("Payment Verification Failed", "Please contact support if money was deducted.");
+            }
+          } catch (err) {
+             console.error("Verification error", err);
+             showError("Payment Verification Error", "Please contact support if money was deducted.");
+          }
+        },
+        prefill: {
+          name: session.user.name,
+          email: session.user.email,
+        },
+        theme: {
+          color: '#3399cc',
+        },
+      };
+
+      const paymentObject = new (window as any).Razorpay(options);
+      paymentObject.open();
+
     } catch (error) {
       console.error("Subscription error:", error)
       showError("Subscription Failed", "Failed to start subscription process. Please try again.")
