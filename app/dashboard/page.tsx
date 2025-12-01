@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Building2, 
   Users, 
   Package, 
   FileText, 
@@ -24,7 +23,6 @@ import {
   Calculator,
   Crown
 } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 import { useBusinessContext } from "@/components/business-context";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -138,13 +136,12 @@ export default function DashboardPage() {
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "paid": return "bg-green-500/10 text-green-700 border-green-200";
-      case "pending": return "bg-yellow-500/10 text-yellow-700 border-yellow-200";
-      case "overdue": return "bg-red-500/10 text-red-700 border-red-200";
-      case "draft": return "bg-gray-500/10 text-gray-700 border-gray-200";
-      default: return "bg-blue-500/10 text-blue-700 border-blue-200";
+  const getStatusDotColor = (status: string) => {
+    switch (status) {
+      case 'PAID': return 'bg-green-500';
+      case 'PENDING': return 'bg-yellow-500';
+      case 'OVERDUE': return 'bg-red-500';
+      default: return 'bg-gray-400';
     }
   };
 
@@ -386,12 +383,14 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              {loading ? (
+              {loading && (
                 <div className="flex items-center justify-center py-12 text-muted-foreground">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mr-2"></div>
                   Loading...
                 </div>
-              ) : recentInvoices.length === 0 ? (
+              )}
+              
+              {!loading && recentInvoices.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
                     <FileText className="w-6 h-6 text-muted-foreground" />
@@ -405,16 +404,14 @@ export default function DashboardPage() {
                     </Button>
                   </Link>
                 </div>
-              ) : (
+              )}
+
+              {!loading && recentInvoices.length > 0 && (
                 <div className="divide-y">
                   {recentInvoices.map((invoice) => (
                     <div key={invoice.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
                       <div className="flex items-center gap-4">
-                        <div className={`w-2 h-2 rounded-full ${
-                          invoice.status === 'PAID' ? 'bg-green-500' : 
-                          invoice.status === 'PENDING' ? 'bg-yellow-500' : 
-                          invoice.status === 'OVERDUE' ? 'bg-red-500' : 'bg-gray-400'
-                        }`} />
+                        <div className={`w-2 h-2 rounded-full ${getStatusDotColor(invoice.status)}`} />
                         <div>
                           <Link href={`/dashboard/invoices/${invoice.id}`} className="font-medium text-sm hover:text-primary transition-colors">
                             {invoice.invoiceNumber}
@@ -455,12 +452,14 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              {loading ? (
+              {loading && (
                 <div className="flex items-center justify-center py-12 text-muted-foreground">
                   <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mr-2"></div>
                   Loading...
                 </div>
-              ) : topCustomers.length === 0 ? (
+              )}
+              
+              {!loading && topCustomers.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
                     <Users className="w-6 h-6 text-muted-foreground" />
@@ -473,7 +472,9 @@ export default function DashboardPage() {
                     </Button>
                   </Link>
                 </div>
-              ) : (
+              )}
+
+              {!loading && topCustomers.length > 0 && (
                 <div className="divide-y">
                   {topCustomers.map((customer, index) => (
                     <div key={customer.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">

@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -609,11 +608,13 @@ export default function BusinessSettingsPage() {
                 </Dialog>
               </CardHeader>
               <CardContent>
-                {loadingTeam ? (
+                {loadingTeam && (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground">Loading team members...</p>
                   </div>
-                ) : teamMembers.length === 0 ? (
+                )}
+                
+                {!loadingTeam && teamMembers.length === 0 && (
                   <div className="text-center py-8">
                     <Users className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
                     <h3 className="text-lg font-semibold mb-2">No team members yet</h3>
@@ -621,7 +622,9 @@ export default function BusinessSettingsPage() {
                       Add team members to collaborate on this business
                     </p>
                   </div>
-                ) : (
+                )}
+
+                {!loadingTeam && teamMembers.length > 0 && (
                   <div className="rounded-md border">
                     <Table>
                       <TableHeader>

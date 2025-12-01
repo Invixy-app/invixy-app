@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
@@ -62,7 +61,6 @@ interface Product {
 }
 
 export default function ProductsPage() {
-  const { data: session } = useSession();
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -157,10 +155,6 @@ export default function ProductsPage() {
       style: 'currency',
       currency: currentBusiness?.currency || 'USD'
     }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
   };
 
   const getStockStatus = (product: Product) => {
@@ -315,7 +309,11 @@ export default function ProductsPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-2">
-                          {product.stockQuantity !== null ? (
+                          {product.stockQuantity === null ? (
+                            <span className="text-sm text-gray-500">
+                              Not tracked
+                            </span>
+                          ) : (
                             <>
                               <span className="font-medium text-gray-900">
                                 {product.stockQuantity}
@@ -323,14 +321,10 @@ export default function ProductsPage() {
                               <span className="text-xs text-gray-500">
                                 {product.unit}
                               </span>
-                              {stockStatus.status === "Low stock" && (
+                              {getStockStatus(product).status === "Low stock" && (
                                 <AlertTriangle className="h-3 w-3 text-yellow-500" />
                               )}
                             </>
-                          ) : (
-                            <span className="text-sm text-gray-500">
-                              Not tracked
-                            </span>
                           )}
                         </div>
                         <Badge
@@ -465,9 +459,9 @@ export default function ProductsPage() {
             title: "Categories",
             value: categories.length,
           },
-        ].map((stat, i) => (
+        ].map((stat) => (
           <Card
-            key={i}
+            key={stat.title}
             className="border border-gray-100 shadow-sm rounded-xl hover:shadow-md transition-shadow"
           >
             <CardHeader className="pb-2">

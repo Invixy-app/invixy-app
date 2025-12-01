@@ -16,7 +16,6 @@ import {
   LogOut,
   ChevronRight,
   Bell,
-  Search,
   PanelLeftClose,
   PanelLeftOpen,
   Loader2
@@ -35,10 +34,9 @@ import {
 import { BusinessSwitcher } from "@/components/business-switcher"
 import { useBusinessContext } from "@/components/business-context"
 import { Separator } from "@/components/ui/separator"
-import { Input } from "@/components/ui/input"
 import { GlobalAlert } from "@/components/global-alert"
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+export function DashboardLayout({ children }: { readonly children: React.ReactNode }) {
   const pathname = usePathname()
   const { data: session } = useSession()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
@@ -292,7 +290,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               {pathname !== "/dashboard" && (
                 <>
                   <ChevronRight className="h-4 w-4 mx-1" />
-                  <span className="capitalize">{pathname.split("/").pop()?.replace(/-/g, " ")}</span>
+                  <span className="capitalize">{pathname.split("/").pop()?.replaceAll(/-/g, " ")}</span>
                 </>
               )}
             </div>

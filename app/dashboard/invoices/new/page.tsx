@@ -124,6 +124,7 @@ function NewInvoiceContent() {
   
   const [formData, setFormData] = useState<InvoiceFormData>({
     customerId: searchParams?.get("customerId") || "",
+    status: "DRAFT",
     issueDate: new Date().toISOString().split('T')[0],
     dueDate: "",
     notes: "",
@@ -452,7 +453,11 @@ function NewInvoiceContent() {
 
     setLoading(true);
     try {
-      const validatedData = invoiceSchema.parse(formData);
+      const dataToValidate = {
+        ...formData,
+        dueDate: formData.dueDate === "" ? undefined : formData.dueDate
+      };
+      const validatedData = invoiceSchema.parse(dataToValidate);
       
       const invoiceData = {
         ...validatedData,

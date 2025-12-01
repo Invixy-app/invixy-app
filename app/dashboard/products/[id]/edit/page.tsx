@@ -9,10 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { FormField, FormTextareaField, FormSection, FormGrid } from "@/components/ui/form-fields";
+import { FormField, FormTextareaField, FormGrid } from "@/components/ui/form-fields";
 import { ArrowLeft, Save, Package, DollarSign, Hash, Calculator } from "lucide-react";
 import Link from "next/link";
 
@@ -115,7 +114,7 @@ export default function EditProductPage() {
         currency: currency,
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
-      }).replace(/\d/g, '').trim();
+      }).replaceAll(/\d/g, '').trim();
     } catch {
       return "$";
     }
@@ -301,7 +300,7 @@ export default function EditProductPage() {
                         min="0"
                         placeholder="0.00"
                         value={formData.price.toString()}
-                        onChange={(e) => handleFieldChange("price", parseFloat(e.target.value) || 0)}
+                        onChange={(e) => handleFieldChange("price", Number.parseFloat(e.target.value) || 0)}
                         className="pl-10"
                         required
                       />
@@ -320,7 +319,7 @@ export default function EditProductPage() {
                         min="0"
                         placeholder="0.00"
                         value={formData.cost.toString()}
-                        onChange={(e) => handleFieldChange("cost", parseFloat(e.target.value) || 0)}
+                        onChange={(e) => handleFieldChange("cost", Number.parseFloat(e.target.value) || 0)}
                         className="pl-10"
                       />
                     </div>
@@ -366,7 +365,7 @@ export default function EditProductPage() {
                     id="stockQuantity"
                     type="number"
                     value={formData.stockQuantity.toString()}
-                    onChange={(value) => handleFieldChange("stockQuantity", parseInt(value) || 0)}
+                    onChange={(value) => handleFieldChange("stockQuantity", Number.parseInt(value) || 0)}
                     placeholder="0"
                   />
                   <FormField
@@ -374,7 +373,7 @@ export default function EditProductPage() {
                     id="minStockLevel"
                     type="number"
                     value={formData.minStockLevel.toString()}
-                    onChange={(value) => handleFieldChange("minStockLevel", parseInt(value) || 0)}
+                    onChange={(value) => handleFieldChange("minStockLevel", Number.parseInt(value) || 0)}
                     placeholder="0"
                   />
                 </FormGrid>

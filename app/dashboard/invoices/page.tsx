@@ -38,7 +38,6 @@ import {
   Send,
   DollarSign,
   Calendar,
-  User,
   Download,
   Copy,
   CheckCircle,
@@ -82,7 +81,6 @@ interface Invoice {
 }
 
 export default function InvoicesPage() {
-  const { data: session } = useSession();
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
@@ -229,14 +227,14 @@ export default function InvoicesPage() {
       
       if (response.ok) {
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        const url = globalThis.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `invoice-${invoiceId}.pdf`;
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        globalThis.URL.revokeObjectURL(url);
+        a.remove();
         showSuccess("Success", "Invoice PDF downloaded successfully");
       } else {
         const errorData = await response.json();

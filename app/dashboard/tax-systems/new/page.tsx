@@ -58,9 +58,9 @@ const taxTemplates = {
     taxId: "VAT",
     taxType: "PERCENTAGE",
     rates: [
-      { name: "Standard VAT", rate: 0.20, description: "Standard VAT rate" },
+      { name: "Standard VAT", rate: 0.2, description: "Standard VAT rate" },
       { name: "Reduced VAT", rate: 0.05, description: "Reduced rate for essentials" },
-      { name: "Zero VAT", rate: 0.00, description: "Zero-rated goods" }
+      { name: "Zero VAT", rate: 0, description: "Zero-rated goods" }
     ]
   },
   sales_tax: {
@@ -91,9 +91,9 @@ function NewTaxSystemContent() {
     taxType: "PERCENTAGE",
     rate: "",
     isCompound: false,
+    isActive: true,
     validFrom: new Date().toISOString().split('T')[0],
     validTo: "",
-
   });
 
   useEffect(() => {
@@ -106,7 +106,7 @@ function NewTaxSystemContent() {
         ...prev,
         name: template.name,
         taxId: template.taxId,
-        taxType: template.taxType,
+        taxType: template.taxType as TaxSystemFormData["taxType"],
         description: `${template.name} system`
       }));
       
@@ -228,7 +228,7 @@ function NewTaxSystemContent() {
             name: rate.name,
             description: rate.description,
             taxId: `${template.taxId}_${(rate.rate * 100).toString().replace('.', '_')}`,
-            taxType: template.taxType,
+            taxType: template.taxType as TaxSystemFormData["taxType"],
             rate: rate.rate,
             isCompound: false,
             validFrom: new Date(formData.validFrom),
@@ -336,7 +336,7 @@ function NewTaxSystemContent() {
                       </p>
                       <div className="grid gap-2">
                         {templateInfo.rates.map((rate, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div key={rate.name} className="flex items-center justify-between p-3 border rounded-lg">
                             <div>
                               <div className="font-medium">{rate.name}</div>
                               <div className="text-sm text-muted-foreground">{rate.description}</div>
@@ -509,9 +509,7 @@ function NewTaxSystemContent() {
                       />
                       <Label htmlFor="isCompound" className="flex items-center">
                         Compound Tax
-                        <span className="ml-2 text-sm text-muted-foreground">
-                          (Tax calculated on tax-inclusive amount)
-                        </span>
+                        <span className="ml-2 text-sm text-muted-foreground">(Tax calculated on tax-inclusive amount)</span>
                       </Label>
                     </div>
                   </CardContent>

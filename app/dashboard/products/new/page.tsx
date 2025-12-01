@@ -43,7 +43,8 @@ export default function NewProductPage() {
     unit: "pcs",
     stockQuantity: 0,
     minStockLevel: 0,
-    taxSystemId: "none"
+    taxSystemId: "none",
+    isActive: true
   });
 
   useEffect(() => {
@@ -82,7 +83,7 @@ export default function NewProductPage() {
         currency: currency,
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
-      }).replace(/\d/g, '').trim();
+      }).replaceAll(/\d/g, '').trim();
     } catch {
       return "$";
     }
