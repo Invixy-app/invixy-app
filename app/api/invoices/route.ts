@@ -5,24 +5,10 @@ import { InvoiceStatus } from "@prisma/client";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth-config";
 
-const invoiceItemSchema = z.object({
-  productId: z.string().optional(),
-  description: z.string().min(1, "Description is required"),
-  quantity: z.number().min(0.001, "Quantity must be positive"),
-  unitPrice: z.number().min(0, "Unit price must be positive"),
-  discount: z.number().min(0).default(0),
-  taxSystemIds: z.array(z.string()).default([]) // Item-level tax systems
-});
+import { invoiceSchema } from "@/lib/validations/invoice";
 
-const createInvoiceSchema = z.object({
+const createInvoiceSchema = invoiceSchema.extend({
   businessId: z.string(),
-  customerId: z.string(),
-  issueDate: z.string().transform((str) => new Date(str)).optional(),
-  dueDate: z.string().transform((str) => new Date(str)).optional(),
-  notes: z.string().optional(),
-  terms: z.string().optional(),
-  currency: z.string().default("USD"),
-  items: z.array(invoiceItemSchema).min(1, "At least one item is required")
 });
 
 export async function GET(request: NextRequest) {

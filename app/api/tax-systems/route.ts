@@ -2,19 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { getTaxSystemsByBusiness, createTaxSystem } from "@/lib/taxSystem";
-import { TaxType } from "@prisma/client";
 import { z } from "zod";
 
-const createTaxSystemSchema = z.object({
+import { taxSystemSchema } from "@/lib/validations/tax";
+
+const createTaxSystemSchema = taxSystemSchema.extend({
   businessId: z.string(),
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  taxId: z.string().min(1, "Tax ID is required"),
-  taxType: z.nativeEnum(TaxType),
-  rate: z.number().min(0, "Rate must be positive"),
-  isCompound: z.boolean().default(false),
-  validFrom: z.string().transform((str) => new Date(str)).optional(),
-  validTo: z.string().transform((str) => new Date(str)).optional()
 });
 
 export async function GET(request: NextRequest) {

@@ -182,8 +182,13 @@ export async function updateProductStock(
     throw new Error("Insufficient permissions");
   }
 
+  // If stock is not tracked (null), do not update
+  if (product.stockQuantity === null) {
+    return product;
+  }
+
   let newQuantity: number;
-  const currentStock = product.stockQuantity || 0;
+  const currentStock = product.stockQuantity;
 
   switch (operation) {
     case 'add':

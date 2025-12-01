@@ -7,9 +7,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { z } from "zod";
+import { loginSchema } from "@/lib/validations/auth";
 
 function SignInContent() {
   const [formData, setFormData] = useState({
@@ -18,12 +19,35 @@ function SignInContent() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
+  const validateForm = (): boolean => {
+    try {
+      loginSchema.parse(formData);
+      setFieldErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        for (const err of error.issues) {
+          if (err.path[0]) {
+            newErrors[err.path[0] as string] = err.message;
+          }
+        }
+        setFieldErrors(newErrors);
+      }
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+
     setIsLoading(true);
     setError("");
 
@@ -40,6 +64,7 @@ function SignInContent() {
         router.push(callbackUrl);
       }
     } catch (error) {
+      console.error(error);
       setError("Something went wrong");
     } finally {
       setIsLoading(false);
@@ -112,9 +137,9 @@ function SignInContent() {
                 placeholder="name@example.com"
                 value={formData.email}
                 onChange={handleChange}
-                required
-                className="bg-background"
+                className={fieldErrors.email ? "border-red-500" : "bg-background"}
               />
+              {fieldErrors.email && <p className="text-sm text-red-500">{fieldErrors.email}</p>}
             </div>
 
             <div className="space-y-2">
@@ -125,9 +150,9 @@ function SignInContent() {
                 type="password"
                 value={formData.password}
                 onChange={handleChange}
-                required
-                className="bg-background"
+                className={fieldErrors.password ? "border-red-500" : "bg-background"}
               />
+              {fieldErrors.password && <p className="text-sm text-red-500">{fieldErrors.password}</p>}
             </div>
 
             <Button

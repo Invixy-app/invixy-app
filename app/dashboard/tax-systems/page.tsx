@@ -34,7 +34,6 @@ import {
   Eye,
   Percent,
   DollarSign,
-  FileText,
   CheckCircle,
   Clock
 } from "lucide-react";
@@ -56,7 +55,6 @@ interface TaxSystem {
 }
 
 export default function TaxSystemsPage() {
-  const { data: session } = useSession();
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
   const [loading, setLoading] = useState(true);

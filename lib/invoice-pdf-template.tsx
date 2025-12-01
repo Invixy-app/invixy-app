@@ -167,13 +167,6 @@ const styles = StyleSheet.create({
   },
 });
 
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD'
-  }).format(amount);
-};
-
 const formatDate = (date: string) => {
   return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -182,8 +175,16 @@ const formatDate = (date: string) => {
   });
 };
 
-const InvoicePDFTemplate: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => (
-  <Document>
+const InvoicePDFTemplate: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: invoice.currency || 'USD'
+    }).format(amount);
+  };
+
+  return (
+    <Document>
     <Page size="A4" style={styles.page}>
       {/* Header */}
       <View style={styles.header}>
@@ -291,7 +292,8 @@ const InvoicePDFTemplate: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => 
         <Text>Invoice #{invoice.invoiceNumber} | {invoice.business.name} | Generated on {new Date().toLocaleDateString()}</Text>
       </View>
     </Page>
-  </Document>
-);
+    </Document>
+  );
+};
 
 export default InvoicePDFTemplate;

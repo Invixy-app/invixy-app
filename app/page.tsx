@@ -5,10 +5,9 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, BarChart3 } from "lucide-react";
 import { FeaturesSection } from "@/components/landing/features-section";
-import { PricingSection } from "@/components/landing/pricing-section";
 import { TrustedBy } from "@/components/landing/trusted-by";
 import { Testimonials } from "@/components/landing/testimonials";
-import { FAQ } from "@/components/landing/faq";
+import { FAQ as FaqSection } from "@/components/landing/faq";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 
@@ -103,11 +102,23 @@ export default function LandingPage() {
         {/* Testimonials Section */}
         <Testimonials />
 
-        {/* Pricing Section */}
-        <PricingSection />
+        {/* Pricing CTA Section */}
+        <section className="py-24 bg-muted/30">
+          <div className="container mx-auto px-4 md:px-6 text-center">
+            <h2 className="text-3xl font-bold tracking-tight mb-4">Simple, Transparent Pricing</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
+              Choose the plan that fits your business needs. No hidden fees, cancel anytime.
+            </p>
+            <Link href="/pricing">
+              <Button size="lg" className="px-8">
+                View Pricing Plans <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </section>
 
         {/* FAQ Section */}
-        <FAQ />
+        <FaqSection />
 
         {/* CTA Section */}
         <section className="py-24">

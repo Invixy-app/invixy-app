@@ -38,7 +38,6 @@ import {
   Send,
   DollarSign,
   Calendar,
-  User,
   Download,
   Copy,
   CheckCircle,
@@ -82,7 +81,6 @@ interface Invoice {
 }
 
 export default function InvoicesPage() {
-  const { data: session } = useSession();
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
@@ -229,14 +227,14 @@ export default function InvoicesPage() {
       
       if (response.ok) {
         const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
+        const url = globalThis.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `invoice-${invoiceId}.pdf`;
         document.body.appendChild(a);
         a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
+        globalThis.URL.revokeObjectURL(url);
+        a.remove();
         showSuccess("Success", "Invoice PDF downloaded successfully");
       } else {
         const errorData = await response.json();
@@ -413,9 +411,9 @@ export default function InvoicesPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue, currentBusiness?.currency || 'USD')}</div>
               <p className="text-xs text-muted-foreground">
-                {formatCurrency(stats.totalPaid)} collected
+                {formatCurrency(stats.totalPaid, currentBusiness?.currency || 'USD')} collected
               </p>
             </CardContent>
           </Card>
@@ -426,7 +424,7 @@ export default function InvoicesPage() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalOutstanding)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(stats.totalOutstanding, currentBusiness?.currency || 'USD')}</div>
               <p className="text-xs text-muted-foreground">
                 {stats.sent + stats.overdue} invoices pending
               </p>

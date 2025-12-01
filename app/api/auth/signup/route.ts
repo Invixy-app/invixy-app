@@ -3,8 +3,6 @@ import { NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import prisma from '@/lib/db';
 
-
-
 export async function POST(req: Request) {
   try {
     const body = await req.json()

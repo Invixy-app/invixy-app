@@ -4,18 +4,10 @@ import { authOptions } from "@/lib/auth-config";
 import { getProductsByBusiness, createProduct } from "@/lib/product";
 import { z } from "zod";
 
-const createProductSchema = z.object({
+import { productSchema } from "@/lib/validations/product";
+
+const createProductSchema = productSchema.extend({
   businessId: z.string(),
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  sku: z.string().optional(),
-  price: z.coerce.number().min(0, "Price must be positive"),
-  cost: z.coerce.number().min(0).nullable().transform(val => val ?? undefined),
-  category: z.string().optional(),
-  unit: z.string().default("pcs"),
-  stockQuantity: z.coerce.number().int().nullable().transform(val => val ?? undefined),
-  minStockLevel: z.coerce.number().int().nullable().transform(val => val ?? undefined),
-  taxSystemId: z.string().nullable().transform(val => val === "none" || !val ? undefined : val)
 });
 
 export async function GET(request: NextRequest) {

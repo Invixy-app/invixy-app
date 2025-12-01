@@ -14,21 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Save, Package, DollarSign, Hash, Calculator } from "lucide-react";
 import Link from "next/link";
 import { z } from "zod";
-const createProductSchema = z.object({
-  businessId: z.string(),
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  sku: z.string().optional(),
-  price: z.coerce.number().min(0, "Price must be positive"),
-  cost: z.coerce.number().min(0).nullable().transform(val => val ?? undefined),
-  category: z.string().optional(),
-  unit: z.string().default("pcs"),
-  stockQuantity: z.coerce.number().int().nullable().transform(val => val ?? undefined),
-  minStockLevel: z.coerce.number().int().nullable().transform(val => val ?? undefined),
-  taxSystemId: z.string().nullable().transform(val => val === "none" || !val ? undefined : val)
-});
+import { productSchema, type ProductFormValues } from "@/lib/validations/product";
 
-type ProductFormData = z.infer<typeof createProductSchema>;
+type ProductFormData = ProductFormValues & { businessId: string };
 
 interface TaxSystem {
   id: string;
@@ -55,7 +43,8 @@ export default function NewProductPage() {
     unit: "pcs",
     stockQuantity: 0,
     minStockLevel: 0,
-    taxSystemId: "none"
+    taxSystemId: "none",
+    isActive: true
   });
 
   useEffect(() => {
@@ -87,19 +76,39 @@ export default function NewProductPage() {
     }
   };
 
+  const getCurrencySymbol = (currency: string) => {
+    try {
+      return (0).toLocaleString('en-US', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).replaceAll(/\d/g, '').trim();
+    } catch {
+      return "$";
+    }
+  };
+
+  const formatPrice = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currentBusiness?.currency || 'USD'
+    }).format(amount);
+  };
+
   const validateForm = (): boolean => {
     try {
-      createProductSchema.parse(formData);
+      productSchema.parse(formData);
       setErrors({});
       return true;
     } catch (error) {
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
-        error.issues.forEach((err) => {
+        for (const err of error.issues) {
           if (err.path[0]) {
             newErrors[err.path[0] as string] = err.message;
           }
-        });
+        }
         setErrors(newErrors);
       }
       return false;
@@ -311,7 +320,9 @@ export default function NewProductPage() {
                   <div className="space-y-2">
                     <Label htmlFor="price">Selling Price *</Label>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <div className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground flex items-center justify-center font-semibold text-sm">
+                        {getCurrencySymbol(currentBusiness?.currency || 'USD')}
+                      </div>
                       <Input
                         id="price"
                         type="number"
@@ -319,7 +330,7 @@ export default function NewProductPage() {
                         min="0"
                         placeholder="0.00"
                         value={formData.price || ""}
-                        onChange={(e) => handleInputChange("price", parseFloat(e.target.value) || 0)}
+                        onChange={(e) => handleInputChange("price", Number.parseFloat(e.target.value) || 0)}
                         className={`pl-10 ${errors.price ? "border-red-500" : ""}`}
                       />
                     </div>
@@ -331,7 +342,9 @@ export default function NewProductPage() {
                   <div className="space-y-2">
                     <Label htmlFor="cost">Cost Price</Label>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <div className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground flex items-center justify-center font-semibold text-sm">
+                        {getCurrencySymbol(currentBusiness?.currency || 'USD')}
+                      </div>
                       <Input
                         id="cost"
                         type="number"
@@ -339,7 +352,7 @@ export default function NewProductPage() {
                         min="0"
                         placeholder="0.00"
                         value={formData.cost || ""}
-                        onChange={(e) => handleInputChange("cost", parseFloat(e.target.value) || 0)}
+                        onChange={(e) => handleInputChange("cost", Number.parseFloat(e.target.value) || 0)}
                         className="pl-10"
                       />
                     </div>
@@ -372,7 +385,7 @@ export default function NewProductPage() {
                   <div className="p-3 bg-muted rounded-md">
                     <div className="text-sm font-medium">Profit Margin</div>
                     <div className="text-lg font-bold">
-                      ${(formData.price - formData.cost).toFixed(2)} 
+                      {formatPrice(formData.price - formData.cost)}
                       <span className="text-sm font-normal text-muted-foreground ml-2">
                         ({(((formData.price - formData.cost) / formData.price) * 100).toFixed(1)}%)
                       </span>
@@ -404,7 +417,7 @@ export default function NewProductPage() {
                     min="0"
                     placeholder="Leave empty if not tracking stock"
                     value={formData.stockQuantity || ""}
-                    onChange={(e) => handleInputChange("stockQuantity", parseInt(e.target.value) || 0)}
+                    onChange={(e) => handleInputChange("stockQuantity", Number.parseInt(e.target.value) || 0)}
                   />
                 </div>
 
@@ -416,7 +429,7 @@ export default function NewProductPage() {
                     min="0"
                     placeholder="Alert threshold"
                     value={formData.minStockLevel || ""}
-                    onChange={(e) => handleInputChange("minStockLevel", parseInt(e.target.value) || 0)}
+                    onChange={(e) => handleInputChange("minStockLevel", Number.parseInt(e.target.value) || 0)}
                   />
                 </div>
               </div>

@@ -9,10 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { FormField, FormTextareaField, FormSection, FormGrid } from "@/components/ui/form-fields";
+import { FormField, FormTextareaField, FormGrid } from "@/components/ui/form-fields";
 import { ArrowLeft, Save, Package, DollarSign, Hash, Calculator } from "lucide-react";
 import Link from "next/link";
 
@@ -105,6 +104,19 @@ export default function EditProductPage() {
       }
     } catch (error) {
       console.error("Error fetching tax systems:", error);
+    }
+  };
+
+  const getCurrencySymbol = (currency: string) => {
+    try {
+      return (0).toLocaleString('en-US', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).replaceAll(/\d/g, '').trim();
+    } catch {
+      return "$";
     }
   };
 
@@ -275,23 +287,43 @@ export default function EditProductPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormGrid columns={2}>
-                  <FormField
-                    label="Selling Price"
-                    id="price"
-                    type="number"
-                    value={formData.price.toString()}
-                    onChange={(value) => handleFieldChange("price", parseFloat(value) || 0)}
-                    required
-                    placeholder="0.00"
-                  />
-                  <FormField
-                    label="Cost Price"
-                    id="cost"
-                    type="number"
-                    value={formData.cost.toString()}
-                    onChange={(value) => handleFieldChange("cost", parseFloat(value) || 0)}
-                    placeholder="0.00"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Selling Price <span className="text-destructive ml-1">*</span></Label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground flex items-center justify-center font-semibold text-sm">
+                        {getCurrencySymbol(currentBusiness?.currency || 'USD')}
+                      </div>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={formData.price.toString()}
+                        onChange={(e) => handleFieldChange("price", Number.parseFloat(e.target.value) || 0)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cost">Cost Price</Label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground flex items-center justify-center font-semibold text-sm">
+                        {getCurrencySymbol(currentBusiness?.currency || 'USD')}
+                      </div>
+                      <Input
+                        id="cost"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={formData.cost.toString()}
+                        onChange={(e) => handleFieldChange("cost", Number.parseFloat(e.target.value) || 0)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
                 </FormGrid>
 
                 <div className="space-y-2">
@@ -333,7 +365,7 @@ export default function EditProductPage() {
                     id="stockQuantity"
                     type="number"
                     value={formData.stockQuantity.toString()}
-                    onChange={(value) => handleFieldChange("stockQuantity", parseInt(value) || 0)}
+                    onChange={(value) => handleFieldChange("stockQuantity", Number.parseInt(value) || 0)}
                     placeholder="0"
                   />
                   <FormField
@@ -341,7 +373,7 @@ export default function EditProductPage() {
                     id="minStockLevel"
                     type="number"
                     value={formData.minStockLevel.toString()}
-                    onChange={(value) => handleFieldChange("minStockLevel", parseInt(value) || 0)}
+                    onChange={(value) => handleFieldChange("minStockLevel", Number.parseInt(value) || 0)}
                     placeholder="0"
                   />
                 </FormGrid>

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth-config";
 import db from "@/lib/db";
 import { z } from "zod";
+import { updateProductStock } from "@/lib/product";
 
 const updateStatusSchema = z.object({
   status: z.enum(["DRAFT", "SENT", "VIEWED", "PAID", "PARTIAL_PAID", "OVERDUE", "CANCELLED", "REFUNDED"])
@@ -33,11 +34,40 @@ export async function PATCH(
             }
           }
         }
+      },
+      include: {
+        items: true
       }
     });
 
     if (!existingInvoice) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+    }
+
+    // Handle inventory updates
+    const oldStatus = existingInvoice.status;
+    const newStatus = validatedData.status;
+    
+    // Statuses that imply stock has been deducted
+    const stockDeductedStatuses = ["SENT", "VIEWED", "PAID", "PARTIAL_PAID", "OVERDUE"];
+    
+    const wasDeducted = stockDeductedStatuses.includes(oldStatus);
+    const willBeDeducted = stockDeductedStatuses.includes(newStatus);
+    
+    if (!wasDeducted && willBeDeducted) {
+      // Deduct stock
+      for (const item of existingInvoice.items) {
+        if (item.productId) {
+          await updateProductStock(item.productId, Number(item.quantity), 'subtract', session.user.id);
+        }
+      }
+    } else if (wasDeducted && !willBeDeducted) {
+      // Return stock (e.g. cancelled or back to draft)
+      for (const item of existingInvoice.items) {
+        if (item.productId) {
+          await updateProductStock(item.productId, Number(item.quantity), 'add', session.user.id);
+        }
+      }
     }
 
     // Update the invoice status
