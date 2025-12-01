@@ -60,6 +60,8 @@ import {
 } from "lucide-react";
 import { useAlert } from "@/lib/alert-store";
 import { useBusinessContext } from "@/components/business-context";
+import { businessSchema } from "@/lib/validations/business";
+import { z } from "zod";
 
 interface TeamMember {
   id: string;
@@ -141,10 +143,13 @@ export default function BusinessSettingsPage() {
         currency: businessInfo.currency
       };
 
+      // Validate payload
+      const validatedData = businessSchema.partial().parse(payload);
+
       const response = await fetch(`/api/business/${currentBusiness.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(validatedData)
       });
 
       if (!response.ok) {
@@ -161,11 +166,19 @@ export default function BusinessSettingsPage() {
       refreshBusinesses();
 
     } catch (error: any) {
-      addAlert({
-        type: 'error',
-        title: 'Update Failed',
-        message: error.message || 'Failed to update business'
-      });
+      if (error instanceof z.ZodError) {
+        addAlert({
+          type: 'error',
+          title: 'Validation Failed',
+          message: error.message
+        });
+      } else {
+        addAlert({
+          type: 'error',
+          title: 'Update Failed',
+          message: error.message || 'Failed to update business'
+        });
+      }
     } finally {
       setLoading(false);
     }

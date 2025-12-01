@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { requireBusinessAccess } from "@/lib/permissions";
-import { createBusinessSchema } from "@/lib/validations/auth";
+import { businessSchema } from "@/lib/validations/business";
 import { Role } from "@prisma/client";
 import prisma from "@/lib/db";
 
@@ -172,7 +172,7 @@ export async function PUT(
     await requireBusinessAccess(session.user.id, businessId, [Role.OWNER, Role.ACCOUNTANT]);
 
     // Validate the update data
-    const parsedData = createBusinessSchema.partial().safeParse(body);
+    const parsedData = businessSchema.partial().safeParse(body);
     if (!parsedData.success) {
       return NextResponse.json({ 
         error: "Validation failed", 
@@ -217,7 +217,7 @@ export async function PATCH(
     await requireBusinessAccess(session.user.id, businessId, [Role.OWNER, Role.ACCOUNTANT]);
 
     // Validate the update data
-    const parsedData = createBusinessSchema.partial().safeParse(body);
+    const parsedData = businessSchema.partial().safeParse(body);
     if (!parsedData.success) {
       return NextResponse.json({ errors: parsedData.error.flatten() }, { status: 400 });
     }

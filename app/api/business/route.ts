@@ -1,5 +1,5 @@
 import prisma from "@/lib/db";
-import { createBusinessSchema } from "@/lib/validations/auth";
+import { businessSchema } from "@/lib/validations/business";
 import { requireAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     try {
         const session = await requireAuth();
         const body=await req.json();
-        const parsedBody=createBusinessSchema.safeParse(body);
+        const parsedBody=businessSchema.safeParse(body);
         if(!parsedBody.success){
             return NextResponse.json({errors:parsedBody.error.flatten()},{status:400});
         }
@@ -29,7 +29,10 @@ export async function POST(req: Request) {
             phone:parsedBody.data.phone,
             email:parsedBody.data.email,
             website:parsedBody.data.website,
-            currency:parsedBody.data.currency,
+            currency:parsedBody.data.currency || "USD",
+            timezone:parsedBody.data.timezone || "UTC",
+            logo:parsedBody.data.logo,
+            isActive:parsedBody.data.isActive ?? true,
             createdAt:new Date(),
             updatedAt:new Date(),
             

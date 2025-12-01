@@ -34,41 +34,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { z } from "zod";
+import { invoiceSchema, type InvoiceFormValues } from "@/lib/validations/invoice";
 
-const invoiceItemSchema = z.object({
-  productId: z.string().optional(),
-  description: z.string().min(1, "Description is required"),
-  quantity: z.number().min(0.001, "Quantity must be positive"),
-  unitPrice: z.number().min(0, "Unit price must be positive"),
-  discount: z.number().min(0).default(0)
-});
-
-const invoiceSchema = z.object({
-  customerId: z.string().min(1, "Customer is required"),
-  issueDate: z.date(),
-  dueDate: z.date().optional(),
-  notes: z.string().optional(),
-  terms: z.string().optional(),
-  currency: z.string().default("USD"),
-  items: z.array(invoiceItemSchema).min(1, "At least one item is required")
-});
-
-type InvoiceFormData = {
-  customerId: string;
+type InvoiceFormData = Omit<InvoiceFormValues, "issueDate" | "dueDate" | "items"> & {
   issueDate: string;
   dueDate: string;
-  notes: string;
-  terms: string;
-  currency: string;
-  items: {
-    productId?: string;
-    description: string;
-    quantity: number;
-    unitPrice: number;
-    discount: number;
+  items: (InvoiceFormValues["items"][number] & {
     lineTotal: number;
-    taxSystemIds: string[]; // Tax systems for this specific item
-  }[];
+  })[];
 };
 
 interface Customer {
@@ -171,6 +144,12 @@ function NewInvoiceContent() {
       fetchData();
     }
   }, [currentBusiness?.id]);
+
+  useEffect(() => {
+    if (currentBusiness?.currency) {
+      setFormData(prev => ({ ...prev, currency: currentBusiness.currency }));
+    }
+  }, [currentBusiness?.currency]);
 
   const fetchData = async () => {
     if (!currentBusiness?.id) return;
@@ -439,18 +418,32 @@ function NewInvoiceContent() {
   // Get all unique tax systems used across all items for summary display
   const usedTaxSystems = Array.from(new Set(formData.items.flatMap(item => item.taxSystemIds)));
 
+  const validateForm = (): boolean => {
+    try {
+      invoiceSchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        for (const err of error.issues) {
+          if (err.path[0] === "items" && err.path[1] !== undefined) {
+             // Handle item errors if needed, or just show general items error
+             newErrors["items"] = "Please check item details";
+          } else if (err.path[0]) {
+            newErrors[err.path[0] as string] = err.message;
+          }
+        }
+        setErrors(newErrors);
+      }
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent, saveAs: 'draft' | 'sent' = 'draft') => {
     e.preventDefault();
     
-    if (!formData.customerId) {
-      setErrors({ customer: "Please select a customer" });
-      return;
-    }
-
-    if (formData.items.some(item => !item.description || item.quantity <= 0 || item.unitPrice < 0)) {
-      setErrors({ items: "Please complete all item details" });
-      return;
-    }
+    if (!validateForm()) return;
 
     if (!currentBusiness?.id) {
       showError("No Business", "Please select a business first");
@@ -459,22 +452,16 @@ function NewInvoiceContent() {
 
     setLoading(true);
     try {
+      const validatedData = invoiceSchema.parse(formData);
+      
       const invoiceData = {
+        ...validatedData,
         businessId: currentBusiness.id,
-        customerId: formData.customerId,
-        issueDate: formData.issueDate ? new Date(formData.issueDate) : new Date(),
-        dueDate: formData.dueDate ? new Date(formData.dueDate) : undefined,
-        notes: formData.notes,
-        terms: formData.terms,
-        currency: formData.currency,
-        items: formData.items.map(item => ({
-          productId: item.productId || undefined,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          discount: item.discount,
-          taxSystemIds: item.taxSystemIds // Include item-level taxes
-        }))
+        // Ensure dates are Date objects (schema handles coercion but we want to be sure for API if it expects strings or dates)
+        // API expects JSON, so dates will be strings.
+        // But wait, invoiceSchema.parse returns Date objects for dates.
+        // JSON.stringify will convert Date objects to ISO strings.
+        // So this is fine.
       };
 
       const response = await fetch("/api/invoices", {

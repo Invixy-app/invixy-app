@@ -3,16 +3,10 @@ import { getServerSession } from "next-auth";
 import { getCustomersByBusiness, createCustomer } from "@/lib/customer";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth-config";
+import { customerSchema } from "@/lib/validations/customer";
 
-const createCustomerSchema = z.object({
+const createCustomerSchema = customerSchema.extend({
   businessId: z.string(),
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email().optional().or(z.literal("")),
-  phone: z.string().optional(),
-  billingAddress: z.string().optional(),
-  shippingAddress: z.string().optional(),
-  taxId: z.string().optional(),
-  notes: z.string().optional()
 });
 
 export async function GET(request: NextRequest) {

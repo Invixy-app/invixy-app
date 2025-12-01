@@ -95,7 +95,7 @@ export function BusinessSwitcher({ className }: BusinessSwitcherProps) {
       <Button variant="outline" className={`${className} w-full`} asChild>
         <Link href="/dashboard/businesses/new">
           <Building2 className="mr-2 h-4 w-4" />
-          Create Your First Business
+          Create  Business
         </Link>
       </Button>
     );

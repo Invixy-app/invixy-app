@@ -413,9 +413,9 @@ export default function InvoicesPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue, currentBusiness?.currency || 'USD')}</div>
               <p className="text-xs text-muted-foreground">
-                {formatCurrency(stats.totalPaid)} collected
+                {formatCurrency(stats.totalPaid, currentBusiness?.currency || 'USD')} collected
               </p>
             </CardContent>
           </Card>
@@ -426,7 +426,7 @@ export default function InvoicesPage() {
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalOutstanding)}</div>
+              <div className="text-2xl font-bold">{formatCurrency(stats.totalOutstanding, currentBusiness?.currency || 'USD')}</div>
               <p className="text-xs text-muted-foreground">
                 {stats.sent + stats.overdue} invoices pending
               </p>

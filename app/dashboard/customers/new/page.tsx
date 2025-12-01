@@ -14,38 +14,28 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Save, User, Mail, Phone, MapPin, FileText } from "lucide-react";
 import Link from "next/link";
 import { z } from "zod";
-
-const customerSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
-  phone: z.string().optional(),
-  billingAddress: z.string().optional(),
-  shippingAddress: z.string().optional(),
-  taxId: z.string().optional(),
-  notes: z.string().optional()
-});
-
-type CustomerFormData = z.infer<typeof customerSchema>;
+import { customerSchema, type CustomerFormValues } from "@/lib/validations/customer";
 
 export default function NewCustomerPage() {
   const router = useRouter();
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [formData, setFormData] = useState<CustomerFormData>({
+  const [formData, setFormData] = useState<CustomerFormValues>({
     name: "",
     email: "",
     phone: "",
     billingAddress: "",
     shippingAddress: "",
     taxId: "",
-    notes: ""
+    notes: "",
+    isActive: true
   });
 
-  const handleInputChange = (field: keyof CustomerFormData, value: string) => {
+  const handleInputChange = (field: keyof CustomerFormValues, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
-    if (errors[field]) {
+    if (typeof field === 'string' && errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
     }
   };
@@ -65,11 +55,11 @@ export default function NewCustomerPage() {
     } catch (error) {
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
-        error.issues.forEach((err) => {
+        for (const err of error.issues) {
           if (err.path[0]) {
             newErrors[err.path[0] as string] = err.message;
           }
-        });
+        }
         setErrors(newErrors);
       }
       return false;

@@ -282,41 +282,43 @@ model UserSettings {
 }
 
 model Subscription {
-  id                     String             @id @default(cuid())
-  businessId             String
-  plan                   Plan               @default(FREE)
-  interval               PlanInterval       @default(MONTHLY)
-  status                 SubscriptionStatus @default(ACTIVE)
-  startDate              DateTime           @default(now())
-  endDate                DateTime?          // Null for lifetime or ongoing free plans
-  razorpaySubscriptionId String?            // External ID from Razorpay for recurring billing
+  id                   String             @id @default(cuid())
+  businessId           String
+  plan                 Plan               @default(FREE)
+  interval             PlanInterval       @default(MONTHLY)
+  status               SubscriptionStatus @default(ACTIVE)
+  startDate            DateTime           @default(now())
+  endDate              DateTime?          // Null for lifetime or ongoing free plans
+  transactionId          String?            @unique
   
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
-  business               Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business             Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  transaction            Transaction?       @relation(fields: [transactionId], references: [id])
 }
 
 model Transaction {
-  id                String            @id @default(cuid())
-  businessId        String
-  amount            Decimal           @db.Decimal(10, 2)
-  currency          String            @default("INR")
-  status            TransactionStatus
-  plan              Plan
-  interval          PlanInterval
+  id              String            @id @default(cuid())
+  businessId      String
+  amount          Decimal           @db.Decimal(10, 2)
+  currency        String            @default("USD")
+  status          TransactionStatus
+  plan            Plan
+  interval        PlanInterval
   
   // Payment Details (Safe Metadata only)
-  paymentMethod     String            @default("RAZORPAY") // e.g. "RAZORPAY", "CREDIT_CARD"
+  paymentMethod   String            @default("RAZORPAY") // e.g. "RAZORPAY", "CREDIT_CARD"
   razorpayOrderId   String?           // The Order ID from Razorpay
   razorpayPaymentId String?           // The Payment ID from Razorpay
   razorpaySignature String?           // The Signature from Razorpay
-  paymentEmail      String?           // The email used for payment
-  last4Digits       String?           // Safe to store (e.g., "4242")
+  paymentEmail    String?           // The email used for payment
+  last4Digits     String?           // Safe to store (e.g., "4242")
   
-  createdAt         DateTime          @default(now())
+  createdAt       DateTime          @default(now())
   
-  business          Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business        Business          @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  subscription      Subscription?
 }
 
 enum TaxType {

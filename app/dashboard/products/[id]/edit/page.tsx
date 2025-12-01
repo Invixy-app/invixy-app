@@ -108,6 +108,19 @@ export default function EditProductPage() {
     }
   };
 
+  const getCurrencySymbol = (currency: string) => {
+    try {
+      return (0).toLocaleString('en-US', {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).replace(/\d/g, '').trim();
+    } catch {
+      return "$";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -275,23 +288,43 @@ export default function EditProductPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormGrid columns={2}>
-                  <FormField
-                    label="Selling Price"
-                    id="price"
-                    type="number"
-                    value={formData.price.toString()}
-                    onChange={(value) => handleFieldChange("price", parseFloat(value) || 0)}
-                    required
-                    placeholder="0.00"
-                  />
-                  <FormField
-                    label="Cost Price"
-                    id="cost"
-                    type="number"
-                    value={formData.cost.toString()}
-                    onChange={(value) => handleFieldChange("cost", parseFloat(value) || 0)}
-                    placeholder="0.00"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Selling Price <span className="text-destructive ml-1">*</span></Label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground flex items-center justify-center font-semibold text-sm">
+                        {getCurrencySymbol(currentBusiness?.currency || 'USD')}
+                      </div>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={formData.price.toString()}
+                        onChange={(e) => handleFieldChange("price", parseFloat(e.target.value) || 0)}
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cost">Cost Price</Label>
+                    <div className="relative">
+                      <div className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground flex items-center justify-center font-semibold text-sm">
+                        {getCurrencySymbol(currentBusiness?.currency || 'USD')}
+                      </div>
+                      <Input
+                        id="cost"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0.00"
+                        value={formData.cost.toString()}
+                        onChange={(e) => handleFieldChange("cost", parseFloat(e.target.value) || 0)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
                 </FormGrid>
 
                 <div className="space-y-2">

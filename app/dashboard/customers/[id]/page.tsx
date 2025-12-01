@@ -101,7 +101,7 @@ export default function CustomerDetailsPage() {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
+      currency: currentBusiness?.currency || 'USD'
     }).format(amount);
   };
 

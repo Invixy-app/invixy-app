@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     // 5. Database Transaction
     await prisma.$transaction(async (tx) => {
       // A. Record the Transaction
-      await tx.transaction.create({
+      const transaction = await tx.transaction.create({
         data: {
           businessId: businessRole.businessId,
           amount: amount,
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
           status: SubscriptionStatus.ACTIVE,
           startDate,
           endDate,
-          razorpaySubscriptionId: null 
+          transactionId: transaction.id
         }
       });
     });

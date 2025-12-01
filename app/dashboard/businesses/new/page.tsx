@@ -15,10 +15,12 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { CURRENCY_OPTIONS, TIMEZONE_OPTIONS } from "@/lib/business";
+import { businessSchema, type BusinessFormValues } from "@/lib/validations/business";
+import { z } from "zod";
 
 export default function NewBusinessPage() {
   const { refreshBusinesses } = useBusinessContext();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<BusinessFormValues>({
     name: "",
     description: "",
     billingAddress: "",
@@ -32,20 +34,44 @@ export default function NewBusinessPage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const router = useRouter();
+
+  const validateForm = (): boolean => {
+    try {
+      businessSchema.parse(formData);
+      setFieldErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        for (const err of error.issues) {
+          if (err.path[0]) {
+            newErrors[err.path[0] as string] = err.message;
+          }
+        }
+        setFieldErrors(newErrors);
+      }
+      return false;
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
+
     setIsLoading(true);
     setError("");
 
     try {
+      const validatedData = businessSchema.parse(formData);
       const res = await fetch("/api/business", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(validatedData),
       });
 
       const data = await res.json();
@@ -58,6 +84,7 @@ export default function NewBusinessPage() {
         setError(data.error || "Something went wrong");
       }
     } catch (error) {
+      console.error(error);
       setError("Something went wrong");
     } finally {
       setIsLoading(false);
@@ -127,15 +154,18 @@ export default function NewBusinessPage() {
               {/* Basic Information */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="sm:col-span-2">
-                  <Label htmlFor="name">Business Name *</Label>
+                  <Label htmlFor="name">
+                    Business Name<span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="name"
                     name="name"
                     placeholder="Enter business name"
                     value={formData.name}
                     onChange={handleChange}
-                    required
+                    className={fieldErrors.name ? "border-red-500" : ""}
                   />
+                  {fieldErrors.name && <p className="text-sm text-red-500 mt-1">{fieldErrors.name}</p>}
                 </div>
 
                 <div className="sm:col-span-2">
@@ -144,14 +174,18 @@ export default function NewBusinessPage() {
                     id="description"
                     name="description"
                     placeholder="Brief description of your business"
-                    value={formData.description}
+                    value={formData.description || ""}
                     onChange={handleChange}
                     rows={3}
+                    className={fieldErrors.description ? "border-red-500" : ""}
                   />
+                  {fieldErrors.description && <p className="text-sm text-red-500 mt-1">{fieldErrors.description}</p>}
                 </div>
 
                 <div>
-                  <Label htmlFor="phone">Phone Number *</Label>
+                  <Label htmlFor="phone">
+                    Phone Number<span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="phone"
                     name="phone"
@@ -159,12 +193,15 @@ export default function NewBusinessPage() {
                     placeholder="Business phone number"
                     value={formData.phone}
                     onChange={handleChange}
-                    required
+                    className={fieldErrors.phone ? "border-red-500" : ""}
                   />
+                  {fieldErrors.phone && <p className="text-sm text-red-500 mt-1">{fieldErrors.phone}</p>}
                 </div>
 
                 <div>
-                  <Label htmlFor="email">Email Address *</Label>
+                  <Label htmlFor="email">
+                    Email Address<span className="text-red-500">*</span>
+                  </Label>
                   <Input
                     id="email"
                     name="email"
@@ -172,8 +209,9 @@ export default function NewBusinessPage() {
                     placeholder="Business email address"
                     value={formData.email}
                     onChange={handleChange}
-                    required
+                    className={fieldErrors.email ? "border-red-500" : ""}
                   />
+                  {fieldErrors.email && <p className="text-sm text-red-500 mt-1">{fieldErrors.email}</p>}
                 </div>
 
                 <div>
@@ -183,9 +221,11 @@ export default function NewBusinessPage() {
                     name="website"
                     type="url"
                     placeholder="https://yourwebsite.com"
-                    value={formData.website}
+                    value={formData.website || ""}
                     onChange={handleChange}
+                    className={fieldErrors.website ? "border-red-500" : ""}
                   />
+                  {fieldErrors.website && <p className="text-sm text-red-500 mt-1">{fieldErrors.website}</p>}
                 </div>
 
                 <div>
@@ -194,9 +234,11 @@ export default function NewBusinessPage() {
                     id="taxRegistrationNumber"
                     name="taxRegistrationNumber"
                     placeholder="Tax registration/VAT number"
-                    value={formData.taxRegistrationNumber}
+                    value={formData.taxRegistrationNumber || ""}
                     onChange={handleChange}
+                    className={fieldErrors.taxRegistrationNumber ? "border-red-500" : ""}
                   />
+                  {fieldErrors.taxRegistrationNumber && <p className="text-sm text-red-500 mt-1">{fieldErrors.taxRegistrationNumber}</p>}
                 </div>
               </div>
 
@@ -207,7 +249,9 @@ export default function NewBusinessPage() {
                 </h3>
 
                 <div>
-                  <Label htmlFor="billingAddress">Billing Address *</Label>
+                  <Label htmlFor="billingAddress">
+                    Billing Address<span className="text-red-500">*</span>
+                  </Label>
                   <Textarea
                     id="billingAddress"
                     name="billingAddress"
@@ -215,13 +259,16 @@ export default function NewBusinessPage() {
                     value={formData.billingAddress}
                     onChange={handleChange}
                     rows={3}
-                    required
+                    className={fieldErrors.billingAddress ? "border-red-500" : ""}
                   />
+                  {fieldErrors.billingAddress && <p className="text-sm text-red-500 mt-1">{fieldErrors.billingAddress}</p>}
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label htmlFor="shippingAddress">Shipping Address *</Label>
+                    <Label htmlFor="shippingAddress">
+                      Shipping Address<span className="text-red-500">*</span>
+                    </Label>
                     <Button
                       type="button"
                       variant="outline"
@@ -238,8 +285,9 @@ export default function NewBusinessPage() {
                     value={formData.shippingAddress}
                     onChange={handleChange}
                     rows={3}
-                    required
+                    className={fieldErrors.shippingAddress ? "border-red-500" : ""}
                   />
+                  {fieldErrors.shippingAddress && <p className="text-sm text-red-500 mt-1">{fieldErrors.shippingAddress}</p>}
                 </div>
               </div>
 

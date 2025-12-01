@@ -42,6 +42,7 @@ export async function GET(
       thisMonthInvoices,
       recentInvoices,
       topCustomersData,
+      activeSubscription
     ] = await Promise.all([
       // Total customers
       prisma.customer.count({
@@ -114,6 +115,17 @@ export async function GET(
         },
         take: 100, // Get more to calculate totals
       }),
+
+      // Active Subscription
+      prisma.subscription.findFirst({
+        where: {
+          businessId,
+          status: "ACTIVE"
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      })
     ]);
 
     // Calculate statistics from invoices
@@ -215,6 +227,7 @@ export async function GET(
       thisMonthRevenue,
       lastMonthRevenue,
       thisMonthInvoices,
+      subscriptionPlan: activeSubscription?.plan || "FREE"
     };
 
     return NextResponse.json({

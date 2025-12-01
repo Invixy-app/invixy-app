@@ -27,27 +27,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { z } from "zod";
+import { taxSystemSchema, type TaxSystemFormValues } from "@/lib/validations/tax";
 
-const taxSystemSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  taxId: z.string().min(1, "Tax ID is required"),
-  taxType: z.enum(["PERCENTAGE", "FIXED_AMOUNT", "COMPOUND", "INCLUSIVE", "EXCLUSIVE"]),
-  rate: z.number().min(0, "Rate must be positive").max(1, "Rate must be less than or equal to 100%"),
-  isCompound: z.boolean().default(false),
-  validFrom: z.date(),
-  validTo: z.date().optional()
-});
-
-type TaxSystemFormData = {
-  name: string;
-  description: string;
-  taxId: string;
-  taxType: string;
-  rate: string;
-  isCompound: boolean;
+type TaxSystemFormData = Omit<TaxSystemFormValues, "validFrom" | "validTo" | "rate"> & {
   validFrom: string;
   validTo: string;
+  rate: string;
 };
 
 interface Product {
@@ -145,23 +130,29 @@ function NewTaxSystemContent() {
     }
   };
 
+  const validateForm = (): boolean => {
+    try {
+      taxSystemSchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        for (const err of error.issues) {
+          if (err.path[0]) {
+            newErrors[err.path[0] as string] = err.message;
+          }
+        }
+        setErrors(newErrors);
+      }
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.taxId || !formData.rate) {
-      setErrors({
-        name: !formData.name ? "Name is required" : "",
-        taxId: !formData.taxId ? "Tax ID is required" : "",
-        rate: !formData.rate ? "Rate is required" : ""
-      });
-      return;
-    }
-
-    const rateValue = parseFloat(formData.rate);
-    if (isNaN(rateValue) || rateValue < 0 || rateValue > 100) {
-      setErrors({ rate: "Rate must be between 0 and 100" });
-      return;
-    }
+    if (!validateForm()) return;
 
     if (!currentBusiness?.id) {
       showError("No Business", "Please select a business first");
@@ -170,18 +161,26 @@ function NewTaxSystemContent() {
 
     setLoading(true);
     try {
+      // Parse data using schema to get correctly typed values
+      const validatedData = taxSystemSchema.parse(formData);
+      
       const taxSystemData = {
+        ...validatedData,
         businessId: currentBusiness.id,
-        name: formData.name,
-        description: formData.description || undefined,
-        taxId: formData.taxId,
-        taxType: formData.taxType,
-        rate: rateValue / 100, // Convert percentage to decimal
-        isCompound: formData.isCompound,
-        validFrom: new Date(formData.validFrom),
-        validTo: formData.validTo ? new Date(formData.validTo) : undefined,
-
+        // Ensure rate is a decimal for percentage if needed, but schema handles it as number.
+        // The backend expects rate as decimal (0.18) for percentage?
+        // Let's check the previous code.
+        // Previous code: rate: rateValue / 100, // Convert percentage to decimal
       };
+      
+      // Wait, the schema validation just checks if it is a number.
+      // If the user enters "18", schema parses it as 18.
+      // If the backend expects 0.18, we need to transform it.
+      // The previous code did: rate: rateValue / 100
+      
+      if (validatedData.taxType === "PERCENTAGE") {
+         taxSystemData.rate = validatedData.rate / 100;
+      }
 
       const response = await fetch("/api/tax-systems", {
         method: "POST",
