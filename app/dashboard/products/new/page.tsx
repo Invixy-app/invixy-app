@@ -178,7 +178,7 @@ export default function NewProductPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -236,7 +236,7 @@ export default function NewProductPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Product Name *</Label>
+                  <Label htmlFor="name">Product Name <span className="text-red-500">*</span></Label>
                   <Input
                     id="name"
                     placeholder="Enter product name"
@@ -318,7 +318,7 @@ export default function NewProductPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="price">Selling Price *</Label>
+                    <Label htmlFor="price">Selling Price <span className="text-red-500">*</span></Label>
                     <div className="relative">
                       <div className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground flex items-center justify-center font-semibold text-sm">
                         {getCurrencySymbol(currentBusiness?.currency || 'USD')}
@@ -381,7 +381,7 @@ export default function NewProductPage() {
                   </Select>
                 </div>
 
-                {formData.price > 0 && formData.cost && formData.cost > 0 && (
+                {formData.price > 0 && formData.cost !== undefined && formData.cost >= 0 && (
                   <div className="p-3 bg-muted rounded-md">
                     <div className="text-sm font-medium">Profit Margin</div>
                     <div className="text-lg font-bold">
@@ -415,7 +415,7 @@ export default function NewProductPage() {
                     id="stockQuantity"
                     type="number"
                     min="0"
-                    placeholder="Leave empty if not tracking stock"
+                    placeholder="Add Current Stock Quantity"
                     value={formData.stockQuantity || ""}
                     onChange={(e) => handleInputChange("stockQuantity", Number.parseInt(e.target.value) || 0)}
                   />

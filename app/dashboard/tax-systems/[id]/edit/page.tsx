@@ -230,7 +230,7 @@ export default function EditTaxSystemPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -323,7 +323,7 @@ export default function EditTaxSystemPage() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="name">Tax System Name *</Label>
+                      <Label htmlFor="name">Tax System Name <span className="text-red-500">*</span></Label>
                       <Input
                         id="name"
                         placeholder="e.g., GST 18%, VAT Standard"
@@ -337,7 +337,7 @@ export default function EditTaxSystemPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="taxId">Tax ID *</Label>
+                      <Label htmlFor="taxId">Tax ID <span className="text-red-500">*</span></Label>
                       <Input
                         id="taxId"
                         placeholder="e.g., GST, VAT, SALES_TAX"
@@ -393,16 +393,14 @@ export default function EditTaxSystemPage() {
                               Fixed Amount
                             </div>
                           </SelectItem>
-                          <SelectItem value="COMPOUND">Compound Tax</SelectItem>
                           <SelectItem value="INCLUSIVE">Inclusive Tax</SelectItem>
-                          <SelectItem value="EXCLUSIVE">Exclusive Tax</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="rate">
-                        Tax Rate * {formData.taxType === "PERCENTAGE" ? "(%)" : "(Amount)"}
+                        Tax Rate <span className="text-red-500">*</span> {formData.taxType === "PERCENTAGE" ? "(%)" : "(Amount)"}
                       </Label>
                       <Input
                         id="rate"
@@ -458,7 +456,7 @@ export default function EditTaxSystemPage() {
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="validFrom">Valid From *</Label>
+                      <Label htmlFor="validFrom">Valid From <span className="text-red-500">*</span></Label>
                       <Input
                         id="validFrom"
                         type="date"

@@ -151,7 +151,7 @@ export default function SignUpPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Full Name <span className="text-red-500">*</span></Label>
               <Input
                 id="name"
                 name="name"
@@ -165,7 +165,7 @@ export default function SignUpPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email <span className="text-red-500">*</span></Label>
               <Input
                 id="email"
                 name="email"
@@ -179,7 +179,7 @@ export default function SignUpPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
               <Input
                 id="password"
                 name="password"

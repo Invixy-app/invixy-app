@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
-import { showError, showSuccess } from "@/lib/alert-store";
+import { showError, showSuccess, showWarning, showInfo } from "@/lib/alert-store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +56,7 @@ interface Product {
   name: string;
   price: number;
   unit: string;
+  stockQuantity?: number | null;
   taxSystem?: {
     id: string;
     name: string;
@@ -152,6 +153,38 @@ function NewInvoiceContent() {
     }
   }, [currentBusiness?.currency]);
 
+  useEffect(() => {
+    const checkPendingInvoices = async () => {
+      if (!formData.customerId || !currentBusiness?.id) return;
+
+      try {
+        // Fetch pending invoices (SENT, OVERDUE, PARTIAL_PAID)
+        const response = await fetch(
+          `/api/invoices?businessId=${currentBusiness.id}&customerId=${formData.customerId}&status=SENT,OVERDUE,PARTIAL_PAID`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          const invoices = Array.isArray(data) ? data : (data.invoices || []);
+          
+          if (invoices.length > 0) {
+             const count = invoices.length;
+             const totalDue = invoices.reduce((sum: number, inv: any) => sum + (inv.balanceAmount || 0), 0);
+             
+             showInfo(
+               "Pending Invoices",
+               `This customer has ${count} pending invoice(s) with a total due of ${new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currency }).format(totalDue)}.`
+             );
+          }
+        }
+      } catch (error) {
+        console.error("Error checking pending invoices:", error);
+      }
+    };
+
+    checkPendingInvoices();
+  }, [formData.customerId, currentBusiness?.id]);
+
   const fetchData = async () => {
     if (!currentBusiness?.id) return;
 
@@ -212,6 +245,20 @@ function NewInvoiceContent() {
       const updatedItems = prev.items.map((item, i) => {
         if (i === index) {
           const updatedItem = { ...item, [field]: value };
+          
+          // Stock check
+          if (field === 'quantity' && updatedItem.productId) {
+            const product = products.find(p => p.id === updatedItem.productId);
+            if (product && product.stockQuantity !== null && product.stockQuantity !== undefined) {
+              if (updatedItem.quantity > product.stockQuantity) {
+                showWarning(
+                  "Stock Warning", 
+                  `Requested quantity (${updatedItem.quantity}) exceeds available stock (${product.stockQuantity}) for ${product.name}.`
+                );
+              }
+            }
+          }
+
           // Recalculate line total if it's a price-affecting field
           if (field === 'quantity' || field === 'unitPrice' || field === 'discount') {
             updatedItem.lineTotal = (updatedItem.quantity * updatedItem.unitPrice) - updatedItem.discount;
@@ -231,6 +278,14 @@ function NewInvoiceContent() {
   const selectProduct = (index: number, productId: string) => {
     const product = products.find(p => p.id === productId);
     if (product) {
+      // Stock check
+      if (product.stockQuantity !== null && product.stockQuantity !== undefined && product.stockQuantity < 1) {
+         showWarning(
+            "Stock Warning", 
+            `Product ${product.name} is out of stock (Available: ${product.stockQuantity}).`
+         );
+      }
+
       // Fetch historical price if customer is selected
       if (formData.customerId && currentBusiness?.id) {
         fetchProductHistory(productId, formData.customerId);
@@ -428,14 +483,20 @@ function NewInvoiceContent() {
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
         for (const err of error.issues) {
-          if (err.path[0] === "items" && err.path[1] !== undefined) {
-             // Handle item errors if needed, or just show general items error
-             newErrors["items"] = "Please check item details";
+          if (err.path[0] === "items") {
+             const itemIndex = err.path[1];
+             const field = err.path[2];
+             if (typeof itemIndex === 'number' && field) {
+                newErrors[`items.${itemIndex}.${String(field)}`] = err.message;
+             } else {
+                newErrors["items"] = "Please check item details";
+             }
           } else if (err.path[0]) {
             newErrors[err.path[0] as string] = err.message;
           }
         }
         setErrors(newErrors);
+        showError("Validation Error", "Please check the form for errors.");
       }
       return false;
     }
@@ -518,7 +579,7 @@ function NewInvoiceContent() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -574,10 +635,10 @@ function NewInvoiceContent() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <Label htmlFor="customer">Customer *</Label>
+                        <Label htmlFor="customer">Customer <span className="text-red-500">*</span></Label>
                         <Button
                           type="button"
                           variant="ghost"
@@ -611,21 +672,6 @@ function NewInvoiceContent() {
                       {errors.customer && (
                         <p className="text-sm text-red-500">{errors.customer}</p>
                       )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="currency">Currency</Label>
-                      <Select value={formData.currency} onValueChange={(value) => setFormData(prev => ({ ...prev, currency: value }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="USD">USD - US Dollar</SelectItem>
-                          <SelectItem value="EUR">EUR - Euro</SelectItem>
-                          <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                          <SelectItem value="INR">INR - Indian Rupee</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
 
@@ -738,12 +784,16 @@ function NewInvoiceContent() {
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Description *</Label>
+                            <Label>Description <span className="text-red-500">*</span></Label>
                             <Input
                               placeholder="Item description"
                               value={item.description}
                               onChange={(e) => updateItem(index, "description", e.target.value)}
+                              className={errors[`items.${index}.description`] ? "border-red-500" : ""}
                             />
+                            {errors[`items.${index}.description`] && (
+                                <p className="text-xs text-red-500 mt-1">{errors[`items.${index}.description`]}</p>
+                            )}
                           </div>
                         </div>
 
@@ -757,7 +807,11 @@ function NewInvoiceContent() {
                               placeholder="1"
                               value={item.quantity || ""}
                               onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)}
+                              className={errors[`items.${index}.quantity`] ? "border-red-500" : ""}
                             />
+                            {errors[`items.${index}.quantity`] && (
+                                <p className="text-xs text-red-500 mt-1">{errors[`items.${index}.quantity`]}</p>
+                            )}
                           </div>
 
                           <div className="space-y-2">
@@ -769,7 +823,11 @@ function NewInvoiceContent() {
                               placeholder="0.00"
                               value={item.unitPrice || ""}
                               onChange={(e) => updateItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                              className={errors[`items.${index}.unitPrice`] ? "border-red-500" : ""}
                             />
+                            {errors[`items.${index}.unitPrice`] && (
+                                <p className="text-xs text-red-500 mt-1">{errors[`items.${index}.unitPrice`]}</p>
+                            )}
                           </div>
 
                           <div className="space-y-2">
@@ -996,7 +1054,7 @@ function NewInvoiceContent() {
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="customerName">Customer Name *</Label>
+                <Label htmlFor="customerName">Customer Name <span className="text-red-500">*</span></Label>
                 <Input
                   id="customerName"
                   value={newCustomer.name}
@@ -1106,7 +1164,7 @@ function NewInvoiceContent() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="productName">Product Name *</Label>
+                  <Label htmlFor="productName">Product Name <span className="text-red-500">*</span></Label>
                   <Input
                     id="productName"
                     value={newProduct.name}
@@ -1139,7 +1197,7 @@ function NewInvoiceContent() {
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="productPrice">Price *</Label>
+                  <Label htmlFor="productPrice">Price <span className="text-red-500">*</span></Label>
                   <Input
                     id="productPrice"
                     type="number"

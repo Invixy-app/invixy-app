@@ -7,17 +7,16 @@ import { z } from "zod";
 const updateProductSchema = z.object({
   businessId: z.string(),
   name: z.string().min(1, "Product name is required").optional(),
-  description: z.string().optional(),
-  sku: z.string().optional(),
-  category: z.string().optional(),
-  unitPrice: z.number().min(0, "Unit price must be non-negative").optional(),
-  costPrice: z.number().min(0, "Cost price must be non-negative").optional(),
-  stockQuantity: z.number().int().min(0, "Stock quantity must be non-negative").optional(),
-  minStockLevel: z.number().int().min(0, "Minimum stock level must be non-negative").optional(),
+  description: z.string().optional().nullable(),
+  sku: z.string().optional().nullable(),
+  category: z.string().optional().nullable(),
+  price: z.coerce.number().min(0, "Price must be non-negative").optional(),
+  cost: z.coerce.number().min(0, "Cost must be non-negative").optional().nullable(),
+  stockQuantity: z.coerce.number().int().min(0, "Stock quantity must be non-negative").optional().nullable(),
+  minStockLevel: z.coerce.number().int().min(0, "Minimum stock level must be non-negative").optional().nullable(),
   unit: z.string().optional(),
-  taxable: z.boolean().optional(),
-  active: z.boolean().optional(),
-  notes: z.string().optional()
+  taxSystemId: z.string().optional().nullable().or(z.literal("")),
+  isActive: z.boolean().optional(),
 });
 
 export async function GET(
@@ -95,6 +94,12 @@ export async function PUT(
     }
 
     const body = await request.json();
+
+    // Sanitize taxSystemId
+    if (body.taxSystemId === "" || body.taxSystemId === "none") {
+      body.taxSystemId = null;
+    }
+
     const { businessId, ...updateData } = updateProductSchema.parse(body);
 
     // Verify user has access to this business

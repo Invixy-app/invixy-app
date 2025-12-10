@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Mail } from "lucide-react";
+import { showError, showSuccess } from "@/lib/alert-store";
 
 interface InvoiceEmailDialogProps {
   invoiceId: string;
@@ -45,7 +46,7 @@ export function InvoiceEmailDialog({
     e.preventDefault();
 
     if (!formData.recipient) {
-      alert("Please enter recipient email address");
+      showError("Validation Error", "Please enter recipient email address");
       return;
     }
 
@@ -71,7 +72,7 @@ export function InvoiceEmailDialog({
 
       const result = await response.json();
       
-      alert(`Invoice emailed successfully to ${result.recipient}`);
+      showSuccess("Success", `Invoice emailed successfully to ${result.recipient}`);
 
       onOpenChange(false);
       onSuccess?.();
@@ -84,7 +85,7 @@ export function InvoiceEmailDialog({
       });
     } catch (error) {
       console.error("Email error:", error);
-      alert(error instanceof Error ? error.message : "Failed to send email");
+      showError("Error", error instanceof Error ? error.message : "Failed to send email");
     } finally {
       setIsLoading(false);
     }

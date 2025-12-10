@@ -13,6 +13,8 @@ import { Switch } from "@/components/ui/switch";
 import { FormField, FormTextareaField, FormGrid } from "@/components/ui/form-fields";
 import { ArrowLeft, Save, User, MapPin } from "lucide-react";
 import Link from "next/link";
+import { z } from "zod";
+import { customerSchema } from "@/lib/validations/customer";
 
 interface CustomerFormData {
   name: string;
@@ -31,6 +33,7 @@ export default function EditCustomerPage() {
   const { currentBusiness } = useBusinessContext();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState<CustomerFormData>({
     name: "",
     email: "",
@@ -76,16 +79,35 @@ export default function EditCustomerPage() {
     }
   };
 
+  const validateForm = (): boolean => {
+    try {
+      customerSchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        for (const err of error.issues) {
+          if (err.path[0]) {
+            newErrors[err.path[0] as string] = err.message;
+          }
+        }
+        setErrors(newErrors);
+      }
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!validateForm()) return;
+
     if (!currentBusiness?.id) {
       showError("No Business", "Please select a business first");
       return;
     }
-
     setSaving(true);
-
     try {
       const response = await fetch(`/api/customers/${customerId}`, {
         method: "PUT",
@@ -118,6 +140,13 @@ export default function EditCustomerPage() {
       ...prev,
       [field]: value,
     }));
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const copyBillingToShipping = () => {
@@ -131,7 +160,7 @@ export default function EditCustomerPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -194,6 +223,7 @@ export default function EditCustomerPage() {
                   onChange={(value) => handleFieldChange("name", value)}
                   required
                   placeholder="Enter customer name"
+                  error={errors.name}
                 />
 
                 <FormGrid columns={2}>
@@ -204,6 +234,7 @@ export default function EditCustomerPage() {
                     value={formData.email}
                     onChange={(value) => handleFieldChange("email", value)}
                     placeholder="customer@example.com"
+                    error={errors.email}
                   />
                   <FormField
                     label="Phone Number"
@@ -212,6 +243,7 @@ export default function EditCustomerPage() {
                     value={formData.phone}
                     onChange={(value) => handleFieldChange("phone", value)}
                     placeholder="+1 (555) 123-4567"
+                    error={errors.phone}
                   />
                 </FormGrid>
 
@@ -221,6 +253,7 @@ export default function EditCustomerPage() {
                   value={formData.taxId}
                   onChange={(value) => handleFieldChange("taxId", value)}
                   placeholder="Tax identification number"
+                  error={errors.taxId}
                 />
               </CardContent>
             </Card>
@@ -244,6 +277,7 @@ export default function EditCustomerPage() {
                   onChange={(value) => handleFieldChange("billingAddress", value)}
                   placeholder="Enter billing address..."
                   rows={3}
+                  error={errors.billingAddress}
                 />
 
                 <div className="flex items-center justify-between">
@@ -263,7 +297,9 @@ export default function EditCustomerPage() {
                   onChange={(e) => handleFieldChange("shippingAddress", e.target.value)}
                   placeholder="Enter shipping address..."
                   rows={3}
+                  className={errors.shippingAddress ? "border-red-500" : ""}
                 />
+                {errors.shippingAddress && <p className="text-sm text-red-500 mt-1">{errors.shippingAddress}</p>}
               </CardContent>
             </Card>
           </div>
@@ -284,6 +320,7 @@ export default function EditCustomerPage() {
                 onChange={(value) => handleFieldChange("notes", value)}
                 placeholder="Add any notes about this customer..."
                 rows={4}
+                error={errors.notes}
               />
 
               <div className="flex items-center justify-between">

@@ -53,7 +53,7 @@ export function FormField({
         )}
       >
         {label}
-        {required && <span className="text-destructive ml-1">*</span>}
+        {required && <span className="text-red-500 ml-1">*</span>}
       </Label>
       <Input
         id={id}
@@ -96,7 +96,7 @@ export function FormTextareaField({
         )}
       >
         {label}
-        {required && <span className="text-destructive ml-1">*</span>}
+        {required && <span className="text-red-500 ml-1">*</span>}
       </Label>
       <Textarea
         id={id}

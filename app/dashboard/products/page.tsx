@@ -151,10 +151,17 @@ export default function ProductsPage() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currentBusiness?.currency || 'USD'
-    }).format(amount);
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currentBusiness?.currency || 'USD'
+      }).format(amount);
+    } catch (error) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD'
+      }).format(amount);
+    }
   };
 
   const getStockStatus = (product: Product) => {
@@ -172,7 +179,7 @@ export default function ProductsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -252,20 +259,20 @@ export default function ProductsPage() {
 
         {/* Products Table */}
         {filteredProducts.length > 0 ? (
-          <div className="overflow-hidden border border-gray-200 rounded-lg">
+          <div className="overflow-x-auto border border-gray-200 rounded-lg">
             <Table>
               <TableHeader className="bg-gray-50">
                 <TableRow>
-                  <TableHead className="font-semibold text-gray-700">
+                  <TableHead className="font-semibold text-gray-700 max-w-[250px]">
                     Product
                   </TableHead>
-                  <TableHead>SKU</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead>Category</TableHead>
-                  <TableHead>Tax System</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="w-[120px]">SKU</TableHead>
+                  <TableHead className="w-[120px]">Price</TableHead>
+                  <TableHead className="w-[150px]">Stock</TableHead>
+                  <TableHead className="w-[120px]">Category</TableHead>
+                  <TableHead className="w-[150px]">Tax System</TableHead>
+                  <TableHead className="w-[100px]">Status</TableHead>
+                  <TableHead className="text-right w-[50px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -276,13 +283,13 @@ export default function ProductsPage() {
                       key={product.id}
                       className="hover:bg-gray-50 transition-colors"
                     >
-                      <TableCell>
+                      <TableCell className="max-w-[250px]">
                         <div>
-                          <div className="font-medium text-gray-900">
+                          <div className="font-medium text-gray-900 line-clamp-2" title={product.name}>
                             {product.name}
                           </div>
                           {product.description && (
-                            <div className="text-sm text-gray-500 line-clamp-1">
+                            <div className="text-sm text-gray-500 line-clamp-2" title={product.description}>
                               {product.description}
                             </div>
                           )}

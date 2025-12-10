@@ -160,7 +160,7 @@ export default function TaxSystemsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -264,26 +264,26 @@ export default function TaxSystemsPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Tax System</TableHead>
-                          <TableHead>Tax ID</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Rate</TableHead>
-                          <TableHead>Valid Period</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                          <TableHead className="max-w-[250px]">Tax System</TableHead>
+                          <TableHead className="w-[120px]">Tax ID</TableHead>
+                          <TableHead className="w-[120px]">Type</TableHead>
+                          <TableHead className="w-[100px]">Rate</TableHead>
+                          <TableHead className="w-[150px]">Valid Period</TableHead>
+                          <TableHead className="w-[100px]">Status</TableHead>
+                          <TableHead className="text-right w-[50px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {activeTaxSystems.map((tax) => (
                           <TableRow key={tax.id}>
-                            <TableCell>
+                            <TableCell className="max-w-[250px]">
                               <div>
                                 <div className="font-medium flex items-center">
                                   {getTaxTypeIcon(tax.taxType)}
-                                  <span className="ml-2">{tax.name}</span>
+                                  <span className="ml-2 line-clamp-2" title={tax.name}>{tax.name}</span>
                                 </div>
                                 {tax.description && (
-                                  <div className="text-sm text-muted-foreground line-clamp-1">
+                                  <div className="text-sm text-muted-foreground line-clamp-2" title={tax.description}>
                                     {tax.description}
                                   </div>
                                 )}
@@ -388,25 +388,25 @@ export default function TaxSystemsPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Tax System</TableHead>
-                          <TableHead>Tax ID</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Rate</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                          <TableHead className="max-w-[250px]">Tax System</TableHead>
+                          <TableHead className="w-[120px]">Tax ID</TableHead>
+                          <TableHead className="w-[120px]">Type</TableHead>
+                          <TableHead className="w-[100px]">Rate</TableHead>
+                          <TableHead className="w-[100px]">Status</TableHead>
+                          <TableHead className="text-right w-[50px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {inactiveTaxSystems.map((tax) => (
                           <TableRow key={tax.id} className="opacity-60">
-                            <TableCell>
+                            <TableCell className="max-w-[250px]">
                               <div>
                                 <div className="font-medium flex items-center">
                                   {getTaxTypeIcon(tax.taxType)}
-                                  <span className="ml-2">{tax.name}</span>
+                                  <span className="ml-2 line-clamp-2" title={tax.name}>{tax.name}</span>
                                 </div>
                                 {tax.description && (
-                                  <div className="text-sm text-muted-foreground line-clamp-1">
+                                  <div className="text-sm text-muted-foreground line-clamp-2" title={tax.description}>
                                     {tax.description}
                                   </div>
                                 )}
@@ -484,26 +484,26 @@ export default function TaxSystemsPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Tax System</TableHead>
-                          <TableHead>Tax ID</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Rate</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                          <TableHead className="max-w-[250px]">Tax System</TableHead>
+                          <TableHead className="w-[120px]">Tax ID</TableHead>
+                          <TableHead className="w-[120px]">Type</TableHead>
+                          <TableHead className="w-[100px]">Rate</TableHead>
+                          <TableHead className="w-[100px]">Status</TableHead>
+                          <TableHead className="w-[120px]">Created</TableHead>
+                          <TableHead className="text-right w-[50px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {taxSystems.map((tax) => (
                           <TableRow key={tax.id} className={!tax.isActive || isExpired(tax.validTo) ? "opacity-60" : ""}>
-                            <TableCell>
+                            <TableCell className="max-w-[250px]">
                               <div>
                                 <div className="font-medium flex items-center">
                                   {getTaxTypeIcon(tax.taxType)}
-                                  <span className="ml-2">{tax.name}</span>
+                                  <span className="ml-2 line-clamp-2" title={tax.name}>{tax.name}</span>
                                 </div>
                                 {tax.description && (
-                                  <div className="text-sm text-muted-foreground line-clamp-1">
+                                  <div className="text-sm text-muted-foreground line-clamp-2" title={tax.description}>
                                     {tax.description}
                                   </div>
                                 )}

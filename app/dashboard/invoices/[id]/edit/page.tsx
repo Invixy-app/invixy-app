@@ -41,6 +41,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { showError, showSuccess, showConfirm } from "@/lib/alert-store";
+import { z } from "zod";
+import { invoiceSchema } from "@/lib/validations/invoice";
 
 interface Customer {
   id: string;
@@ -120,6 +122,8 @@ export default function EditInvoicePage() {
   });
 
   const [showProductDialog, setShowProductDialog] = useState(false);
+  const [showCustomItemDialog, setShowCustomItemDialog] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
   const [newItem, setNewItem] = useState<Partial<InvoiceItem>>({
     description: "",
@@ -354,26 +358,30 @@ export default function EditInvoicePage() {
     return { subtotal, taxAmount, total };
   };
 
-  const validateForm = () => {
-    if (!formData.customerId) {
-      showError("Validation Error", "Please select a customer");
+  const validateForm = (): boolean => {
+    try {
+      invoiceSchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        for (const err of error.issues) {
+          if (err.path[0]) {
+            newErrors[err.path[0] as string] = err.message;
+          }
+        }
+        setErrors(newErrors);
+        if (Object.keys(newErrors).length > 0) {
+          showError("Validation Error", "Please check the form for errors");
+        }
+      }
       return false;
     }
-    if (!formData.issueDate) {
-      showError("Validation Error", "Please select an issue date");
-      return false;
-    }
-    if (formData.items.length === 0) {
-      showError("Validation Error", "Please add at least one item to the invoice");
-      return false;
-    }
-    return true;
   };
 
   const handleSave = async () => {
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setSaving(true);
     try {
@@ -432,7 +440,7 @@ export default function EditInvoicePage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -528,11 +536,18 @@ export default function EditInvoicePage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="customer">Customer *</Label>
-                    <Select value={formData.customerId} onValueChange={(value) => 
-                      setFormData(prev => ({ ...prev, customerId: value }))
-                    }>
-                      <SelectTrigger>
+                    <Label htmlFor="customer">Customer <span className="text-red-500">*</span></Label>
+                    <Select value={formData.customerId} onValueChange={(value) => {
+                      setFormData(prev => ({ ...prev, customerId: value }));
+                      if (errors.customerId) {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.customerId;
+                          return newErrors;
+                        });
+                      }
+                    }}>
+                      <SelectTrigger className={errors.customerId ? "border-red-500" : ""}>
                         <SelectValue placeholder="Select a customer" />
                       </SelectTrigger>
                       <SelectContent>
@@ -548,17 +563,29 @@ export default function EditInvoicePage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.customerId && <p className="text-sm text-red-500">{errors.customerId}</p>}
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="issueDate">Issue Date *</Label>
+                    <Label htmlFor="issueDate">Issue Date <span className="text-red-500">*</span></Label>
                     <Input
                       id="issueDate"
                       type="date"
                       value={formData.issueDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, issueDate: e.target.value }))}
+                      onChange={(e) => {
+                        setFormData(prev => ({ ...prev, issueDate: e.target.value }));
+                        if (errors.issueDate) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.issueDate;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       required
+                      className={errors.issueDate ? "border-red-500" : ""}
                     />
+                    {errors.issueDate && <p className="text-sm text-red-500">{errors.issueDate}</p>}
                   </div>
                 </div>
 
@@ -568,8 +595,19 @@ export default function EditInvoicePage() {
                     id="dueDate"
                     type="date"
                     value={formData.dueDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                    onChange={(e) => {
+                      setFormData(prev => ({ ...prev, dueDate: e.target.value }));
+                      if (errors.dueDate) {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.dueDate;
+                          return newErrors;
+                        });
+                      }
+                    }}
+                    className={errors.dueDate ? "border-red-500" : ""}
                   />
+                  {errors.dueDate && <p className="text-sm text-red-500">{errors.dueDate}</p>}
                 </div>
               </CardContent>
             </Card>
@@ -591,6 +629,11 @@ export default function EditInvoicePage() {
                 </div>
               </CardHeader>
               <CardContent>
+                {errors.items && (
+                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                    {errors.items}
+                  </div>
+                )}
                 {formData.items.length === 0 ? (
                   <div className="text-center py-8">
                     <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
@@ -853,7 +896,7 @@ export default function EditInvoicePage() {
               {/* Manual Item Entry */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2">
-                  <Label htmlFor="description">Description *</Label>
+                  <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
                   <Input
                     id="description"
                     value={newItem.description}
@@ -864,7 +907,7 @@ export default function EditInvoicePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="quantity">Quantity *</Label>
+                  <Label htmlFor="quantity">Quantity <span className="text-red-500">*</span></Label>
                   <Input
                     id="quantity"
                     type="number"
@@ -877,7 +920,7 @@ export default function EditInvoicePage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="unitPrice">Unit Price *</Label>
+                  <Label htmlFor="unitPrice">Unit Price <span className="text-red-500">*</span></Label>
                   <Input
                     id="unitPrice"
                     type="number"

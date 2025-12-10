@@ -52,7 +52,8 @@ import {
   Trash2,
   Copy,
   Mail,
-  Printer
+  Printer,
+  ChevronDown
 } from "lucide-react";
 import Link from "next/link";
 import { InvoiceEmailDialog } from "@/components/invoices/invoice-email-dialog";
@@ -79,13 +80,13 @@ interface InvoiceItem {
 }
 
 interface InvoiceTax {
-  id: string;
-  amount: number;
-  taxSystem: {
-    id: string;
+  taxSystemId: string;
+  taxableAmount: number;
+  taxRate: number;
+  taxAmount: number;
+  taxSystem?: {
     name: string;
-    taxId: string;
-    rate: number;
+    taxId?: string;
   };
 }
 
@@ -109,10 +110,9 @@ interface Invoice {
   terms?: string | null;
   currency: string;
   subtotal: number;
-  taxAmount: number;
-  total: number;
+  totalTax: number;
+  totalAmount: number;
   paidAmount: number;
-  balanceAmount: number;
   createdAt: Date;
   updatedAt: Date;
   customer: {
@@ -145,16 +145,8 @@ export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
-  const [paymentForm, setPaymentForm] = useState({
-    amount: "",
-    paymentDate: new Date().toISOString().split('T')[0],
-    method: "CASH",
-    reference: "",
-    notes: ""
-  });
 
   useEffect(() => {
     if (params?.id && currentBusiness?.id) {
@@ -204,57 +196,6 @@ export default function InvoiceDetailPage() {
     } catch (error) {
       console.error("Error updating status:", error);
       alert("Error updating invoice status");
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handlePayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!paymentForm.amount || parseFloat(paymentForm.amount) <= 0) {
-      alert("Please enter a valid payment amount");
-      return;
-    }
-
-    if (parseFloat(paymentForm.amount) > (invoice?.balanceAmount || 0)) {
-      alert("Payment amount cannot exceed the balance amount");
-      return;
-    }
-
-    setActionLoading(true);
-    try {
-      const response = await fetch(`/api/invoices/${invoice?.id}/payments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: parseFloat(paymentForm.amount),
-          paymentDate: new Date(paymentForm.paymentDate),
-          method: paymentForm.method,
-          reference: paymentForm.reference || undefined,
-          notes: paymentForm.notes || undefined,
-        }),
-      });
-
-      if (response.ok) {
-        setShowPaymentDialog(false);
-        setPaymentForm({
-          amount: "",
-          paymentDate: new Date().toISOString().split('T')[0],
-          method: "CASH",
-          reference: "",
-          notes: ""
-        });
-        await fetchInvoice();
-      } else {
-        const errorData = await response.json();
-        alert(errorData.error || "Failed to record payment");
-      }
-    } catch (error) {
-      console.error("Error recording payment:", error);
-      alert("Error recording payment");
     } finally {
       setActionLoading(false);
     }
@@ -352,13 +293,16 @@ export default function InvoiceDetailPage() {
   const isDraft = invoice?.status === "DRAFT";
   const canEdit = isDraft;
   const canDelete = isDraft;
-  const canRecordPayment = invoice && ["SENT", "VIEWED", "PARTIAL_PAID", "OVERDUE"].includes(invoice.status);
+
+  // Calculate derived values
+  const totalDiscount = invoice?.items.reduce((sum, item) => sum + (item.discount || 0), 0) || 0;
+  const balanceAmount = invoice ? invoice.totalAmount - invoice.paidAmount : 0;
 
   if (loading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -386,8 +330,8 @@ export default function InvoiceDetailPage() {
           <div className="flex items-center space-x-4">
             <Link href="/dashboard/invoices">
               <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Invoices
+                <ArrowLeft className="h-4 w-4 " />
+                
               </Button>
             </Link>
             <div>
@@ -405,12 +349,41 @@ export default function InvoiceDetailPage() {
           </div>
 
           <div className="flex items-center space-x-2">
-            {canRecordPayment && (
-              <Button onClick={() => setShowPaymentDialog(true)}>
-                <CreditCard className="h-4 w-4 mr-2" />
-                Record Payment
-              </Button>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  Change Status <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Set Status To</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => updateInvoiceStatus("DRAFT")}>
+                  Draft
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateInvoiceStatus("SENT")}>
+                  Sent
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateInvoiceStatus("VIEWED")}>
+                  Viewed
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateInvoiceStatus("PARTIAL_PAID")}>
+                  Partial Paid
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateInvoiceStatus("PAID")}>
+                  Paid
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateInvoiceStatus("OVERDUE")}>
+                  Overdue
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateInvoiceStatus("CANCELLED")}>
+                  Cancelled
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateInvoiceStatus("REFUNDED")}>
+                  Refunded
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {invoice.customer.email && (
               <Button 
@@ -447,7 +420,7 @@ export default function InvoiceDetailPage() {
                   <Mail className="h-4 w-4 mr-2" />
                   Send Email
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={() => window.print()}>
                   <Printer className="h-4 w-4 mr-2" />
                   Print
                 </DropdownMenuItem>
@@ -663,41 +636,16 @@ export default function InvoiceDetailPage() {
                     <span>Subtotal:</span>
                     <span className="font-medium">{formatCurrency(invoice.subtotal)}</span>
                   </div>
-
-                  {invoice.taxes.length > 0 && (
-                    <>
-                      {invoice.taxes.map((tax) => (
-                        <div key={tax.id} className="flex justify-between text-sm">
-                          <span>
-                            {tax.taxSystem.name} ({(tax.taxSystem.rate * 100).toFixed(2)}%):
-                          </span>
-                          <span>{formatCurrency(tax.amount)}</span>
-                        </div>
-                      ))}
-                      <Separator />
-                    </>
-                  )}
-
+                  <div className="flex justify-between">
+                    <span>Taxes:</span>
+                    <span className="font-medium">{formatCurrency(invoice.totalTax)}</span>
+                  </div>
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total:</span>
-                    <span>{formatCurrency(invoice.total)}</span>
+                    <span>{formatCurrency(invoice.totalAmount)}</span>
                   </div>
 
-                  {invoice.paidAmount > 0 && (
-                    <>
-                      <Separator />
-                      <div className="flex justify-between text-green-600">
-                        <span>Paid:</span>
-                        <span className="font-medium">-{formatCurrency(invoice.paidAmount)}</span>
-                      </div>
-                      <div className="flex justify-between text-lg font-bold">
-                        <span>Balance:</span>
-                        <span className={invoice.balanceAmount > 0 ? "text-red-600" : "text-green-600"}>
-                          {formatCurrency(invoice.balanceAmount)}
-                        </span>
-                      </div>
-                    </>
-                  )}
+                  
                 </div>
               </CardContent>
             </Card>
@@ -749,109 +697,6 @@ export default function InvoiceDetailPage() {
             </Card>
           </div>
         </div>
-
-        {/* Payment Dialog */}
-        <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Record Payment</DialogTitle>
-              <DialogDescription>
-                Record a payment for Invoice #{invoice.invoiceNumber}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handlePayment}>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="amount">Amount *</Label>
-                    <Input
-                      id="amount"
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      max={invoice.balanceAmount}
-                      placeholder="0.00"
-                      value={paymentForm.amount}
-                      onChange={(e) => setPaymentForm(prev => ({ ...prev, amount: e.target.value }))}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Maximum: {formatCurrency(invoice.balanceAmount)}
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="paymentDate">Payment Date</Label>
-                    <Input
-                      id="paymentDate"
-                      type="date"
-                      value={paymentForm.paymentDate}
-                      onChange={(e) => setPaymentForm(prev => ({ ...prev, paymentDate: e.target.value }))}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="method">Payment Method</Label>
-                  <Select value={paymentForm.method} onValueChange={(value) => setPaymentForm(prev => ({ ...prev, method: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CASH">Cash</SelectItem>
-                      <SelectItem value="CREDIT_CARD">Credit Card</SelectItem>
-                      <SelectItem value="DEBIT_CARD">Debit Card</SelectItem>
-                      <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
-                      <SelectItem value="CHECK">Check</SelectItem>
-                      <SelectItem value="OTHER">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reference">Reference Number</Label>
-                  <Input
-                    id="reference"
-                    placeholder="Transaction ID, check number, etc."
-                    value={paymentForm.reference}
-                    onChange={(e) => setPaymentForm(prev => ({ ...prev, reference: e.target.value }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">Notes</Label>
-                  <Textarea
-                    id="notes"
-                    placeholder="Additional notes about this payment..."
-                    value={paymentForm.notes}
-                    onChange={(e) => setPaymentForm(prev => ({ ...prev, notes: e.target.value }))}
-                    rows={3}
-                  />
-                </div>
-              </div>
-
-              <DialogFooter className="mt-6">
-                <Button type="button" variant="outline" onClick={() => setShowPaymentDialog(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={actionLoading}>
-                  {actionLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Recording...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Record Payment
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

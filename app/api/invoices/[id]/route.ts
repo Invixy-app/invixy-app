@@ -17,8 +17,8 @@ const invoiceItemSchema = z.object({
 
 const updateInvoiceSchema = z.object({
   customerId: z.string().optional(),
-  issueDate: z.string().transform((str) => new Date(str)).optional(),
-  dueDate: z.string().transform((str) => new Date(str)).optional(),
+  issueDate: z.string().optional().transform((str) => str ? new Date(str) : undefined),
+  dueDate: z.string().optional().transform((str) => str ? new Date(str) : null),
   notes: z.string().optional(),
   terms: z.string().optional(),
   currency: z.string().optional(),

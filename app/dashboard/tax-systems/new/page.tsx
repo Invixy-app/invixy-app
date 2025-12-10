@@ -265,7 +265,7 @@ function NewTaxSystemContent() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -401,7 +401,7 @@ function NewTaxSystemContent() {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">Tax System Name *</Label>
+                        <Label htmlFor="name">Tax System Name <span className="text-red-500">*</span></Label>
                         <Input
                           id="name"
                           placeholder="e.g., GST 18%, VAT Standard"
@@ -415,7 +415,7 @@ function NewTaxSystemContent() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="taxId">Tax ID *</Label>
+                        <Label htmlFor="taxId">Tax ID <span className="text-red-500">*</span></Label>
                         <Input
                           id="taxId"
                           placeholder="e.g., GST, VAT, SALES_TAX"
@@ -471,16 +471,14 @@ function NewTaxSystemContent() {
                                 Fixed Amount
                               </div>
                             </SelectItem>
-                            <SelectItem value="COMPOUND">Compound Tax</SelectItem>
                             <SelectItem value="INCLUSIVE">Inclusive Tax</SelectItem>
-                            <SelectItem value="EXCLUSIVE">Exclusive Tax</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
 
                       <div className="space-y-2">
                         <Label htmlFor="rate">
-                          Tax Rate * {formData.taxType === "PERCENTAGE" ? "(%)" : "(Amount)"}
+                          Tax Rate <span className="text-red-500">*</span> {formData.taxType === "PERCENTAGE" ? "(%)" : "(Amount)"}
                         </Label>
                         <Input
                           id="rate"
@@ -508,8 +506,7 @@ function NewTaxSystemContent() {
                         className="rounded"
                       />
                       <Label htmlFor="isCompound" className="flex items-center">
-                        Compound Tax
-                        <span className="ml-2 text-sm text-muted-foreground">(Tax calculated on tax-inclusive amount)</span>
+                        Compound Tax <span className="ml-2 text-sm text-muted-foreground">(Tax calculated on tax-inclusive amount)</span>
                       </Label>
                     </div>
                   </CardContent>
@@ -526,7 +523,7 @@ function NewTaxSystemContent() {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="validFrom">Valid From *</Label>
+                        <Label htmlFor="validFrom">Valid From <span className="text-red-500">*</span></Label>
                         <Input
                           id="validFrom"
                           type="date"
@@ -633,16 +630,8 @@ function NewTaxSystemContent() {
                     <div className="text-muted-foreground">Fixed tax amount per item</div>
                   </div>
                   <div>
-                    <div className="font-medium">Compound</div>
-                    <div className="text-muted-foreground">Tax calculated on tax-inclusive amount</div>
-                  </div>
-                  <div>
                     <div className="font-medium">Inclusive</div>
                     <div className="text-muted-foreground">Tax included in the price</div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Exclusive</div>
-                    <div className="text-muted-foreground">Tax added to the price</div>
                   </div>
                 </div>
               </CardContent>

@@ -175,16 +175,10 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Link href={`/dashboard/businesses/${currentBusiness.id}/edit`}>
-              <Button variant="outline" size="sm" className="h-9">
-                <Edit className="w-4 h-4 mr-2" />
-                Edit Business
-              </Button>
-            </Link>
             <Link href="/dashboard/business-settings">
               <Button variant="outline" size="sm" className="h-9">
                 <SettingsIcon className="w-4 h-4 mr-2" />
-                Settings
+                Business Settings
               </Button>
             </Link>
           </div>
@@ -385,7 +379,7 @@ export default function DashboardPage() {
             <CardContent className="p-0">
               {loading && (
                 <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mr-2"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-2"></div>
                   Loading...
                 </div>
               )}
@@ -454,7 +448,7 @@ export default function DashboardPage() {
             <CardContent className="p-0">
               {loading && (
                 <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                   Loading...
                 </div>
               )}

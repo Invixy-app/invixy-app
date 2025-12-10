@@ -43,6 +43,15 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+
+    // Sanitize input
+    if (body.taxSystemId === "" || body.taxSystemId === "none" || body.taxSystemId === null) {
+      delete body.taxSystemId;
+    }
+    if (body.stockQuantity === "" || body.stockQuantity === null) {
+      delete body.stockQuantity;
+    }
+
     const validatedData = createProductSchema.safeParse(body);
 
     if (!validatedData.success) {

@@ -27,6 +27,10 @@ export interface InvoiceTaxData {
   taxableAmount: number;
   taxRate: number;
   taxAmount: number;
+  taxSystem?: {
+    name: string;
+    taxId?: string;
+  };
 }
 
 export interface InvoiceData {
@@ -176,7 +180,11 @@ export async function getInvoicesByBusiness(
       taxSystemId: tax.taxSystemId,
       taxableAmount: Number(tax.taxableAmount),
       taxRate: Number(tax.taxRate),
-      taxAmount: Number(tax.taxAmount)
+      taxAmount: Number(tax.taxAmount),
+      taxSystem: tax.taxSystem ? {
+        name: tax.taxSystem.name,
+        taxId: tax.taxSystem.taxId
+      } : undefined
     })),
     payments: invoice.payments.map(payment => ({
       ...payment,
@@ -234,7 +242,16 @@ export async function getInvoiceById(
         },
         orderBy: { sortOrder: 'asc' }
       },
-      taxes: true,
+      taxes: {
+        include: {
+          taxSystem: {
+            select: {
+              name: true,
+              taxId: true
+            }
+          }
+        }
+      },
       payments: {
         orderBy: { paymentDate: 'desc' }
       }
@@ -270,7 +287,11 @@ export async function getInvoiceById(
       taxSystemId: tax.taxSystemId,
       taxableAmount: Number(tax.taxableAmount),
       taxRate: Number(tax.taxRate),
-      taxAmount: Number(tax.taxAmount)
+      taxAmount: Number(tax.taxAmount),
+      taxSystem: tax.taxSystem ? {
+        name: tax.taxSystem.name,
+        taxId: tax.taxSystem.taxId
+      } : undefined
     })),
     payments: invoice.payments.map(payment => ({
       ...payment,
@@ -542,7 +563,16 @@ export async function applyTaxesToInvoice(
         },
         orderBy: { sortOrder: 'asc' }
       },
-      taxes: true,
+      taxes: {
+        include: {
+          taxSystem: {
+            select: {
+              name: true,
+              taxId: true
+            }
+          }
+        }
+      },
       payments: true
     }
   });
@@ -572,7 +602,11 @@ export async function applyTaxesToInvoice(
       taxSystemId: tax.taxSystemId,
       taxableAmount: Number(tax.taxableAmount),
       taxRate: Number(tax.taxRate),
-      taxAmount: Number(tax.taxAmount)
+      taxAmount: Number(tax.taxAmount),
+      taxSystem: tax.taxSystem ? {
+        name: tax.taxSystem.name,
+        taxId: tax.taxSystem.taxId
+      } : undefined
     })),
     payments: updatedInvoice.payments.map(payment => ({
       ...payment,
@@ -586,7 +620,7 @@ export async function updateInvoice(
   invoiceData: {
     customerId?: string;
     issueDate?: Date;
-    dueDate?: Date;
+    dueDate?: Date | null;
     notes?: string;
     terms?: string;
     currency?: string;
@@ -644,7 +678,7 @@ export async function updateInvoice(
 
   if (invoiceData.customerId) updateData.customerId = invoiceData.customerId;
   if (invoiceData.issueDate) updateData.issueDate = invoiceData.issueDate;
-  if (invoiceData.dueDate) updateData.dueDate = invoiceData.dueDate;
+  if (invoiceData.dueDate !== undefined) updateData.dueDate = invoiceData.dueDate;
   if (invoiceData.notes !== undefined) updateData.notes = invoiceData.notes;
   if (invoiceData.terms !== undefined) updateData.terms = invoiceData.terms;
   if (invoiceData.currency) updateData.currency = invoiceData.currency;
@@ -738,7 +772,16 @@ export async function updateInvoice(
         },
         orderBy: { sortOrder: 'asc' }
       },
-      taxes: true,
+      taxes: {
+        include: {
+          taxSystem: {
+            select: {
+              name: true,
+              taxId: true
+            }
+          }
+        }
+      },
       payments: true
     }
   });
@@ -768,7 +811,11 @@ export async function updateInvoice(
       taxSystemId: tax.taxSystemId,
       taxableAmount: Number(tax.taxableAmount),
       taxRate: Number(tax.taxRate),
-      taxAmount: Number(tax.taxAmount)
+      taxAmount: Number(tax.taxAmount),
+      taxSystem: tax.taxSystem ? {
+        name: tax.taxSystem.name,
+        taxId: tax.taxSystem.taxId
+      } : undefined
     })),
     payments: updatedInvoice.payments.map(payment => ({
       ...payment,
@@ -821,7 +868,16 @@ export async function updateInvoiceStatus(
         },
         orderBy: { sortOrder: 'asc' }
       },
-      taxes: true,
+      taxes: {
+        include: {
+          taxSystem: {
+            select: {
+              name: true,
+              taxId: true
+            }
+          }
+        }
+      },
       payments: true
     }
   });
@@ -851,7 +907,11 @@ export async function updateInvoiceStatus(
       taxSystemId: tax.taxSystemId,
       taxableAmount: Number(tax.taxableAmount),
       taxRate: Number(tax.taxRate),
-      taxAmount: Number(tax.taxAmount)
+      taxAmount: Number(tax.taxAmount),
+      taxSystem: tax.taxSystem ? {
+        name: tax.taxSystem.name,
+        taxId: tax.taxSystem.taxId
+      } : undefined
     })),
     payments: updatedInvoice.payments.map(payment => ({
       ...payment,

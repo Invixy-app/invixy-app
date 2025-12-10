@@ -136,7 +136,7 @@ export default function CustomersPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -206,25 +206,25 @@ export default function CustomersPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead>Address</TableHead>
-                      <TableHead>Tax ID</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Added</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="max-w-[200px]">Customer</TableHead>
+                      <TableHead className="max-w-[200px]">Contact</TableHead>
+                      <TableHead className="max-w-[250px]">Address</TableHead>
+                      <TableHead className="w-[120px]">Tax ID</TableHead>
+                      <TableHead className="w-[100px]">Status</TableHead>
+                      <TableHead className="w-[120px]">Added</TableHead>
+                      <TableHead className="text-right w-[50px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredCustomers.map((customer) => (
                       <TableRow key={customer.id}>
-                        <TableCell>
+                        <TableCell className="max-w-[200px]">
                           <div>
-                            <div className="font-medium">{customer.name}</div>
+                            <div className="font-medium line-clamp-2" title={customer.name}>{customer.name}</div>
                             {customer.email && (
-                              <div className="flex items-center text-sm text-muted-foreground mt-1">
-                                <Mail className="h-3 w-3 mr-1" />
-                                {customer.email}
+                              <div className="flex items-center text-sm text-muted-foreground mt-1" title={customer.email}>
+                                <Mail className="h-3 w-3 mr-1 flex-shrink-0" />
+                                <span className="line-clamp-2 break-all">{customer.email}</span>
                               </div>
                             )}
                           </div>
@@ -237,11 +237,11 @@ export default function CustomersPage() {
                             </div>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="max-w-[250px]">
                           {customer.billingAddress && (
                             <div className="flex items-start text-sm">
                               <MapPin className="h-3 w-3 mr-1 mt-0.5 text-muted-foreground flex-shrink-0" />
-                              <span className="line-clamp-2">{customer.billingAddress}</span>
+                              <span className="line-clamp-2" title={customer.billingAddress}>{customer.billingAddress}</span>
                             </div>
                           )}
                         </TableCell>
