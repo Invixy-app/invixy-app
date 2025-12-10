@@ -85,7 +85,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
 
   return (
-    <div className="min-h-screen bg-background font-sans text-foreground flex">
+    <div className="fixed inset-0 w-full overflow-hidden bg-background font-sans text-foreground flex">
       {/* Sidebar - Desktop */}
       <motion.aside
         initial={false}
@@ -93,7 +93,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
           width: isSidebarOpen ? 220 : 72,
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="hidden md:flex flex-col border-r bg-sidebar text-sidebar-foreground h-screen sticky top-0 z-30 shadow-xl"
+        className="hidden md:flex flex-col border-r bg-sidebar text-sidebar-foreground h-full z-30 shadow-xl"
       >
         <div className="p-4 flex items-center justify-between h-16 shrink-0">
           <AnimatePresence mode="wait">
@@ -271,7 +271,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden md:h-screen">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden h-full">
         {/* Top Header */}
         <header className="h-16 border-b bg-background/80 backdrop-blur-sm sticky top-0 z-20 flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-4">
@@ -331,7 +331,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
           >
             <div className="flex flex-col items-center gap-4">
               <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center text-primary-foreground animate-pulse">
-                <Loader2 className="h-6 w-6 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               </div>
               <p className="text-sm font-medium text-muted-foreground animate-pulse">
                 Loading business data...

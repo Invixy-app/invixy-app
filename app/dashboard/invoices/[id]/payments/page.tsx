@@ -321,7 +321,7 @@ export default function InvoicePaymentsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -355,7 +355,7 @@ export default function InvoicePaymentsPage() {
             <Link href={`/dashboard/invoices/${invoice.id}`}>
               <Button variant="outline" size="sm">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Invoice
+                
               </Button>
             </Link>
             <div>

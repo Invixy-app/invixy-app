@@ -124,7 +124,7 @@ export default function CustomerDetailsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );

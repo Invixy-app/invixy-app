@@ -30,6 +30,7 @@ interface InvoiceData {
     description: string;
     quantity: number;
     unitPrice: number;
+    discount?: number;
     taxAmount: number;
     total: number;
     product?: {
@@ -129,11 +130,12 @@ const styles = StyleSheet.create({
     borderBottom: '1px solid #E5E7EB',
     padding: 8,
   },
-  col1: { width: '40%' },
-  col2: { width: '12%', textAlign: 'center' },
-  col3: { width: '16%', textAlign: 'right' },
-  col4: { width: '16%', textAlign: 'right' },
-  col5: { width: '16%', textAlign: 'right' },
+  col1: { width: '35%' },
+  col2: { width: '10%', textAlign: 'center' },
+  col3: { width: '15%', textAlign: 'right' },
+  col4: { width: '10%', textAlign: 'right' },
+  col5: { width: '15%', textAlign: 'right' },
+  col6: { width: '15%', textAlign: 'right' },
   totalsSection: {
     marginTop: 20,
     marginLeft: 'auto',
@@ -224,8 +226,9 @@ const InvoicePDFTemplate: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => 
           <Text style={styles.col1}>Description</Text>
           <Text style={styles.col2}>Qty</Text>
           <Text style={styles.col3}>Unit Price</Text>
-          <Text style={styles.col4}>Tax</Text>
-          <Text style={styles.col5}>Total</Text>
+          <Text style={styles.col4}>Discount</Text>
+          <Text style={styles.col5}>Tax</Text>
+          <Text style={styles.col6}>Total</Text>
         </View>
         {invoice.items.map((item, index) => (
           <View key={index} style={styles.tableRow}>
@@ -235,8 +238,9 @@ const InvoicePDFTemplate: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => 
             </View>
             <Text style={styles.col2}>{item.quantity}</Text>
             <Text style={styles.col3}>{formatCurrency(item.unitPrice)}</Text>
-            <Text style={styles.col4}>{item.taxAmount > 0 ? formatCurrency(item.taxAmount) : '-'}</Text>
-            <Text style={styles.col5}>{formatCurrency(item.total + item.taxAmount)}</Text>
+            <Text style={styles.col4}>{item.discount && item.discount > 0 ? formatCurrency(item.discount) : '-'}</Text>
+            <Text style={styles.col5}>{item.taxAmount > 0 ? formatCurrency(item.taxAmount) : '-'}</Text>
+            <Text style={styles.col6}>{formatCurrency(item.total + item.taxAmount)}</Text>
           </View>
         ))}
       </View>

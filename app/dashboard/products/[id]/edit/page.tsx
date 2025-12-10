@@ -14,6 +14,8 @@ import { Switch } from "@/components/ui/switch";
 import { FormField, FormTextareaField, FormGrid } from "@/components/ui/form-fields";
 import { ArrowLeft, Save, Package, DollarSign, Hash, Calculator } from "lucide-react";
 import Link from "next/link";
+import { z } from "zod";
+import { productSchema } from "@/lib/validations/product";
 
 interface ProductFormData {
   name: string;
@@ -42,6 +44,7 @@ export default function EditProductPage() {
   const { currentBusiness } = useBusinessContext();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
   const [formData, setFormData] = useState<ProductFormData>({
     name: "",
@@ -120,8 +123,29 @@ export default function EditProductPage() {
     }
   };
 
+  const validateForm = (): boolean => {
+    try {
+      productSchema.parse(formData);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        for (const err of error.issues) {
+          if (err.path[0]) {
+            newErrors[err.path[0] as string] = err.message;
+          }
+        }
+        setErrors(newErrors);
+      }
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validateForm()) return;
     
     if (!currentBusiness?.id) {
       showError("No Business", "Please select a business first");
@@ -162,6 +186,13 @@ export default function EditProductPage() {
       ...prev,
       [field]: value,
     }));
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const unitOptions = [
@@ -180,8 +211,8 @@ export default function EditProductPage() {
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -244,6 +275,7 @@ export default function EditProductPage() {
                   onChange={(value) => handleFieldChange("name", value)}
                   required
                   placeholder="Enter product name"
+                  error={errors.name}
                 />
 
                 <FormTextareaField
@@ -253,6 +285,7 @@ export default function EditProductPage() {
                   onChange={(value) => handleFieldChange("description", value)}
                   placeholder="Product description..."
                   rows={3}
+                  error={errors.description}
                 />
 
                 <FormGrid columns={2}>
@@ -262,6 +295,7 @@ export default function EditProductPage() {
                     value={formData.sku}
                     onChange={(value) => handleFieldChange("sku", value)}
                     placeholder="Product SKU"
+                    error={errors.sku}
                   />
                   <FormField
                     label="Category"
@@ -269,6 +303,7 @@ export default function EditProductPage() {
                     value={formData.category}
                     onChange={(value) => handleFieldChange("category", value)}
                     placeholder="Product category"
+                    error={errors.category}
                   />
                 </FormGrid>
               </CardContent>
@@ -288,7 +323,7 @@ export default function EditProductPage() {
               <CardContent className="space-y-4">
                 <FormGrid columns={2}>
                   <div className="space-y-2">
-                    <Label htmlFor="price">Selling Price <span className="text-destructive ml-1">*</span></Label>
+                    <Label htmlFor="price">Selling Price <span className="text-red-500 ml-1">*</span></Label>
                     <div className="relative">
                       <div className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground flex items-center justify-center font-semibold text-sm">
                         {getCurrencySymbol(currentBusiness?.currency || 'USD')}
@@ -301,10 +336,11 @@ export default function EditProductPage() {
                         placeholder="0.00"
                         value={formData.price.toString()}
                         onChange={(e) => handleFieldChange("price", Number.parseFloat(e.target.value) || 0)}
-                        className="pl-10"
+                        className={`pl-10 ${errors.price ? "border-red-500" : ""}`}
                         required
                       />
                     </div>
+                    {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price}</p>}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="cost">Cost Price</Label>
@@ -320,9 +356,10 @@ export default function EditProductPage() {
                         placeholder="0.00"
                         value={formData.cost.toString()}
                         onChange={(e) => handleFieldChange("cost", Number.parseFloat(e.target.value) || 0)}
-                        className="pl-10"
+                        className={`pl-10 ${errors.cost ? "border-red-500" : ""}`}
                       />
                     </div>
+                    {errors.cost && <p className="text-sm text-red-500 mt-1">{errors.cost}</p>}
                   </div>
                 </FormGrid>
 
@@ -367,6 +404,7 @@ export default function EditProductPage() {
                     value={formData.stockQuantity.toString()}
                     onChange={(value) => handleFieldChange("stockQuantity", Number.parseInt(value) || 0)}
                     placeholder="0"
+                    error={errors.stockQuantity}
                   />
                   <FormField
                     label="Minimum Stock Level"
@@ -375,6 +413,7 @@ export default function EditProductPage() {
                     value={formData.minStockLevel.toString()}
                     onChange={(value) => handleFieldChange("minStockLevel", Number.parseInt(value) || 0)}
                     placeholder="0"
+                    error={errors.minStockLevel}
                   />
                 </FormGrid>
               </CardContent>

@@ -80,6 +80,7 @@ export default function BusinessSettingsPage() {
   const { currentBusiness, refreshBusinesses } = useBusinessContext();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Team management state
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -128,6 +129,7 @@ export default function BusinessSettingsPage() {
     if (!currentBusiness) return;
 
     setLoading(true);
+    setErrors({});
     try {
       // Map frontend state to backend schema
       const payload = {
@@ -166,10 +168,17 @@ export default function BusinessSettingsPage() {
 
     } catch (error: any) {
       if (error instanceof z.ZodError) {
+        const newErrors: Record<string, string> = {};
+        for (const err of error.issues) {
+          if (err.path[0]) {
+            newErrors[err.path[0] as string] = err.message;
+          }
+        }
+        setErrors(newErrors);
         addAlert({
           type: 'error',
           title: 'Validation Failed',
-          message: error.message
+          message: 'Please check the form for errors'
         });
       } else {
         addAlert({
@@ -434,37 +443,70 @@ export default function BusinessSettingsPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="businessName">Business Name</Label>
+                    <Label htmlFor="businessName">Business Name <span className="text-red-500">*</span></Label>
                     <Input
                       id="businessName"
                       value={businessInfo.name}
-                      onChange={(e) => setBusinessInfo(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) => {
+                        setBusinessInfo(prev => ({ ...prev, name: e.target.value }));
+                        if (errors.name) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.name;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       placeholder="Enter business name"
+                      className={errors.name ? "border-red-500" : ""}
                     />
+                    {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="businessEmail">Email Address</Label>
+                    <Label htmlFor="businessEmail">Email Address <span className="text-red-500">*</span></Label>
                     <Input
                       id="businessEmail"
                       type="email"
                       value={businessInfo.email}
-                      onChange={(e) => setBusinessInfo(prev => ({ ...prev, email: e.target.value }))}
+                      onChange={(e) => {
+                        setBusinessInfo(prev => ({ ...prev, email: e.target.value }));
+                        if (errors.email) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.email;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       placeholder="business@example.com"
+                      className={errors.email ? "border-red-500" : ""}
                     />
+                    {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="businessPhone">Phone Number</Label>
+                    <Label htmlFor="businessPhone">Phone Number <span className="text-red-500">*</span></Label>
                     <Input
                       id="businessPhone"
                       type="tel"
                       value={businessInfo.phone}
-                      onChange={(e) => setBusinessInfo(prev => ({ ...prev, phone: e.target.value }))}
+                      onChange={(e) => {
+                        setBusinessInfo(prev => ({ ...prev, phone: e.target.value }));
+                        if (errors.phone) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.phone;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       placeholder="+1 (555) 123-4567"
+                      className={errors.phone ? "border-red-500" : ""}
                     />
+                    {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
                   </div>
                   
                   <div className="space-y-2">
@@ -473,21 +515,43 @@ export default function BusinessSettingsPage() {
                       id="businessWebsite"
                       type="url"
                       value={businessInfo.website}
-                      onChange={(e) => setBusinessInfo(prev => ({ ...prev, website: e.target.value }))}
+                      onChange={(e) => {
+                        setBusinessInfo(prev => ({ ...prev, website: e.target.value }));
+                        if (errors.website) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.website;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       placeholder="https://example.com"
+                      className={errors.website ? "border-red-500" : ""}
                     />
+                    {errors.website && <p className="text-sm text-red-500">{errors.website}</p>}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="businessAddress">Business Address</Label>
+                  <Label htmlFor="businessAddress">Business Address <span className="text-red-500">*</span></Label>
                   <Textarea
                     id="businessAddress"
                     value={businessInfo.address}
-                    onChange={(e) => setBusinessInfo(prev => ({ ...prev, address: e.target.value }))}
+                    onChange={(e) => {
+                      setBusinessInfo(prev => ({ ...prev, address: e.target.value }));
+                      if (errors.billingAddress) {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.billingAddress;
+                          return newErrors;
+                        });
+                      }
+                    }}
                     placeholder="Enter your business address"
                     rows={3}
+                    className={errors.billingAddress ? "border-red-500" : ""}
                   />
+                  {errors.billingAddress && <p className="text-sm text-red-500">{errors.billingAddress}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -496,9 +560,20 @@ export default function BusinessSettingsPage() {
                     <Input
                       id="taxId"
                       value={businessInfo.taxId}
-                      onChange={(e) => setBusinessInfo(prev => ({ ...prev, taxId: e.target.value }))}
+                      onChange={(e) => {
+                        setBusinessInfo(prev => ({ ...prev, taxId: e.target.value }));
+                        if (errors.taxRegistrationNumber) {
+                          setErrors(prev => {
+                            const newErrors = { ...prev };
+                            delete newErrors.taxRegistrationNumber;
+                            return newErrors;
+                          });
+                        }
+                      }}
                       placeholder="Tax ID"
+                      className={errors.taxRegistrationNumber ? "border-red-500" : ""}
                     />
+                    {errors.taxRegistrationNumber && <p className="text-sm text-red-500">{errors.taxRegistrationNumber}</p>}
                   </div>
                   
                   <div className="space-y-2">
@@ -524,10 +599,21 @@ export default function BusinessSettingsPage() {
                   <Textarea
                     id="description"
                     value={businessInfo.description}
-                    onChange={(e) => setBusinessInfo(prev => ({ ...prev, description: e.target.value }))}
+                    onChange={(e) => {
+                      setBusinessInfo(prev => ({ ...prev, description: e.target.value }));
+                      if (errors.description) {
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.description;
+                          return newErrors;
+                        });
+                      }
+                    }}
                     placeholder="Brief description of your business"
                     rows={3}
+                    className={errors.description ? "border-red-500" : ""}
                   />
+                  {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
                 </div>
 
                 <div className="flex justify-end">
@@ -569,7 +655,7 @@ export default function BusinessSettingsPage() {
                     </DialogHeader>
                     <div className="space-y-4 py-4">
                       <div className="space-y-2">
-                        <Label htmlFor="memberEmail">Email Address</Label>
+                        <Label htmlFor="memberEmail">Email Address <span className="text-red-500">*</span></Label>
                         <Input
                           id="memberEmail"
                           type="email"

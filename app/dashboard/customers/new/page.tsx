@@ -109,7 +109,7 @@ export default function NewCustomerPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -167,7 +167,7 @@ export default function NewCustomerPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Customer Name *</Label>
+                  <Label htmlFor="name">Customer Name <span className="text-red-500">*</span></Label>
                   <Input
                     id="name"
                     placeholder="Enter customer name"

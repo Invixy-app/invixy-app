@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
@@ -339,7 +338,7 @@ export default function InvoicesPage() {
     const today = new Date();
     const diffTime = today.getTime() - due.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays > 0 ? diffDays : 0;
+    return Math.max(0, diffDays);
   };
 
   // Calculate stats
@@ -360,7 +359,7 @@ export default function InvoicesPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
         </div>
       </DashboardLayout>
     );
@@ -513,13 +512,13 @@ export default function InvoicesPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Invoice</TableHead>
-                          <TableHead>Customer</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead>Due Date</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                          <TableHead className="w-[180px]">Invoice</TableHead>
+                          <TableHead className="max-w-[200px]">Customer</TableHead>
+                          <TableHead className="w-[120px]">Amount</TableHead>
+                          <TableHead className="w-[120px]">Status</TableHead>
+                          <TableHead className="w-[120px]">Due Date</TableHead>
+                          <TableHead className="w-[120px]">Created</TableHead>
+                          <TableHead className="text-right w-[50px]">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -536,11 +535,11 @@ export default function InvoicesPage() {
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="max-w-[200px]">
                               <div>
-                                <div className="font-medium">{invoice.customer.name}</div>
+                                <div className="font-medium line-clamp-2" title={invoice.customer.name}>{invoice.customer.name}</div>
                                 {invoice.customer.email && (
-                                  <div className="text-sm text-muted-foreground">
+                                  <div className="text-sm text-muted-foreground line-clamp-2 break-all" title={invoice.customer.email}>
                                     {invoice.customer.email}
                                   </div>
                                 )}
@@ -678,13 +677,13 @@ export default function InvoicesPage() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Invoice</TableHead>
-                            <TableHead>Customer</TableHead>
-                            <TableHead>Amount</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Due Date</TableHead>
-                            <TableHead>Created</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className="w-[180px]">Invoice</TableHead>
+                            <TableHead className="max-w-[200px]">Customer</TableHead>
+                            <TableHead className="w-[120px]">Amount</TableHead>
+                            <TableHead className="w-[120px]">Status</TableHead>
+                            <TableHead className="w-[120px]">Due Date</TableHead>
+                            <TableHead className="w-[120px]">Created</TableHead>
+                            <TableHead className="text-right w-[50px]">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -701,11 +700,11 @@ export default function InvoicesPage() {
                                   </div>
                                 </div>
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="max-w-[200px]">
                                 <div>
-                                  <div className="font-medium">{invoice.customer.name}</div>
+                                  <div className="font-medium line-clamp-2" title={invoice.customer.name}>{invoice.customer.name}</div>
                                   {invoice.customer.email && (
-                                    <div className="text-sm text-muted-foreground">
+                                    <div className="text-sm text-muted-foreground line-clamp-2 break-all" title={invoice.customer.email}>
                                       {invoice.customer.email}
                                     </div>
                                   )}
