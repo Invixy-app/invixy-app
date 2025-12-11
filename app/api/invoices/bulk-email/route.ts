@@ -5,6 +5,7 @@ import { InvoicePDFService } from "@/lib/pdf-service";
 import { EmailService } from "@/lib/email-service";
 import db from "@/lib/db";
 import { z } from "zod";
+import { canSendEmail } from "@/lib/subscription";
 
 const bulkEmailSchema = z.object({
   invoiceIds: z.array(z.string()).min(1, "At least one invoice ID is required"),
@@ -69,6 +70,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ 
         error: "No invoices found or access denied" 
       }, { status: 404 });
+    }
+
+    // Check subscription limits
+    const businessIds = [...new Set(invoices.map(inv => inv.businessId))];
+    for (const bid of businessIds) {
+        const limitCheck = await canSendEmail(bid);
+        if (!limitCheck.allowed) {
+             return NextResponse.json({ error: limitCheck.message }, { status: 403 });
+        }
     }
 
     // Filter out invoices without customer emails

@@ -2,6 +2,7 @@ import prisma from "@/lib/db";
 import { businessSchema } from "@/lib/validations/business";
 import { requireAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { checkBusinessLimit } from "@/lib/subscription";
 
 
 export async function POST(req: Request) {
@@ -16,6 +17,11 @@ export async function POST(req: Request) {
         const user=await prisma.user.findUnique({where:{email:session.user.email}});
         if(!user){
             return NextResponse.json({error:"User not found!"},{status:404});
+        }
+
+        const limitCheck = await checkBusinessLimit(user.id);
+        if (!limitCheck.allowed) {
+            return NextResponse.json({ error: limitCheck.message }, { status: 403 });
         }
 
        //adding business

@@ -4,6 +4,7 @@ import { getInvoicesByBusiness, createInvoice } from "@/lib/invoice";
 import { InvoiceStatus } from "@prisma/client";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth-config";
+import { checkInvoiceLimit } from "@/lib/subscription";
 
 import { invoiceSchema } from "@/lib/validations/invoice";
 
@@ -55,6 +56,11 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = createInvoiceSchema.parse(body);
+
+    const limitCheck = await checkInvoiceLimit(validatedData.businessId);
+    if (!limitCheck.allowed) {
+      return NextResponse.json({ error: limitCheck.message }, { status: 403 });
+    }
 
     const invoice = await createInvoice(validatedData, session.user.id);
     return NextResponse.json(invoice, { status: 201 });
