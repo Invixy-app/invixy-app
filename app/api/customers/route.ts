@@ -4,6 +4,7 @@ import { getCustomersByBusiness, createCustomer } from "@/lib/customer";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth-config";
 import { customerSchema } from "@/lib/validations/customer";
+import { checkCustomerLimit } from "@/lib/subscription";
 
 const createCustomerSchema = customerSchema.extend({
   businessId: z.string(),
@@ -43,6 +44,11 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const validatedData = createCustomerSchema.parse(body);
+
+    const limitCheck = await checkCustomerLimit(validatedData.businessId);
+    if (!limitCheck.allowed) {
+      return NextResponse.json({ error: limitCheck.message }, { status: 403 });
+    }
 
     const customer = await createCustomer({
       ...validatedData,

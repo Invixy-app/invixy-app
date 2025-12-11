@@ -5,6 +5,7 @@ import { InvoicePDFService } from "@/lib/pdf-service";
 import { EmailService } from "@/lib/email-service";
 import db from "@/lib/db";
 import { z } from "zod";
+import { canSendEmail } from "@/lib/subscription";
 
 const emailSchema = z.object({
   recipient: z.string().email().optional(),
@@ -202,6 +203,11 @@ export async function POST(
 
     if (!invoice) {
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
+    }
+
+    const limitCheck = await canSendEmail(invoice.businessId);
+    if (!limitCheck.allowed) {
+      return NextResponse.json({ error: limitCheck.message }, { status: 403 });
     }
 
     // Check if customer has email

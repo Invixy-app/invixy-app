@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { getProductsByBusiness, createProduct } from "@/lib/product";
 import { z } from "zod";
+import { checkProductLimit } from "@/lib/subscription";
 
 import { productSchema } from "@/lib/validations/product";
 
@@ -59,6 +60,11 @@ export async function POST(request: NextRequest) {
         { error: validatedData.error },
         { status: 400 }
       );
+    }
+
+    const limitCheck = await checkProductLimit(validatedData.data.businessId);
+    if (!limitCheck.allowed) {
+      return NextResponse.json({ error: limitCheck.message }, { status: 403 });
     }
 
     const product = await createProduct({
