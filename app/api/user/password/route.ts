@@ -48,7 +48,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Hash new password
-    const hashedNewPassword = await bcrypt.hash(newPassword, 12);
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
     // Update password
     await db.user.update({

@@ -6,9 +6,9 @@ import { z } from "zod";
 
 import { taxSystemSchema } from "@/lib/validations/tax";
 
-const createTaxSystemSchema = taxSystemSchema.extend({
+const createTaxSystemSchema = taxSystemSchema.and(z.object({
   businessId: z.string(),
-});
+}));
 
 export async function GET(request: NextRequest) {
   try {

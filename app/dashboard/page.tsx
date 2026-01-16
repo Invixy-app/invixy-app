@@ -379,7 +379,7 @@ export default function DashboardPage() {
             <CardContent className="p-0">
               {loading && (
                 <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
                   Loading...
                 </div>
               )}
@@ -459,6 +459,7 @@ export default function DashboardPage() {
                     <Users className="w-6 h-6 text-muted-foreground" />
                   </div>
                   <p className="text-sm font-medium text-foreground">No customers yet</p>
+                  <p className="text-xs text-muted-foreground mb-4 max-w-[180px]">Create your first customer to see activity here.</p>
                   <Link href="/dashboard/customers/new">
                     <Button size="sm">
                       <Plus className="w-4 h-4 mr-2" />

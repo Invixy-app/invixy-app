@@ -31,6 +31,8 @@ export default function NewBusinessPage() {
     website: "",
     currency: "USD",
     timezone: "UTC",
+    isActive: true,
+    logo: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");

@@ -8,9 +8,9 @@ import { checkInvoiceLimit } from "@/lib/subscription";
 
 import { invoiceSchema } from "@/lib/validations/invoice";
 
-const createInvoiceSchema = invoiceSchema.extend({
+const createInvoiceSchema = invoiceSchema.and(z.object({
   businessId: z.string(),
-});
+}));
 
 export async function GET(request: NextRequest) {
   try {
