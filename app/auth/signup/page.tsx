@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { signUpSchema } from "@/lib/validations/auth";
 
@@ -18,6 +18,7 @@ export default function SignUpPage() {
     email: "",
     password: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -104,12 +105,12 @@ export default function SignUpPage() {
     <div className="min-h-screen grid lg:grid-cols-2">
       {/* Left Side - Branding Section */}
       <div className="hidden lg:flex flex-col justify-between bg-primary text-primary-foreground p-10">
-        <div className="flex items-center gap-2 font-bold text-xl tracking-tight">
+        <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
           <div className="w-8 h-8 rounded-lg bg-background/20 flex items-center justify-center text-primary-foreground">
             IV
           </div>
           <span>Invixy</span>
-        </div>
+        </Link>
         
         <div className="space-y-6 max-w-lg">
           <blockquote className="text-2xl font-medium leading-relaxed">
@@ -180,14 +181,32 @@ export default function SignUpPage() {
 
             <div className="space-y-2">
               <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                className={fieldErrors.password ? "border-red-500" : "bg-background"}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={fieldErrors.password ? "border-red-500 pr-10" : "bg-background pr-10"}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className="sr-only">
+                    {showPassword ? "Hide password" : "Show password"}
+                  </span>
+                </Button>
+              </div>
               {fieldErrors.password && <p className="text-sm text-red-500">{fieldErrors.password}</p>}
             </div>
 

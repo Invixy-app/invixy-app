@@ -4,6 +4,12 @@ import { NextResponse } from "next/server";
 export default withAuth(
   function middleware(req) {
     const path = req.nextUrl.pathname;
+    const token = req.nextauth.token;
+
+    // Redirect authenticated users away from auth pages to dashboard
+    if (path.startsWith("/auth") && token) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
     
     // Allow public invoice viewing routes
     if (path.match(/^\/api\/invoices\/[^\/]+\/(public|view)$/)) {
@@ -22,6 +28,11 @@ export default withAuth(
         if (path.match(/^\/api\/invoices\/[^\/]+\/(public|view)$/)) {
           return true;
         }
+
+        // Always allow access to auth pages so the middleware function can handle the redirect logic
+        if (path.startsWith("/auth")) {
+          return true;
+        }
         
         return !!token;
       }
@@ -37,6 +48,7 @@ export const config = {
     "/api/customers/:path*",
     "/api/tax-systems/:path*",
     "/api/invoices/:path*",
-    "/business/:path*"
+    "/business/:path*",
+    "/auth/:path*"
   ]
 };

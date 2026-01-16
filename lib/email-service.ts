@@ -50,6 +50,37 @@ export class EmailService {
     }
   }
 
+  async sendPasswordResetEmail(email: string, resetLink: string): Promise<boolean> {
+    try {
+      const { data, error } = await this.resend.emails.send({
+        from: this.fromEmail,
+        to: email,
+        subject: 'Reset your password',
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2>Reset your password</h2>
+            <p>You requested a password reset. Click the link below to reset your password:</p>
+            <a href="${resetLink}" style="display: inline-block; background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 20px 0;">
+              Reset Password
+            </a>
+            <p>If you didn't request this, please ignore this email.</p>
+            <p>This link will expire in 1 hour.</p>
+          </div>
+        `
+      });
+
+      if (error) {
+        console.error('Failed to send password reset email:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      return false;
+    }
+  }
+
   private generateInvoiceEmailHTML(invoice: InvoiceEmailData, message?: string): string {
     const balanceAmount = invoice.totalAmount - invoice.paidAmount;
     const isOverdue = new Date(invoice.dueDate) < new Date() && balanceAmount > 0;
