@@ -120,7 +120,7 @@ export default function ProductDetailsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm font-medium text-muted-foreground">SKU</div>
+                  <div className="text-sm font-medium text-muted-foreground">Item Code</div>
                   <div className="mt-1 flex items-center gap-2">
                     <Hash className="h-4 w-4 text-muted-foreground" />
                     {product.sku || "N/A"}

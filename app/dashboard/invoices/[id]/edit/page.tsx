@@ -360,7 +360,11 @@ export default function EditInvoicePage() {
 
   const validateForm = (): boolean => {
     try {
-      invoiceSchema.parse(formData);
+      const dataToValidate = {
+        ...formData,
+        dueDate: formData.dueDate === "" ? undefined : formData.dueDate
+      };
+      invoiceSchema.parse(dataToValidate);
       setErrors({});
       return true;
     } catch (error) {
@@ -506,6 +510,9 @@ export default function EditInvoicePage() {
 
           <div className="flex items-center space-x-2">
             <Badge variant="outline">Draft</Badge>
+            <Button variant="outline" onClick={handleCancel} disabled={saving}>
+              Cancel
+            </Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? (
                 <>

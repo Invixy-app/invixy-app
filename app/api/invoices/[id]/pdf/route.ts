@@ -167,10 +167,7 @@ export async function POST(
         business: {
           BusinessUserRole: {
             some: {
-              userId: session.user.id,
-              role: {
-                in: ["OWNER", "MANAGER"]
-              }
+              userId: session.user.id
             }
           }
         }

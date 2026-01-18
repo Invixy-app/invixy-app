@@ -50,6 +50,40 @@ export class EmailService {
     }
   }
 
+  async sendVerificationEmail(email: string, token: string): Promise<boolean> {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const verificationLink = `${baseUrl}/auth/verify?token=${token}`;
+    
+    try {
+      const { data, error } = await this.resend.emails.send({
+        from: this.fromEmail,
+        to: email,
+        subject: 'Verify your email address',
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <h2>Verify your email</h2>
+            <p>Welcome to Invixy! Please click the link below to verify your email address:</p>
+            <a href="${verificationLink}" style="display: inline-block; background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 20px 0;">
+              Verify Email
+            </a>
+            <p>If you didn't create an account, please ignore this email.</p>
+            <p>This link will expire in 24 hours.</p>
+          </div>
+        `
+      });
+
+      if (error) {
+        console.error('Failed to send verification email:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error sending verification email:', error);
+      return false;
+    }
+  }
+
   async sendPasswordResetEmail(email: string, resetLink: string): Promise<boolean> {
     try {
       const { data, error } = await this.resend.emails.send({

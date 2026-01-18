@@ -30,11 +30,13 @@ import {
   User,
   FileText,
   UserPlus,
-  PackagePlus
+  PackagePlus,
+  Download
 } from "lucide-react";
 import Link from "next/link";
 import { z } from "zod";
 import { invoiceSchema, type InvoiceFormValues } from "@/lib/validations/invoice";
+import { InvoiceEmailDialog } from "@/components/invoices/invoice-email-dialog";
 
 type InvoiceFormData = Omit<InvoiceFormValues, "issueDate" | "dueDate" | "items"> & {
   issueDate: string;
@@ -140,6 +142,9 @@ function NewInvoiceContent() {
       taxSystemIds: []
     }]
   });
+
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [createdInvoice, setCreatedInvoice] = useState<{id: string, number: string} | null>(null);
 
   useEffect(() => {
     if (currentBusiness?.id) {
@@ -476,7 +481,11 @@ function NewInvoiceContent() {
 
   const validateForm = (): boolean => {
     try {
-      invoiceSchema.parse(formData);
+      const dataToValidate = {
+        ...formData,
+        dueDate: formData.dueDate === "" ? undefined : formData.dueDate
+      };
+      invoiceSchema.parse(dataToValidate);
       setErrors({});
       return true;
     } catch (error) {
@@ -502,7 +511,7 @@ function NewInvoiceContent() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent, saveAs: 'draft' | 'sent' = 'draft') => {
+  const handleSubmit = async (e: React.FormEvent, action: 'draft' | 'send' | 'download' = 'draft') => {
     e.preventDefault();
     
     if (!validateForm()) return;
@@ -523,11 +532,6 @@ function NewInvoiceContent() {
       const invoiceData = {
         ...validatedData,
         businessId: currentBusiness.id,
-        // Ensure dates are Date objects (schema handles coercion but we want to be sure for API if it expects strings or dates)
-        // API expects JSON, so dates will be strings.
-        // But wait, invoiceSchema.parse returns Date objects for dates.
-        // JSON.stringify will convert Date objects to ISO strings.
-        // So this is fine.
       };
 
       const response = await fetch("/api/invoices", {
@@ -541,19 +545,18 @@ function NewInvoiceContent() {
       if (response.ok) {
         const invoice = await response.json();
         
-        // Update status if sending (no longer need separate tax application)
-        if (saveAs === 'sent') {
-          await fetch(`/api/invoices/${invoice.id}/status`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ status: "SENT" }),
-          });
+        if (action === 'download') {
+          // Open PDF download in new tab
+          window.open(`/api/invoices/${invoice.id}/pdf`, '_blank');
+          showSuccess("Success", "Invoice created successfully. Downloading PDF...");
+          router.push(`/dashboard/invoices/${invoice.id}`);
+        } else if (action === 'send') {
+          setCreatedInvoice({ id: invoice.id, number: invoice.invoiceNumber });
+          setShowEmailDialog(true);
+        } else {
+          showSuccess("Success", "Invoice draft created successfully");
+          router.push(`/dashboard/invoices/${invoice.id}`);
         }
-
-        showSuccess("Success", `Invoice ${saveAs === 'sent' ? 'created and sent' : 'created as draft'} successfully`);
-        router.push(`/dashboard/invoices/${invoice.id}`);
       } else {
         const errorData = await response.json();
         showError("Error", errorData.error || "Failed to create invoice");
@@ -562,7 +565,9 @@ function NewInvoiceContent() {
       console.error("Error creating invoice:", error);
       showError("Error", "Error creating invoice");
     } finally {
-      setLoading(false);
+      if (action !== 'send') {
+          setLoading(false);
+      }
     }
   };
 
@@ -650,8 +655,14 @@ function NewInvoiceContent() {
                           Add New
                         </Button>
                       </div>
-                      <Select value={formData.customerId} onValueChange={(value) => setFormData(prev => ({ ...prev, customerId: value }))}>
-                        <SelectTrigger>
+                      <Select 
+                        value={formData.customerId} 
+                        onValueChange={(value) => {
+                          setFormData(prev => ({ ...prev, customerId: value }));
+                          if(errors.customerId) setErrors(prev => ({...prev, customerId: ""}));
+                        }}
+                      >
+                        <SelectTrigger className={errors.customerId ? "border-red-500" : ""}>
                           <SelectValue placeholder="Select a customer" />
                         </SelectTrigger>
                         <SelectContent>
@@ -669,21 +680,28 @@ function NewInvoiceContent() {
                           ))}
                         </SelectContent>
                       </Select>
-                      {errors.customer && (
-                        <p className="text-sm text-red-500">{errors.customer}</p>
+                      {errors.customerId && (
+                        <p className="text-sm text-red-500">{errors.customerId}</p>
                       )}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="issueDate">Issue Date</Label>
+                      <Label htmlFor="issueDate">Issue Date <span className="text-red-500">*</span></Label>
                       <Input
                         id="issueDate"
                         type="date"
                         value={formData.issueDate}
-                        onChange={(e) => setFormData(prev => ({ ...prev, issueDate: e.target.value }))}
+                        onChange={(e) => {
+                           setFormData(prev => ({ ...prev, issueDate: e.target.value }));
+                           if(errors.issueDate) setErrors(prev => ({...prev, issueDate: ""}));
+                        }}
+                        className={errors.issueDate ? "border-red-500" : ""}
                       />
+                      {errors.issueDate && (
+                        <p className="text-sm text-red-500">{errors.issueDate}</p>
+                      )}
                     </div>
 
                     <div className="space-y-2">
@@ -692,8 +710,15 @@ function NewInvoiceContent() {
                         id="dueDate"
                         type="date"
                         value={formData.dueDate}
-                        onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                        onChange={(e) => {
+                          setFormData(prev => ({ ...prev, dueDate: e.target.value }));
+                          if(errors.dueDate) setErrors(prev => ({...prev, dueDate: ""}));
+                        }}
+                        className={errors.dueDate ? "border-red-500" : ""}
                       />
+                      {errors.dueDate && (
+                        <p className="text-sm text-red-500">{errors.dueDate}</p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -1005,11 +1030,12 @@ function NewInvoiceContent() {
                       type="submit" 
                       className="w-full" 
                       disabled={loading}
+                      variant="outline"
                     >
                       {loading ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Creating...
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                          Saving...
                         </>
                       ) : (
                         <>
@@ -1019,11 +1045,21 @@ function NewInvoiceContent() {
                       )}
                     </Button>
 
-                    <Button 
+                     <Button 
                       type="button"
                       variant="outline"
                       className="w-full"
-                      onClick={(e) => handleSubmit(e, 'sent')}
+                      onClick={(e) => handleSubmit(e, 'download')}
+                      disabled={loading}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Save & Download
+                    </Button>
+
+                    <Button 
+                      type="button"
+                      className="w-full"
+                      onClick={(e) => handleSubmit(e, 'send')}
                       disabled={loading}
                     >
                       <Send className="h-4 w-4 mr-2" />
@@ -1326,6 +1362,21 @@ function NewInvoiceContent() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {createdInvoice && (
+          <InvoiceEmailDialog
+            invoiceId={createdInvoice.id}
+            invoiceNumber={createdInvoice.number}
+            customerEmail={selectedCustomer?.email || ""}
+            customerName={selectedCustomer?.name || ""}
+            open={showEmailDialog}
+            onOpenChange={setShowEmailDialog}
+            onSuccess={() => {
+              // Redirect handled by dialog or we can do it here
+              router.push(`/dashboard/invoices/${createdInvoice.id}`);
+            }}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

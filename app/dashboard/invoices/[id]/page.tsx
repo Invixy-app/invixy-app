@@ -349,60 +349,54 @@ export default function InvoiceDetailPage() {
           </div>
 
           <div className="flex items-center space-x-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  Change Status <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Set Status To</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => updateInvoiceStatus("DRAFT")}>
-                  Draft
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => updateInvoiceStatus("SENT")}>
-                  Sent
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => updateInvoiceStatus("VIEWED")}>
-                  Viewed
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => updateInvoiceStatus("PARTIAL_PAID")}>
-                  Partial Paid
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => updateInvoiceStatus("PAID")}>
-                  Paid
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => updateInvoiceStatus("OVERDUE")}>
-                  Overdue
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => updateInvoiceStatus("CANCELLED")}>
-                  Cancelled
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => updateInvoiceStatus("REFUNDED")}>
-                  Refunded
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+             <Button variant="outline" onClick={downloadPDF}>
+              <Download className="h-4 w-4 mr-2" />
+              Download
+            </Button>
 
-            {invoice.customer.email && (
-              <Button 
-                variant="outline" 
-                onClick={() => setShowEmailDialog(true)}
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Email Invoice
-              </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowEmailDialog(true)}
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              Email
+            </Button>
+            
+            {canEdit && (
+               <Link href={`/dashboard/invoices/${invoice.id}/edit`}>
+                <Button variant="outline">
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              </Link>
             )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={actionLoading}>
+                <Button variant="outline" size="icon">
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                
+                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Status</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => updateInvoiceStatus("DRAFT")}>
+                  Set as Draft
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateInvoiceStatus("SENT")}>
+                  Set as Sent
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => updateInvoiceStatus("PAID")}>
+                   Set as Paid
+                </DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => updateInvoiceStatus("CANCELLED")}>
+                   Set as Cancelled
+                </DropdownMenuItem>
+                
+                 <DropdownMenuSeparator />
+                
                 <DropdownMenuItem onClick={copyInvoiceNumber}>
                   <Copy className="h-4 w-4 mr-2" />
                   Copy Invoice Number
@@ -411,35 +405,14 @@ export default function InvoiceDetailPage() {
                   <Copy className="h-4 w-4 mr-2" />
                   Copy Public Link
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={downloadPDF}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setShowEmailDialog(true)}>
-                  <Mail className="h-4 w-4 mr-2" />
-                  Send Email
-                </DropdownMenuItem>
+                
                 <DropdownMenuItem onClick={() => window.print()}>
                   <Printer className="h-4 w-4 mr-2" />
                   Print
                 </DropdownMenuItem>
+                
                 <DropdownMenuSeparator />
-                {isDraft && (
-                  <DropdownMenuItem onClick={() => updateInvoiceStatus("SENT")}>
-                    <Send className="h-4 w-4 mr-2" />
-                    Mark as Sent
-                  </DropdownMenuItem>
-                )}
-                {canEdit && (
-                  <DropdownMenuItem asChild>
-                    <Link href={`/dashboard/invoices/${invoice.id}/edit`}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Invoice
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
+                
                 {canDelete && (
                   <DropdownMenuItem 
                     onClick={() => setShowDeleteDialog(true)}
