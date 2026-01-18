@@ -204,7 +204,7 @@ export default function NewCustomerPage() {
                     <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="phone"
-                      placeholder="(555) 123-4567"
+                      placeholder="Enter phone number"
                       value={formData.phone}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
                       className="pl-10"

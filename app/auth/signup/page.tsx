@@ -65,9 +65,6 @@ export default function SignUpPage() {
 
       if (res.ok) {
         setSuccess(true);
-        setTimeout(() => {
-          router.push("/auth/signin");
-        }, 2000);
       } else {
         setError(data.error || "Something went wrong");
       }
@@ -92,9 +89,18 @@ export default function SignUpPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-center text-green-600">Account Created!</CardTitle>
-            <CardDescription className="text-center">
-              Your account has been created successfully. Redirecting to login...
+            <CardDescription className="text-center text-base mt-2">
+              We have sent a verification link to your email address: <br/>
+              <span className="font-semibold text-foreground">{formData.email}</span>
             </CardDescription>
+            <div className="text-center text-sm text-muted-foreground mt-4">
+              Please check your inbox (and spam folder) to verify your account before logging in.
+            </div>
+            <div className="mt-6 flex justify-center">
+               <Button asChild>
+                 <Link href="/auth/signin">Go to Login</Link>
+               </Button>
+            </div>
           </CardHeader>
         </Card>
       </div>

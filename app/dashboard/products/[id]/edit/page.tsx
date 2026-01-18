@@ -290,11 +290,11 @@ export default function EditProductPage() {
 
                 <FormGrid columns={2}>
                   <FormField
-                    label="SKU"
+                    label="Item Code"
                     id="sku"
                     value={formData.sku}
                     onChange={(value) => handleFieldChange("sku", value)}
-                    placeholder="Product SKU"
+                    placeholder="Product Item Code"
                     error={errors.sku}
                   />
                   <FormField

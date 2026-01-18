@@ -60,7 +60,11 @@ function SignInContent() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        if (result.error === "CredentialsSignin") {
+             setError("Invalid email or password");
+        } else {
+             setError(result.error);
+        }
       } else {
         router.push(callbackUrl);
       }

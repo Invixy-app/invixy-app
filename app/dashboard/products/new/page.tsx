@@ -262,12 +262,12 @@ export default function NewProductPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="sku">SKU</Label>
+                    <Label htmlFor="sku">Item Code</Label>
                     <div className="relative">
                       <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="sku"
-                        placeholder="Stock keeping unit"
+                        placeholder="Enter Item Code"
                         value={formData.sku}
                         onChange={(e) => handleInputChange("sku", e.target.value)}
                         className="pl-10"

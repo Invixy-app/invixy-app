@@ -235,7 +235,7 @@ export default function ProductsPage() {
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
             <Input
-              placeholder="Search products by name, description, or SKU..."
+              placeholder="Search products by name, description, or Item Code..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-9"
@@ -266,7 +266,7 @@ export default function ProductsPage() {
                   <TableHead className="font-semibold text-gray-700 max-w-[250px]">
                     Product
                   </TableHead>
-                  <TableHead className="w-[120px]">SKU</TableHead>
+                  <TableHead className="w-[120px]">Item Code</TableHead>
                   <TableHead className="w-[120px]">Price</TableHead>
                   <TableHead className="w-[150px]">Stock</TableHead>
                   <TableHead className="w-[120px]">Category</TableHead>
