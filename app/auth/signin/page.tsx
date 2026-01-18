@@ -21,9 +21,29 @@ function SignInContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+
+  const handleResendVerification = async () => {
+    setResendStatus("sending");
+    try {
+      const res = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: formData.email }),
+      });
+      
+      if (res.ok) {
+        setResendStatus("sent");
+      } else {
+        setResendStatus("error");
+      }
+    } catch {
+      setResendStatus("error");
+    }
+  };
 
   const validateForm = (): boolean => {
     try {
@@ -129,7 +149,29 @@ function SignInContent() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+                <AlertDescription className="flex flex-col gap-2">
+                  <span>{error}</span>
+                  {error.includes("Email not verified") && (
+                    <div className="mt-2">
+                      {resendStatus === "sent" ? (
+                        <span className="text-green-600 font-medium">Verification email sent!</span>
+                      ) : (
+                        <Button 
+                          variant="link" 
+                          className="p-0 h-auto text-destructive underline font-semibold"
+                          onClick={handleResendVerification}
+                          disabled={resendStatus === "sending"}
+                          type="button"
+                        >
+                          {resendStatus === "sending" ? "Sending..." : "Resend Verification Email"}
+                        </Button>
+                      )}
+                      {resendStatus === "error" && (
+                         <p className="text-xs mt-1">Failed to send. Please try again.</p>
+                      )}
+                    </div>
+                  )}
+                </AlertDescription>
               </Alert>
             )}
 
