@@ -9,7 +9,7 @@ const posts = [
   {
     title: "The Future of Invoicing is Automated",
     description: "How AI and automation are changing the way businesses handle finances.",
-    date: "November 15, 2025",
+    date: "November 15, 2026",
     slug: "future-of-invoicing"
   },
   {
