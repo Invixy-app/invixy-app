@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 import { showError } from "@/lib/alert-store"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 
@@ -31,7 +31,7 @@ const tiers = [
   {
     name: "Pro",
     id: "pro",
-    price: { MONTHLY: 1, QUARTERLY: 1, YEARLY: 1 },
+    price: { MONTHLY: 399, QUARTERLY: 399, YEARLY: 399 },
     description: "Everything you need to scale your business operations.",
     features: [
       "Unlimited clients",
@@ -81,24 +81,20 @@ export function PricingTable({ mode = "landing" }: PricingTableProps) {
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-  };
+      const script = document.createElement("script")
+      script.src = "https://checkout.razorpay.com/v1/checkout.js"
+      script.onload = () => resolve(true)
+      script.onerror = () => resolve(false)
+      document.body.appendChild(script)
+    })
+  }
 
   const handleSubscribe = async (tierId: string, price: number | string) => {
     if (tierId === "enterprise" || typeof price !== "number" || price === 0) {
       if (tierId === "starter") {
-        if (mode === "landing") {
-             router.push("/auth/signup")
-        }
-        // If dashboard, do nothing or show message
+        if (mode === "landing") router.push("/auth/signup")
         return
       }
-      // Handle enterprise contact
       globalThis.location.href = "mailto:sales@invixy.com"
       return
     }
@@ -112,172 +108,150 @@ export function PricingTable({ mode = "landing" }: PricingTableProps) {
 
     try {
       setLoadingPlan(tierId)
-      
-      const res = await loadRazorpayScript();
 
+      const res = await loadRazorpayScript()
       if (!res) {
-        showError("Payment Error", "Razorpay SDK failed to load. Are you online?");
-        setLoadingPlan(null);
-        return;
+        showError("Payment Error", "Razorpay SDK failed to load.")
+        return
       }
 
-      // 2. Create Order
       const response = await fetch("/api/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan: tierId.toUpperCase(),
           interval: billingCycle,
-          price: price,
+          price,
         }),
       })
 
       const data = await response.json()
+      if (!response.ok) throw new Error(data.error)
 
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to create subscription")
-      }
-
-      // 3. Open Razorpay Modal
       const options = {
         key: process.env.NEXT_PUBLIC_RZRPAY_CLIENT_ID,
         amount: data.amount,
         currency: data.currency,
-        name: 'Invixy App',
+        name: "Invixy App",
         description: `${tierId} Plan - ${billingCycle}`,
         order_id: data.orderId,
-        handler: async function (response: any) {
-          // 4. Verify Payment
-          try {
-            const verifyRes = await fetch('/api/payments/razorpay/callback', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-                plan: tierId.toUpperCase(),
-                interval: billingCycle,
-              }),
-            });
-
-            const verifyData = await verifyRes.json();
-
-            if (verifyData.status === 'success') {
-              // Success!
-              globalThis.location.href = "/dashboard?payment=success";
-            } else {
-              showError("Payment Verification Failed", "Please contact support if money was deducted.");
-            }
-          } catch (err) {
-             console.error("Verification error", err);
-             showError("Payment Verification Error", "Please contact support if money was deducted.");
-          }
+        handler: async (response: any) => {
+          await fetch("/api/payments/razorpay/callback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+              plan: tierId.toUpperCase(),
+              interval: billingCycle,
+            }),
+          })
+          globalThis.location.href = "/dashboard?payment=success"
         },
         prefill: {
           name: session.user.name,
           email: session.user.email,
         },
-        theme: {
-          color: '#3399cc',
-        },
-      };
+        theme: { color: "#3399cc" },
+      }
 
-      const paymentObject = new (globalThis as any).Razorpay(options);
-      paymentObject.open();
-
-    } catch (error) {
-      console.error("Subscription error:", error)
-      showError("Subscription Failed", "Failed to start subscription process. Please try again.")
+      new (globalThis as any).Razorpay(options).open()
+    } catch {
+      showError("Subscription Failed", "Please try again.")
     } finally {
       setLoadingPlan(null)
     }
   }
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 text-center">
-      <div className="mt-6 flex items-center justify-center">
-        <Tabs defaultValue="MONTHLY" className="w-full max-w-md" onValueChange={(value) => setBillingCycle(value as BillingCycle)}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="MONTHLY">Monthly</TabsTrigger>
-            <TabsTrigger value="QUARTERLY">
-              Quarterly
-              <span className="ml-1.5 hidden rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary sm:inline-block">
-                -10%
-              </span>
-            </TabsTrigger>
-            <TabsTrigger value="YEARLY">
-              Yearly
-              <span className="ml-1.5 hidden rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary sm:inline-block">
-                -17%
-              </span>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+    <div className="flex flex-col items-center text-center">
+      {/* Billing Toggle */}
+      <Tabs
+        defaultValue="MONTHLY"
+        onValueChange={(value) => setBillingCycle(value as BillingCycle)}
+        className="mt-10 rounded-full border bg-muted/40 p-1"
+      >
+        <TabsList className="grid grid-cols-3 bg-transparent">
+          <TabsTrigger className="rounded-full px-6" value="MONTHLY">
+            Monthly
+          </TabsTrigger>
+          <TabsTrigger className="rounded-full px-6" value="QUARTERLY">
+            Quarterly <span className="ml-2 text-xs text-primary">Save 10%</span>
+          </TabsTrigger>
+          <TabsTrigger className="rounded-full px-6" value="YEARLY">
+            Yearly <span className="ml-2 text-xs text-primary">Save 17%</span>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
-      <div className="grid w-full grid-cols-1 gap-8 pt-4 md:grid-cols-3 lg:gap-8 text-left">
+      {/* Pricing Cards */}
+      <div className="mt-16 grid w-full max-w-6xl grid-cols-1 gap-8 md:grid-cols-3">
         {tiers.map((tier) => {
           const price = tier.price[billingCycle]
           const isCustom = typeof price === "string"
-          
-          // Adjust button text based on mode
+
           let buttonText = tier.buttonText
           if (mode === "landing" && tier.id === "starter") {
             buttonText = "Start for free"
           }
-          
+
           return (
-            <Card 
-              key={tier.id} 
+            <Card
+              key={tier.id}
               className={cn(
-                "flex flex-col",
-                tier.mostPopular && "border-primary shadow-lg relative"
+                "relative flex flex-col rounded-3xl border bg-card p-8 transition-all",
+                tier.mostPopular
+                  ? "border-primary shadow-xl scale-[1.03]"
+                  : "hover:shadow-lg"
               )}
             >
               {tier.mostPopular && (
-                <div className="absolute -top-4 left-0 right-0 mx-auto w-fit rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-primary px-4 py-1 text-xs font-semibold text-primary-foreground">
                   Most Popular
                 </div>
               )}
-              <CardHeader>
-                <CardTitle className="text-xl">{tier.name}</CardTitle>
-                <CardDescription>{tier.description}</CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4 flex-1">
-                <div className="text-3xl font-bold">
-                  {isCustom ? (
-                    price
-                  ) : (
-                    <>
-                      ${price}
-                      <span className="text-sm font-normal text-muted-foreground">
-                        /{cycleLabels[billingCycle]}
-                      </span>
-                    </>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  {tier.features.map((feature) => (
-                    <div key={feature} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-primary" />
-                      <span className="text-sm text-muted-foreground">{feature}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button 
-                  className="w-full" 
-                  variant={tier.mostPopular ? "default" : "outline"}
-                  onClick={() => handleSubscribe(tier.id, price)}
-                  disabled={loadingPlan === tier.id || (mode === "dashboard" && tier.id === 'starter')}
-                >
-                  {loadingPlan === tier.id ? "Processing..." : buttonText}
-                </Button>
-              </CardFooter>
+
+              <h3 className="text-xl font-semibold">{tier.name}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {tier.description}
+              </p>
+
+              <div className="mt-8 flex items-end gap-1">
+                {isCustom ? (
+                  <span className="text-4xl font-bold">{price}</span>
+                ) : (
+                  <>
+                    <span className="text-5xl font-bold">₹{price}</span>
+                    <span className="text-sm text-muted-foreground">
+                      /{cycleLabels[billingCycle]}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              <ul className="mt-8 space-y-4 flex-1">
+                {tier.features.map((feature) => (
+                  <li key={feature} className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-primary mt-0.5" />
+                    <span className="text-sm text-muted-foreground">
+                      {feature}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <Button
+                className="mt-8 h-12 rounded-full"
+                variant={tier.mostPopular ? "default" : "outline"}
+                onClick={() => handleSubscribe(tier.id, price)}
+                disabled={
+                  loadingPlan === tier.id ||
+                  (mode === "dashboard" && tier.id === "starter")
+                }
+              >
+                {loadingPlan === tier.id ? "Processing..." : buttonText}
+              </Button>
             </Card>
           )
         })}

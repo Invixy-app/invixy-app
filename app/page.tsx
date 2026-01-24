@@ -29,12 +29,12 @@ export default function LandingPage() {
           
           <div className="container mx-auto px-4 md:px-6 relative z-10">
             <div className="flex flex-col items-center text-center space-y-8 max-w-5xl mx-auto">
-              <div className="inline-flex items-center rounded-full border bg-background/50 px-3 py-1 text-sm font-medium text-muted-foreground backdrop-blur-xl shadow-sm animate-fade-in-up">
+              {/* <div className="inline-flex items-center rounded-full border bg-background/50 px-3 py-1 text-sm font-medium text-muted-foreground backdrop-blur-xl shadow-sm animate-fade-in-up">
                 <span className="flex h-2 w-2 rounded-full bg-primary mr-2 animate-pulse"></span>
                 <span>v2.0 is now live</span>
                 <span className="mx-2 text-muted-foreground/30">|</span>
                 <span className="text-primary hover:underline cursor-pointer">See what&apos;s new &rarr;</span>
-              </div>
+              </div> */}
               
               <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-foreground leading-[1.1] animate-fade-in-up delay-100">
                 Invoicing for the <br />
@@ -78,7 +78,7 @@ export default function LandingPage() {
                 </Link>
               </div>
 
-              <div className="pt-8 flex items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-in-up delay-400">
+              {/* <div className="pt-8 flex items-center justify-center gap-6 text-sm text-muted-foreground animate-fade-in-up delay-400">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-primary" />
                   <span>No credit card required</span>
@@ -91,7 +91,7 @@ export default function LandingPage() {
                   <CheckCircle2 className="h-4 w-4 text-primary" />
                   <span>Cancel anytime</span>
                 </div>
-              </div>
+              </div> */}
             </div>
 
             {/* Hero Image / Dashboard Preview */}

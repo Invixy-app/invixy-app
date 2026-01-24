@@ -1,61 +1,249 @@
-"use client";
+"use client"
 
-import { SiteHeader } from "@/components/site-header";
-import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header"
+import { SiteFooter } from "@/components/site-footer"
 
-export default function PrivacyPage() {
+export default function PrivacyPolicyPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <SiteHeader />
+
       <main className="flex-1 container mx-auto px-4 md:px-6 py-12">
         <div className="max-w-3xl mx-auto space-y-8">
-          <h1 className="text-4xl font-bold tracking-tight">Privacy Policy</h1>
-          <p className="text-muted-foreground">Last updated: November 24, 2025</p>
-          
-          <div className="prose dark:prose-invert max-w-none space-y-6">
+          <h1 className="text-4xl font-bold tracking-tight">
+            INVIXY — Privacy Policy
+          </h1>
+
+          <div className="text-muted-foreground space-y-1">
+            <p>Effective date: [DD/MM/YYYY]</p>
+            <p>Last updated: [DD/MM/YYYY]</p>
+            <p>
+              Contact:{" "}
+              <a
+                href="mailto:support@invixy.com"
+                className="text-primary hover:underline"
+              >
+                support@invixy.com
+              </a>
+            </p>
+          </div>
+
+          <div className="prose dark:prose-invert max-w-none space-y-8">
+
+            {/* 1. Introduction */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
+              <h2>1. Introduction & Scope</h2>
               <p>
-                Invixy ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our services.
+                INVIXY (“we”, “us”, “our”) provides an invoice management platform
+                and related services. This Privacy Policy explains how we
+                collect, use, disclose, store, and protect personal data of
+                users, including customers, their employees or clients, and
+                website visitors.
+              </p>
+              <p>
+                This policy applies to personal data processed in India and
+                globally in connection with our services and is aligned with the
+                Digital Personal Data Protection Act, 2023 (DPDP Act) and other
+                applicable laws.
               </p>
             </section>
 
+            {/* 2. Definitions */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">2. Information We Collect</h2>
-              <p>
-                We collect information that you provide directly to us, such as when you create an account, update your profile, or communicate with us. This may include:
-              </p>
-              <ul className="list-disc pl-6 mt-2 space-y-1">
-                <li>Name and contact information</li>
-                <li>Business details and tax information</li>
-                <li>Payment information</li>
-                <li>Usage data and preferences</li>
+              <h2>2. Definitions</h2>
+              <ul>
+                <li>
+                  <strong>Personal Data</strong> — Information that identifies or
+                  can reasonably identify an individual (name, email, phone,
+                  IP address, etc.).
+                </li>
+                <li>
+                  <strong>Sensitive Personal Data</strong> — Financial,
+                  authentication, or other data classified as sensitive under
+                  applicable law.
+                </li>
+                <li>
+                  <strong>Processing</strong> — Any operation performed on
+                  personal data, including collection, storage, use, disclosure,
+                  or deletion.
+                </li>
               </ul>
             </section>
 
+            {/* 3. What We Collect */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">3. How We Use Your Information</h2>
+              <h2>3. What We Collect</h2>
+
+              <h3>A. Data You Submit</h3>
+              <ul>
+                <li>Account information (name, email, phone, company name)</li>
+                <li>Billing address and business details</li>
+                <li>GSTIN, PAN (if provided for billing or compliance)</li>
+                <li>Bank details for payouts (if applicable)</li>
+                <li>Customer or client data entered into invoices</li>
+                <li>Uploaded documents (invoices, PDFs, contracts)</li>
+              </ul>
+
+              <h3>B. Payment Data</h3>
               <p>
-                We use the information we collect to:
+                INVIXY does not store raw card numbers by default. Payments are
+                processed using PCI-DSS-compliant third-party payment gateways.
+                If a feature requires card storage, applicable PCI compliance
+                standards will apply.
               </p>
-              <ul className="list-disc pl-6 mt-2 space-y-1">
-                <li>Provide, maintain, and improve our services</li>
-                <li>Process transactions and send related information</li>
-                <li>Send you technical notices, updates, and support messages</li>
-                <li>Respond to your comments and questions</li>
+
+              <h3>C. Automatically Collected Data</h3>
+              <ul>
+                <li>IP address and device/browser information</li>
+                <li>Usage logs, timestamps, and analytics data</li>
+              </ul>
+
+              <h3>D. Cookies & Tracking</h3>
+              <p>
+                We use session cookies, functional cookies, and analytics cookies
+                to operate and improve our services. You can manage cookies
+                through your browser settings.
+              </p>
+            </section>
+
+            {/* 4. Purpose */}
+            <section>
+              <h2>4. Purpose & Lawful Basis</h2>
+              <p>We process personal data to:</p>
+              <ul>
+                <li>Provide and maintain the INVIXY platform</li>
+                <li>Process billing and payments</li>
+                <li>Provide customer support and communications</li>
+                <li>Detect fraud, abuse, and security incidents</li>
+                <li>Improve product functionality and analytics</li>
+                <li>Comply with legal and regulatory obligations</li>
+              </ul>
+              <p>
+                Processing is based on contract performance, legitimate
+                interests, consent (where required), and legal obligations.
+              </p>
+            </section>
+
+            {/* 5. Sharing */}
+            <section>
+              <h2>5. Sharing & Third Parties</h2>
+              <p>
+                We share personal data only with trusted third parties,
+                including:
+              </p>
+              <ul>
+                <li>Hosting, analytics, and email service providers</li>
+                <li>Payment gateways and banking partners</li>
+                <li>Regulators or law enforcement when legally required</li>
+              </ul>
+              <p>
+                All third parties are contractually required to protect data and
+                use it only for permitted purposes.
+              </p>
+            </section>
+
+            {/* 6. Cross-Border */}
+            <section>
+              <h2>6. Cross-Border Transfers</h2>
+              <p>
+                If personal data is transferred outside India (for example,
+                using global cloud providers), such transfers will comply with
+                applicable laws and include appropriate safeguards.
+              </p>
+            </section>
+
+            {/* 7. Retention */}
+            <section>
+              <h2>7. Data Retention</h2>
+              <ul>
+                <li>Account data: retained while the account is active</li>
+                <li>
+                  Invoice and tax records: retained as required by Indian tax
+                  and GST laws
+                </li>
+                <li>
+                  Logs and analytics: retained in aggregated or anonymized form
+                </li>
               </ul>
             </section>
 
+            {/* 8. Security */}
             <section>
-              <h2 className="text-2xl font-semibold mb-4">4. Data Security</h2>
+              <h2>8. Security Measures</h2>
+              <ul>
+                <li>Encryption in transit (TLS) and at rest where applicable</li>
+                <li>Role-based access controls and logging</li>
+                <li>Regular security reviews and monitoring</li>
+                <li>Use of PCI-compliant payment processors</li>
+              </ul>
+            </section>
+
+            {/* 9. Breach */}
+            <section>
+              <h2>9. Data Breach & Notification</h2>
               <p>
-                We implement appropriate technical and organizational measures to protect the security of your personal information. However, please note that no method of transmission over the Internet or method of electronic storage is 100% secure.
+                In the event of a personal data breach, we will take reasonable
+                steps to contain and remediate the incident and notify affected
+                users and authorities as required by law.
               </p>
             </section>
+
+            {/* 10. Rights */}
+            <section>
+              <h2>10. Your Rights & Choices</h2>
+              <ul>
+                <li>Access and correction of personal data</li>
+                <li>Data export and portability</li>
+                <li>Account deletion (subject to legal retention)</li>
+                <li>Withdrawal of consent where applicable</li>
+              </ul>
+              <p>
+                Requests can be made by contacting our Data Protection or
+                Grievance Officer.
+              </p>
+            </section>
+
+            {/* 11. Children */}
+            <section>
+              <h2>11. Children</h2>
+              <p>
+                INVIXY services are not intended for individuals under 18. We do
+                not knowingly collect personal data from children.
+              </p>
+            </section>
+
+            {/* 12. Changes */}
+            <section>
+              <h2>12. Changes to this Policy</h2>
+              <p>
+                We may update this Privacy Policy from time to time. Material
+                changes will be communicated via email or in-app notifications.
+              </p>
+            </section>
+
+            {/* 13. Contact */}
+            <section>
+              <h2>13. Contact & Grievance Officer</h2>
+              <p><strong>Data Protection / Grievance Officer</strong></p>
+              <p>[Name]</p>
+              <p>
+                Email:{" "}
+                <a
+                  href="mailto:dpo@invixy.com"
+                  className="text-primary hover:underline"
+                >
+                  dpo@invixy.com
+                </a>
+              </p>
+              <p>Phone: +91 XXXXXXXXXX</p>
+              <p>Address: [Company Address]</p>
+            </section>
+
           </div>
         </div>
       </main>
+
       <SiteFooter />
     </div>
-  );
+  )
 }

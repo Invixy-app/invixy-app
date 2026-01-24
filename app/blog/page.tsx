@@ -28,42 +28,105 @@ const posts = [
 
 export default function BlogPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
-      <SiteHeader />
-      <main className="flex-1 container mx-auto px-4 md:px-6 py-12">
-        <div className="max-w-4xl mx-auto space-y-12">
-          <div className="text-center space-y-4">
-            <h1 className="text-4xl font-bold tracking-tight">Blog</h1>
-            <p className="text-xl text-muted-foreground">
-              Latest news, updates, and insights from the Invixy team.
+   <div className="flex flex-col min-h-screen bg-background text-foreground">
+  <SiteHeader />
+
+  <main className="flex-1 container mx-auto px-4 md:px-6 py-16">
+    <div className="max-w-6xl mx-auto space-y-20">
+
+      {/* Page Header */}
+      <div className="text-center space-y-6">
+        <h1 className="text-5xl md:text-6xl font-bold tracking-tight">
+          Invixy Blog
+        </h1>
+        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+          Product updates, industry insights, and stories from the Invixy team.
+        </p>
+      </div>
+
+      {/* Featured Post */}
+      {posts[0] && (
+        <Link
+          href={`/blog/${posts[0].slug}`}
+          className="group block rounded-3xl overflow-hidden border bg-card hover:shadow-xl transition-all"
+        >
+          <div className="relative aspect-[16/9] overflow-hidden">
+            <img
+              src={posts[0].image}
+              alt={posts[0].title}
+              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+          </div>
+
+          <div className="p-8 md:p-10 space-y-4">
+            <div className="text-sm text-muted-foreground">
+              {posts[0].date}
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight group-hover:text-primary transition-colors">
+              {posts[0].title}
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-3xl">
+              {posts[0].description}
             </p>
+            <div className="pt-2 text-primary font-medium inline-flex items-center gap-1">
+              Read featured story →
+            </div>
           </div>
-          
-          <div className="grid gap-6">
-            {posts.map((post) => (
-              <Card key={post.slug} className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader>
-                  <div className="text-sm text-muted-foreground mb-2">{post.date}</div>
-                  <CardTitle className="text-2xl">
-                    <Link href={`/blog/${post.slug}`} className="hover:underline">
-                      {post.title}
-                    </Link>
-                  </CardTitle>
-                  <CardDescription className="text-base">
-                    {post.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Link href={`/blog/${post.slug}`} className="text-primary font-medium hover:underline">
-                    Read more →
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+        </Link>
+      )}
+
+      {/* Latest Posts */}
+      <section className="space-y-8">
+        <h3 className="text-2xl font-semibold tracking-tight">
+          Latest Articles
+        </h3>
+
+        <div className="space-y-8">
+          {posts.slice(1).map((post) => (
+            <Link
+              key={post.slug}
+              href={`/blog/${post.slug}`}
+              className="group flex flex-col md:flex-row gap-6 rounded-2xl border bg-card/50 p-6 hover:bg-card hover:shadow-md transition-all"
+            >
+              {/* Thumbnail */}
+              <div className="relative w-full md:w-64 aspect-[16/10] overflow-hidden rounded-xl shrink-0">
+                <img
+                  src={post.image}
+                  alt={post.title}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 space-y-3">
+                <div className="text-sm text-muted-foreground">
+                  {post.date}
+                </div>
+
+                <h4 className="text-xl md:text-2xl font-semibold tracking-tight group-hover:text-primary transition-colors">
+                  {post.title}
+                </h4>
+
+                <p className="text-muted-foreground text-base line-clamp-2">
+                  {post.description}
+                </p>
+
+                <div className="pt-1 text-primary font-medium inline-flex items-center gap-1">
+                  Read more →
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
-      </main>
-      <SiteFooter />
+      </section>
+
     </div>
+  </main>
+
+  <SiteFooter />
+</div>
+
+
   );
 }
