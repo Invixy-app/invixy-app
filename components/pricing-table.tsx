@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Check } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
@@ -13,55 +13,108 @@ import { cn } from "@/lib/utils"
 
 type BillingCycle = "MONTHLY" | "QUARTERLY" | "YEARLY"
 
-const tiers = [
-  {
-    name: "Starter",
-    id: "starter",
-    price: { MONTHLY: 0, QUARTERLY: 0, YEARLY: 0 },
-    description: "Perfect for freelancers and small businesses just getting started.",
-    features: [
-      "Up to 5 active clients",
-      "Unlimited invoices",
-      "Basic templates",
-      "Email support",
-    ],
-    mostPopular: false,
-    buttonText: "Current Plan",
-  },
-  {
-    name: "Pro",
-    id: "pro",
-    price: { MONTHLY: 1, QUARTERLY: 1, YEARLY: 1 },
-    description: "Everything you need to scale your business operations.",
-    features: [
-      "Unlimited clients",
-      "Unlimited invoices",
-      "Custom branding & templates",
-      "Recurring invoices",
-      "Automated reminders",
-      "Priority support",
-      "Multi-currency support",
-    ],
-    mostPopular: true,
-    buttonText: "Upgrade to Pro",
-  },
-  {
-    name: "Enterprise",
-    id: "enterprise",
-    price: { MONTHLY: "Custom", QUARTERLY: "Custom", YEARLY: "Custom" },
-    description: "Dedicated support and infrastructure for large organizations.",
-    features: [
-      "Unlimited everything",
-      "Dedicated account manager",
-      "Custom API integration",
-      "SSO & Advanced Security",
-      "SLA guarantees",
-      "Custom contracts",
-    ],
-    mostPopular: false,
-    buttonText: "Contact Sales",
-  },
-]
+type Currency = "USD" | "INR"
+
+const tiers = {
+  USD: [
+    {
+      name: "Starter",
+      id: "starter",
+      price: { MONTHLY: 0, QUARTERLY: 0, YEARLY: 0 },
+      description: "Perfect for freelancers and small businesses just getting started.",
+      features: [
+        "Up to 5 active clients",
+        "Unlimited invoices",
+        "Basic templates",
+        "Email support",
+      ],
+      mostPopular: false,
+      buttonText: "Current Plan",
+    },
+    {
+      name: "Pro",
+      id: "pro",
+      price: { MONTHLY: 15, QUARTERLY: 40, YEARLY: 150 },
+      description: "Everything you need to scale your business operations.",
+      features: [
+        "Unlimited clients",
+        "Unlimited invoices",
+        "Custom branding & templates",
+        "Recurring invoices",
+        "Automated reminders",
+        "Priority support",
+        "Multi-currency support",
+      ],
+      mostPopular: true,
+      buttonText: "Upgrade to Pro",
+    },
+    {
+      name: "Enterprise",
+      id: "enterprise",
+      price: { MONTHLY: "Custom", QUARTERLY: "Custom", YEARLY: "Custom" },
+      description: "Dedicated support and infrastructure for large organizations.",
+      features: [
+        "Unlimited everything",
+        "Dedicated account manager",
+        "Custom API integration",
+        "SSO & Advanced Security",
+        "SLA guarantees",
+        "Custom contracts",
+      ],
+      mostPopular: false,
+      buttonText: "Contact Sales",
+    },
+  ],
+  INR: [
+    {
+      name: "Starter",
+      id: "starter",
+      price: { MONTHLY: 0, QUARTERLY: 0, YEARLY: 0 },
+      description: "Perfect for freelancers and small businesses just getting started.",
+      features: [
+        "Up to 5 active clients",
+        "Unlimited invoices",
+        "Basic templates",
+        "Email support",
+      ],
+      mostPopular: false,
+      buttonText: "Current Plan",
+    },
+    {
+      name: "Pro",
+      id: "pro",
+      price: { MONTHLY: 999, QUARTERLY: 2699, YEARLY: 9999 },
+      description: "Everything you need to scale your business operations.",
+      features: [
+        "Unlimited clients",
+        "Unlimited invoices",
+        "Custom branding & templates",
+        "Recurring invoices",
+        "Automated reminders",
+        "Priority support",
+        "Multi-currency support",
+      ],
+      mostPopular: true,
+      buttonText: "Upgrade to Pro",
+    },
+    {
+      name: "Enterprise",
+      id: "enterprise",
+      price: { MONTHLY: "Custom", QUARTERLY: "Custom", YEARLY: "Custom" },
+      description: "Dedicated support and infrastructure for large organizations.",
+      features: [
+        "Unlimited everything",
+        "Dedicated account manager",
+        "Custom API integration",
+        "SSO & Advanced Security",
+        "SLA guarantees",
+        "Custom contracts",
+      ],
+      mostPopular: false,
+      buttonText: "Contact Sales",
+    },
+  ]
+}
 
 interface PricingTableProps {
   mode?: "landing" | "dashboard"
@@ -72,12 +125,28 @@ export function PricingTable({ mode = "landing" }: PricingTableProps) {
   const router = useRouter()
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("MONTHLY")
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null)
+  const [currency, setCurrency] = useState<Currency>("USD")
 
   const cycleLabels: Record<BillingCycle, string> = {
     MONTHLY: "mo",
     QUARTERLY: "qtr",
     YEARLY: "yr",
   }
+
+  const currencySymbols: Record<Currency, string> = {
+    USD: "$",
+    INR: "₹",
+  }
+
+  useEffect(() => {
+    // Auto-detect currency based on timezone
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (timeZone.includes("Kolkata") || timeZone.includes("Mumbai") || timeZone.includes("New_Delhi") || timeZone.includes("India")) {
+      setCurrency('INR')
+    } else {
+      setCurrency('USD')
+    }
+  }, [])
 
   const loadRazorpayScript = () => {
     return new Promise((resolve) => {
@@ -130,7 +199,7 @@ export function PricingTable({ mode = "landing" }: PricingTableProps) {
         body: JSON.stringify({
           plan: tierId.toUpperCase(),
           interval: billingCycle,
-          price: price,
+          currency: currency,
         }),
       })
 
@@ -219,7 +288,8 @@ export function PricingTable({ mode = "landing" }: PricingTableProps) {
       </div>
 
       <div className="grid w-full grid-cols-1 gap-8 pt-4 md:grid-cols-3 lg:gap-8 text-left">
-        {tiers.map((tier) => {
+        {tiers[currency].map((tier) => {
+          // @ts-ignore
           const price = tier.price[billingCycle]
           const isCustom = typeof price === "string"
           
@@ -252,7 +322,7 @@ export function PricingTable({ mode = "landing" }: PricingTableProps) {
                     price
                   ) : (
                     <>
-                      ${price}
+                      {currencySymbols[currency]}{price}
                       <span className="text-sm font-normal text-muted-foreground">
                         /{cycleLabels[billingCycle]}
                       </span>

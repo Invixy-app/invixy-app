@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
 import { createRazorpayOrder } from "@/lib/razorpay";
+import { getPrice } from "@/lib/pricing";
 
 export async function POST(req: NextRequest) {
   const session = await requireAuth();
@@ -9,7 +10,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { plan, interval, price } = await req.json();
+    const { plan, interval, currency } = await req.json();
 
     // Basic validation
     if (!plan || !interval ) {
@@ -19,10 +20,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Get validated price from backend config
+    const price = getPrice(currency, plan, interval);
+
+    if (price === 0) {
+       return NextResponse.json({ error: "Free plans do not require payment" }, { status: 400 });
+    }
+
     // Create Razorpay order
-    // Using INR as default currency as per schema change
+    // Using provided currency or default to INR
     const receipt = `receipt_1`;
-    const order = await createRazorpayOrder(price, "INR", receipt);
+    const order = await createRazorpayOrder(price, currency || "INR", receipt);
     
     // Log the order for debugging
     console.log("Razorpay Order Created:", JSON.stringify(order, null, 2));
