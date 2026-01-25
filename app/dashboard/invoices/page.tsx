@@ -353,7 +353,7 @@ export default function InvoicesPage() {
     totalOutstanding: invoices.reduce((sum, inv) => sum + (inv.totalAmount - inv.paidAmount), 0)
   };
 
-  const statusOptions = ["DRAFT", "SENT", "VIEWED", "PARTIAL_PAID", "PAID", "OVERDUE", "CANCELLED"];
+  const statusOptions = ["DRAFT", "SENT", "VIEWED", "PAID", "OVERDUE", "CANCELLED"];
 
   if (loading) {
     return (

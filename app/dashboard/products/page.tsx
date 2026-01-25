@@ -298,14 +298,14 @@ export default function ProductsPage() {
                       <TableCell>
                         {product.sku && (
                           <div className="flex items-center text-sm text-gray-700">
-                            <Hash className="h-3 w-3 mr-1 text-gray-400" />
+                            {/* <Hash className="h-3 w-3 mr-1 text-gray-400" /> */}
                             {product.sku}
                           </div>
                         )}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center text-gray-900">
-                          <DollarSign className="h-3 w-3 mr-1 text-gray-400" />
+                          {/* <DollarSign className="h-3 w-3 mr-1 text-gray-400" /> */}
                           {formatCurrency(product.price)}
                         </div>
                         {product.cost && (
