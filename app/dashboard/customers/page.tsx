@@ -24,6 +24,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { LIMITS } from "@/lib/constants-limits";
 import { 
   Search, 
   Plus, 
@@ -56,6 +63,11 @@ export default function CustomersPage() {
   const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // Calculate limits
+  const currentPlan = currentBusiness?.plan || "FREE";
+  const customerLimit = LIMITS[currentPlan].CUSTOMERS;
+  const canCreateCustomer = customers.length < customerLimit;
 
   useEffect(() => {
     if (currentBusiness?.id) {
@@ -171,12 +183,32 @@ export default function CustomersPage() {
               Manage your customer database and relationships
             </p>
           </div>
-          <Link href="/dashboard/customers/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Customer
-            </Button>
-          </Link>
+          <TooltipProvider>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button disabled={!canCreateCustomer} asChild={canCreateCustomer}>
+                    {canCreateCustomer ? (
+                      <Link href="/dashboard/customers/new">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Customer
+                      </Link>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Customer
+                      </>
+                    )}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!canCreateCustomer && (
+                <TooltipContent side="left">
+                   <p>Limit reached on {currentPlan} plan.</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         {/* Search and Filters */}
@@ -319,12 +351,32 @@ export default function CustomersPage() {
                   }
                 </p>
                 {!searchTerm && (
-                  <Link href="/dashboard/customers/new">
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Your First Customer
-                    </Button>
-                  </Link>
+                  <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <span>
+                          <Button disabled={!canCreateCustomer} asChild={canCreateCustomer}>
+                            {canCreateCustomer ? (
+                              <Link href="/dashboard/customers/new">
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Your First Customer
+                              </Link>
+                            ) : (
+                              <>
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Your First Customer
+                              </>
+                            )}
+                          </Button>
+                        </span>
+                      </TooltipTrigger>
+                      {!canCreateCustomer && (
+                        <TooltipContent>
+                          <p>Limit reached on {currentPlan} plan.</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </div>
             )}

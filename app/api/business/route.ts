@@ -66,7 +66,19 @@ export async function GET(req: Request) {
         
         const user=await prisma.user.findUnique({
             where:{email:session.user.email},
-            include:{BusinessUserRole:{include:{business:true}}}
+            include:{BusinessUserRole:{
+                include:{
+                    business:{
+                        include: {
+                            subscriptions: {
+                                where: { status: "ACTIVE" },
+                                orderBy: { createdAt: "desc" },
+                                take: 1
+                            }
+                        }
+                    }
+                }
+            }}
         });
         if(!user){
             return NextResponse.json({error:"User not found!"},{status:404});
@@ -84,6 +96,7 @@ export async function GET(req: Request) {
             website:bur.business.website,
             currency:bur.business.currency,
             role:bur.role,
+            plan: bur.business.subscriptions[0]?.plan || "FREE",
             createdAt:bur.business.createdAt,
             updatedAt:bur.business.updatedAt
         }));

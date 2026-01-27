@@ -25,6 +25,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { LIMITS } from "@/lib/constants-limits";
 import { InvoiceEmailDialog } from "@/components/invoices/invoice-email-dialog";
 import { 
   Search, 
@@ -354,6 +361,12 @@ export default function InvoicesPage() {
   };
 
   const statusOptions = ["DRAFT", "SENT", "VIEWED", "PAID", "OVERDUE", "CANCELLED"];
+  
+  // Calculate limits
+  const currentPlan = currentBusiness?.plan || "FREE";
+  const invoiceLimit = LIMITS[currentPlan].INVOICES;
+  const canCreateInvoice = invoices.length < invoiceLimit;
+  const canSendEmail = LIMITS[currentPlan].CAN_SEND_EMAIL;
 
   if (loading) {
     return (
@@ -394,12 +407,33 @@ export default function InvoicesPage() {
               Create, manage, and track your invoices
             </p>
           </div>
-          <Link href="/dashboard/invoices/new">
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Invoice
-            </Button>
-          </Link>
+          <TooltipProvider>
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <span>
+                  <Button disabled={!canCreateInvoice} asChild={canCreateInvoice}>
+                    {canCreateInvoice ? (
+                      <Link href="/dashboard/invoices/new">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Invoice
+                      </Link>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Invoice
+                      </>
+                    )}
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              {!canCreateInvoice && (
+                <TooltipContent side="left">
+                  <p>You have reached the limit of {invoiceLimit} invoices for the {currentPlan} plan.</p>
+                  <p className="font-semibold text-primary mt-1">Upgrade to Pro for unlimited invoices.</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         {/* Stats Overview */}
@@ -608,10 +642,17 @@ export default function InvoicesPage() {
                                     <Download className="h-4 w-4 mr-2" />
                                     Download PDF
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleSendToCustomer(invoice.id)}>
-                                    <Send className="h-4 w-4 mr-2" />
-                                    Send to Customer
-                                  </DropdownMenuItem>
+                                  {canSendEmail ? (
+                                    <DropdownMenuItem onClick={() => handleSendToCustomer(invoice.id)}>
+                                      <Send className="h-4 w-4 mr-2" />
+                                      Send to Customer
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem disabled>
+                                      <Send className="h-4 w-4 mr-2" />
+                                      Send to Customer (Pro)
+                                    </DropdownMenuItem>
+                                  )}
                                   <DropdownMenuSeparator />
                                   {invoice.status === "DRAFT" && (
                                     <DropdownMenuItem 
@@ -658,12 +699,32 @@ export default function InvoicesPage() {
                       }
                     </p>
                     {!(searchTerm || statusFilter) && (
-                      <Link href="/dashboard/invoices/new">
-                        <Button>
-                          <Plus className="h-4 w-4 mr-2" />
-                          Create Your First Invoice
-                        </Button>
-                      </Link>
+                      <TooltipProvider>
+                        <Tooltip delayDuration={0}>
+                          <TooltipTrigger asChild>
+                            <span>
+                              <Button disabled={!canCreateInvoice} asChild={canCreateInvoice}>
+                                {canCreateInvoice ? (
+                                  <Link href="/dashboard/invoices/new">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Create Your First Invoice
+                                  </Link>
+                                ) : (
+                                  <span className="flex items-center">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Create Your First Invoice
+                                  </span>
+                                )}
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {!canCreateInvoice && (
+                             <TooltipContent>
+                               <p>Limit reached on {currentPlan} plan.</p>
+                             </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                     )}
                   </div>
                 )}
@@ -773,10 +834,17 @@ export default function InvoicesPage() {
                                       <Download className="h-4 w-4 mr-2" />
                                       Download PDF
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleSendToCustomer(invoice.id)}>
-                                      <Send className="h-4 w-4 mr-2" />
-                                      Send to Customer
-                                    </DropdownMenuItem>
+                                    {canSendEmail ? (
+                                      <DropdownMenuItem onClick={() => handleSendToCustomer(invoice.id)}>
+                                        <Send className="h-4 w-4 mr-2" />
+                                        Send to Customer
+                                      </DropdownMenuItem>
+                                    ) : (
+                                      <DropdownMenuItem disabled>
+                                        <Send className="h-4 w-4 mr-2" />
+                                        Send to Customer (Pro)
+                                      </DropdownMenuItem>
+                                    )}
                                     <DropdownMenuSeparator />
                                     {invoice.status === "DRAFT" && (
                                       <DropdownMenuItem 
@@ -823,12 +891,32 @@ export default function InvoicesPage() {
                         }
                       </p>
                       {!(searchTerm || statusFilter) && (
-                        <Link href="/dashboard/invoices/new">
-                          <Button>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create Invoice
-                          </Button>
-                        </Link>
+                        <TooltipProvider>
+                        <Tooltip delayDuration={0}>
+                          <TooltipTrigger asChild>
+                            <span>
+                              <Button disabled={!canCreateInvoice} asChild={canCreateInvoice}>
+                                {canCreateInvoice ? (
+                                  <Link href="/dashboard/invoices/new">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Create Invoice
+                                  </Link>
+                                ) : (
+                                  <>
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Create Invoice
+                                  </>
+                                )}
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          {!canCreateInvoice && (
+                             <TooltipContent>
+                               <p>Limit reached on {currentPlan} plan.</p>
+                             </TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                       )}
                     </div>
                   )}

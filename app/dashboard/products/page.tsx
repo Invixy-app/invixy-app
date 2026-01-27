@@ -24,6 +24,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { LIMITS } from "@/lib/constants-limits";
 import { 
   Search, 
   Plus, 
@@ -67,6 +74,11 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+
+  // Calculate limits
+  const currentPlan = currentBusiness?.plan || "FREE";
+  const productLimit = LIMITS[currentPlan].PRODUCTS;
+  const canCreateProduct = products.length < productLimit;
 
   useEffect(() => {
     if (currentBusiness?.id) {
@@ -214,12 +226,33 @@ export default function ProductsPage() {
           Manage your product catalog and inventory
         </p>
       </div>
-      <Link href="/dashboard/products/new">
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Product
-        </Button>
-      </Link>
+      <TooltipProvider>
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <span>
+              <Button disabled={!canCreateProduct} asChild={canCreateProduct}>
+                {canCreateProduct ? (
+                  <Link href="/dashboard/products/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Product
+                  </Link>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Product
+                  </>
+                )}
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {!canCreateProduct && (
+            <TooltipContent side="left">
+              <p>You have reached the limit of {productLimit} products for the {currentPlan} plan.</p>
+              <p className="font-semibold text-primary mt-1">Upgrade to Pro for unlimited products.</p>
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
     </div>
 
     {/* Search and Filters */}
@@ -426,12 +459,32 @@ export default function ProductsPage() {
                 : "Get started by adding your first product."}
             </p>
             {!(searchTerm || selectedCategory) && (
-              <Link href="/dashboard/products/new">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Your First Product
-                </Button>
-              </Link>
+              <TooltipProvider>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button disabled={!canCreateProduct} asChild={canCreateProduct} className="bg-blue-600 hover:bg-blue-700 text-white">
+                        {canCreateProduct ? (
+                          <Link href="/dashboard/products/new">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Your First Product
+                          </Link>
+                        ) : (
+                          <>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Add Your First Product
+                          </>
+                        )}
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {!canCreateProduct && (
+                    <TooltipContent>
+                      <p>Limit reached on {currentPlan} plan.</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             )}
           </div>
         )}
