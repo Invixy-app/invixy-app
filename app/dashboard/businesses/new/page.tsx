@@ -83,11 +83,11 @@ export default function NewBusinessPage() {
         await refreshBusinesses();
         router.push("/dashboard");
       } else {
-        setError(data.error || "Something went wrong");
+        setError("Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error(error);
-      setError("Something went wrong");
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }

@@ -68,12 +68,12 @@ export default function EditCustomerPage() {
           isActive: customer.isActive,
         });
       } else {
-        showError("Error", "Failed to fetch customer details");
+        showError("Error", "Something went wrong. Please try again.");
         router.push("/dashboard/customers");
       }
     } catch (error) {
       console.error("Error fetching customer:", error);
-      showError("Error", "Error loading customer details");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -125,11 +125,11 @@ export default function EditCustomerPage() {
         router.push(`/dashboard/customers/${customerId}`);
       } else {
         const errorData = await response.json();
-        showError("Error", errorData.error || "Failed to update customer");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error updating customer:", error);
-      showError("Error", "Error updating customer");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }

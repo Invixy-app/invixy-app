@@ -20,12 +20,13 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const businessId = searchParams.get("businessId");
+    const taxSystemId = searchParams.get("taxSystemId") || undefined;
 
     if (!businessId) {
       return NextResponse.json({ error: "Business ID is required" }, { status: 400 });
     }
 
-    const products = await getProductsByBusiness(businessId, session.user.id);
+    const products = await getProductsByBusiness(businessId, session.user.id, taxSystemId);
     return NextResponse.json(products);
   } catch (error: any) {
     console.error("Error fetching products:", error);

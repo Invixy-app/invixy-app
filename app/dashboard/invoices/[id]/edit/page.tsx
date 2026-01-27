@@ -144,7 +144,7 @@ export default function EditInvoicePage() {
       // Fetch invoice
       const invoiceResponse = await fetch(`/api/invoices/${params?.id}?businessId=${currentBusiness?.id}`);
       if (!invoiceResponse.ok) {
-        showError("Error", "Failed to load invoice");
+        showError("Error", "Something went wrong. Please try again.");
         router.push("/dashboard/invoices");
         return;
       }
@@ -178,7 +178,7 @@ export default function EditInvoicePage() {
       ]);
     } catch (error) {
       console.error("Error fetching invoice data:", error);
-      showError("Error", "Failed to load invoice data");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -371,14 +371,20 @@ export default function EditInvoicePage() {
       if (error instanceof z.ZodError) {
         const newErrors: Record<string, string> = {};
         for (const err of error.issues) {
-          if (err.path[0]) {
+          if (err.path[0] === "items") {
+             const itemIndex = err.path[1];
+             const field = err.path[2];
+             if (typeof itemIndex === 'number' && field) {
+                newErrors[`items.${itemIndex}.${String(field)}`] = err.message;
+             } else {
+                newErrors["items"] = "Please check item details";
+             }
+          } else if (err.path[0]) {
             newErrors[err.path[0] as string] = err.message;
           }
         }
         setErrors(newErrors);
-        if (Object.keys(newErrors).length > 0) {
-          showError("Validation Error", "Please check the form for errors");
-        }
+        showError("Validation Error", "Please check the form for errors.");
       }
       return false;
     }
@@ -420,11 +426,11 @@ export default function EditInvoicePage() {
         router.push(`/dashboard/invoices/${params?.id}`);
       } else {
         const errorData = await response.json();
-        showError("Error", errorData.error || "Failed to update invoice");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error updating invoice:", error);
-      showError("Error", "Failed to update invoice");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -666,10 +672,15 @@ export default function EditInvoicePage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {formData.items.map((item, index) => (
-                        <TableRow key={item.id || item.tempId}>
+                      {formData.items.map((item, index) => {
+                        const hasError = Object.keys(errors).some(key => key.startsWith(`items.${index}.`));
+                        return (
+                        <TableRow key={item.id || item.tempId} className={hasError ? "bg-red-50" : ""}>
                           <TableCell>
                             <div className="font-medium">{item.description}</div>
+                            {errors[`items.${index}.description`] && (
+                                <div className="text-xs text-red-500 mt-1">{errors[`items.${index}.description`]}</div>
+                            )}
                             {item.taxSystemIds && item.taxSystemIds.length > 0 && (
                               <div className="text-xs text-muted-foreground mt-1">
                                 Taxes: {item.taxSystemIds.map((taxId, idx) => {
@@ -684,12 +695,23 @@ export default function EditInvoicePage() {
                               </div>
                             )}
                           </TableCell>
-                          <TableCell className="text-right">{item.quantity}</TableCell>
+                          <TableCell className="text-right">
+                            {item.quantity}
+                            {errors[`items.${index}.quantity`] && (
+                                <div className="text-xs text-red-500 mt-1">{errors[`items.${index}.quantity`]}</div>
+                            )}
+                          </TableCell>
                           <TableCell className="text-right">
                             ${item.unitPrice.toFixed(2)}
+                            {errors[`items.${index}.unitPrice`] && (
+                                <div className="text-xs text-red-500 mt-1">{errors[`items.${index}.unitPrice`]}</div>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">
                             ${item.discount.toFixed(2)}
+                             {errors[`items.${index}.discount`] && (
+                                <div className="text-xs text-red-500 mt-1">{errors[`items.${index}.discount`]}</div>
+                            )}
                           </TableCell>
                           <TableCell className="text-right font-medium">
                             ${item.lineTotal.toFixed(2)}
@@ -713,7 +735,7 @@ export default function EditInvoicePage() {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )})}
                     </TableBody>
                   </Table>
                 )}
@@ -737,7 +759,11 @@ export default function EditInvoicePage() {
                     value={formData.notes}
                     onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     rows={3}
+                    className={errors.notes ? "border-red-500" : ""}
                   />
+                  {errors.notes && (
+                      <p className="text-sm text-red-500">{errors.notes}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -748,7 +774,11 @@ export default function EditInvoicePage() {
                     value={formData.terms}
                     onChange={(e) => setFormData(prev => ({ ...prev, terms: e.target.value }))}
                     rows={3}
+                    className={errors.terms ? "border-red-500" : ""}
                   />
+                  {errors.terms && (
+                      <p className="text-sm text-red-500">{errors.terms}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>

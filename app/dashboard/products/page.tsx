@@ -44,6 +44,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import Link from "next/link";
+import { BulkProductImport } from "@/components/products/bulk-product-import";
 
 interface Product {
   id: string;
@@ -148,11 +149,11 @@ export default function ProductsPage() {
             showSuccess("Success", "Product deleted successfully");
           } else {
             const errorData = await response.json();
-            showError("Error", errorData.error || "Failed to delete product");
+            showError("Error", "Something went wrong. Please try again.");
           }
         } catch (error) {
           console.error("Error deleting product:", error);
-          showError("Error", "Error deleting product");
+          showError("Error", "Something went wrong. Please try again.");
         }
       },
       {
@@ -226,33 +227,36 @@ export default function ProductsPage() {
           Manage your product catalog and inventory
         </p>
       </div>
-      <TooltipProvider>
-        <Tooltip delayDuration={0}>
-          <TooltipTrigger asChild>
-            <span>
-              <Button disabled={!canCreateProduct} asChild={canCreateProduct}>
-                {canCreateProduct ? (
-                  <Link href="/dashboard/products/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Product
-                  </Link>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Product
-                  </>
-                )}
-              </Button>
-            </span>
-          </TooltipTrigger>
-          {!canCreateProduct && (
-            <TooltipContent side="left">
-              <p>You have reached the limit of {productLimit} products for the {currentPlan} plan.</p>
-              <p className="font-semibold text-primary mt-1">Upgrade to Pro for unlimited products.</p>
-            </TooltipContent>
-          )}
-        </Tooltip>
-      </TooltipProvider>
+      <div className="flex items-center space-x-2">
+        <BulkProductImport />
+        <TooltipProvider>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <span>
+                <Button disabled={!canCreateProduct} asChild={canCreateProduct}>
+                  {canCreateProduct ? (
+                    <Link href="/dashboard/products/new">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Product
+                    </Link>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Product
+                    </>
+                  )}
+                </Button>
+              </span>
+            </TooltipTrigger>
+            {!canCreateProduct && (
+              <TooltipContent side="left">
+                <p>You have reached the limit of {productLimit} products for the {currentPlan} plan.</p>
+                <p className="font-semibold text-primary mt-1">Upgrade to Pro for unlimited products.</p>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     </div>
 
     {/* Search and Filters */}

@@ -103,6 +103,7 @@ export default function EditBusinessPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (businessId) {
@@ -136,12 +137,12 @@ export default function EditBusinessPage() {
           country: businessData.country || "United States"
         });
       } else {
-        showError("Error", "Failed to load business details");
+        showError("Error", "Something went wrong. Please try again.");
         router.push("/dashboard");
       }
     } catch (error) {
       console.error("Failed to fetch business:", error);
-      showError("Error", "Failed to load business details");
+      showError("Error", "Something went wrong. Please try again.");
       router.push("/dashboard");
     } finally {
       setLoading(false);
@@ -151,25 +152,41 @@ export default function EditBusinessPage() {
   const handleInputChange = (field: keyof BusinessFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setHasChanges(true);
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
     if (!formData.name.trim()) {
-      showError("Validation Error", "Business name is required");
-      return false;
+      newErrors.name = "Business name is required";
     }
     if (!formData.type) {
-      showError("Validation Error", "Business type is required");
-      return false;
+      newErrors.type = "Business type is required";
     }
     if (formData.email && !formData.email.includes("@")) {
-      showError("Validation Error", "Please enter a valid email address");
-      return false;
+      newErrors.email = "Please enter a valid email address";
     }
     if (formData.website && !formData.website.startsWith("http")) {
-      showError("Validation Error", "Website URL should start with http:// or https://");
+      newErrors.website = "Website URL should start with http:// or https://";
+    }
+    if (formData.phone && formData.phone.length < 10) {
+      newErrors.phone = "Phone number should be at least 10 digits";
+    }
+
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      showError("Validation Error", "Please check the form for errors");
       return false;
     }
+
     return true;
   };
 
@@ -191,12 +208,11 @@ export default function EditBusinessPage() {
         setHasChanges(false);
         router.push(`/dashboard`);
       } else {
-        const error = await response.json();
-        showError("Error", error.message || "Failed to update business");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Failed to update business:", error);
-      showError("Error", "Failed to update business");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -353,7 +369,9 @@ export default function EditBusinessPage() {
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Enter business name"
+                  className={errors.name ? "border-red-500" : ""}
                 />
+                {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name}</p>}
               </div>
 
               <div>
@@ -374,7 +392,7 @@ export default function EditBusinessPage() {
                     value={formData.type}
                     onValueChange={(value) => handleInputChange('type', value)}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={errors.type ? "border-red-500" : ""}>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -385,6 +403,7 @@ export default function EditBusinessPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.type && <p className="text-sm text-red-500 mt-1">{errors.type}</p>}
                 </div>
 
                 <div>
@@ -454,9 +473,10 @@ export default function EditBusinessPage() {
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     placeholder="+1 (555) 123-4567"
-                    className="pl-10"
+                    className={`pl-10 ${errors.phone ? "border-red-500" : ""}`}
                   />
                 </div>
+                {errors.phone && <p className="text-sm text-red-500 mt-1">{errors.phone}</p>}
               </div>
 
               <div>
@@ -469,9 +489,10 @@ export default function EditBusinessPage() {
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     placeholder="contact@business.com"
-                    className="pl-10"
+                    className={`pl-10 ${errors.email ? "border-red-500" : ""}`}
                   />
                 </div>
+                 {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email}</p>}
               </div>
 
               <div>
@@ -483,9 +504,10 @@ export default function EditBusinessPage() {
                     value={formData.website}
                     onChange={(e) => handleInputChange('website', e.target.value)}
                     placeholder="https://www.business.com"
-                    className="pl-10"
+                    className={`pl-10 ${errors.website ? "border-red-500" : ""}`}
                   />
                 </div>
+                 {errors.website && <p className="text-sm text-red-500 mt-1">{errors.website}</p>}
               </div>
 
               <Separator />

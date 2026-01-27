@@ -177,11 +177,11 @@ export default function InvoicesPage() {
             showSuccess("Success", "Invoice deleted successfully");
           } else {
             const errorData = await response.json();
-            showError("Error", errorData.error || "Failed to delete invoice");
+            showError("Error", "Something went wrong. Please try again.");
           }
         } catch (error) {
           console.error("Error deleting invoice:", error);
-          showError("Error", "Error deleting invoice");
+          showError("Error", "Something went wrong. Please try again.");
         }
       },
       {
@@ -214,11 +214,11 @@ export default function InvoicesPage() {
         showSuccess("Success", "Invoice status updated successfully");
       } else {
         const errorData = await response.json();
-        showError("Error", errorData.error || "Failed to update invoice status");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error updating invoice status:", error);
-      showError("Error", "Error updating invoice status");
+      showError("Error", "Something went wrong. Please try again.");
     }
   };
 
@@ -244,11 +244,11 @@ export default function InvoicesPage() {
         showSuccess("Success", "Invoice PDF downloaded successfully");
       } else {
         const errorData = await response.json();
-        showError("Error", errorData.error || "Failed to download PDF");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error downloading PDF:", error);
-      showError("Error", "Error downloading PDF");
+      showError("Error", "Something went wrong. Please try again.");
     }
   };
 
@@ -288,7 +288,7 @@ export default function InvoicesPage() {
       showSuccess("Info", "Duplicate invoice feature will be implemented soon");
     } catch (error) {
       console.error("Error duplicating invoice:", error);
-      showError("Error", "Error duplicating invoice");
+      showError("Error", "Something went wrong. Please try again.");
     }
   };
 
