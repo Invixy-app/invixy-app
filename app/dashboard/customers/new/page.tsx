@@ -95,11 +95,11 @@ export default function NewCustomerPage() {
         router.push("/dashboard/customers");
       } else {
         const errorData = await response.json();
-        showError("Error", errorData.error || "Failed to create customer");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error creating customer:", error);
-      showError("Error", "Error creating customer");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -207,8 +207,11 @@ export default function NewCustomerPage() {
                       placeholder="Enter phone number"
                       value={formData.phone}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
-                      className="pl-10"
-                    />
+                    className={`pl-10 ${errors.phone ? "border-red-500" : ""}`}
+                  />
+                  {errors.phone && (
+                    <p className="text-sm text-red-500">{errors.phone}</p>
+                  )}
                   </div>
                 </div>
 
@@ -221,9 +224,12 @@ export default function NewCustomerPage() {
                       placeholder="Tax identification number"
                       value={formData.taxId}
                       onChange={(e) => handleInputChange("taxId", e.target.value)}
-                      className="pl-10"
+                      className={`pl-10 ${errors.taxId ? "border-red-500" : ""}`}
                     />
                   </div>
+                  {errors.taxId && (
+                    <p className="text-sm text-red-500">{errors.taxId}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -248,7 +254,11 @@ export default function NewCustomerPage() {
                     value={formData.billingAddress}
                     onChange={(e) => handleInputChange("billingAddress", e.target.value)}
                     rows={3}
+                    className={errors.billingAddress ? "border-red-500" : ""}
                   />
+                  {errors.billingAddress && (
+                    <p className="text-sm text-red-500">{errors.billingAddress}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -273,7 +283,11 @@ export default function NewCustomerPage() {
                     value={formData.shippingAddress}
                     onChange={(e) => handleInputChange("shippingAddress", e.target.value)}
                     rows={3}
+                    className={errors.shippingAddress ? "border-red-500" : ""}
                   />
+                  {errors.shippingAddress && (
+                    <p className="text-sm text-red-500">{errors.shippingAddress}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -293,7 +307,11 @@ export default function NewCustomerPage() {
                 value={formData.notes}
                 onChange={(e) => handleInputChange("notes", e.target.value)}
                 rows={4}
+                className={errors.notes ? "border-red-500" : ""}
               />
+              {errors.notes && (
+                <p className="text-sm text-red-500">{errors.notes}</p>
+              )}
             </CardContent>
           </Card>
 

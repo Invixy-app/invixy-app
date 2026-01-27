@@ -228,3 +228,54 @@ export const TAX_TEMPLATES = {
     ]
   }
 };
+
+export async function getTaxSystemUsage(taxSystemId: string, businessId: string) {
+  // Query invoices that use this tax system
+  const invoices = await prisma.invoice.findMany({
+    where: {
+      businessId,
+      taxes: {
+        some: {
+          taxSystemId
+        }
+      }
+    },
+    select: {
+       id: true,
+       invoiceNumber: true,
+       issueDate: true,
+       status: true,
+       totalTax: true,
+       totalAmount: true,
+       customer: {
+         select: {
+           name: true
+         }
+       },
+       taxes: {
+         where: {
+            taxSystemId
+         },
+         select: {
+            taxAmount: true
+         }
+       }
+    },
+    orderBy: {
+      issueDate: 'desc'
+    },
+    take: 50 
+  });
+
+  return {
+    invoices: invoices.map(inv => ({
+      id: inv.id,
+      invoiceNumber: inv.invoiceNumber,
+      customerName: inv.customer.name,
+      issueDate: inv.issueDate,
+      status: inv.status,
+      taxAmount: Number(inv.taxes[0]?.taxAmount || 0),
+      total: Number(inv.totalAmount)
+    }))
+  };
+}

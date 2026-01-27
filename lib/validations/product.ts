@@ -8,8 +8,8 @@ export const productSchema = z.object({
   cost: z.coerce.number().min(0, "Cost must be positive").optional(),
   category: z.string().optional().or(z.literal("")),
   unit: z.string().min(1, "Unit is required").default("pcs"),
-  stockQuantity: z.coerce.number().int("Stock must be an integer").min(0).default(0),
-  minStockLevel: z.coerce.number().int("Min stock must be an integer").min(0).default(0),
+  stockQuantity: z.coerce.number().int("Stock must be number").min(0).default(0),
+  minStockLevel: z.coerce.number().int("Min stock must be number").min(0).default(0),
   taxSystemId: z.string().optional().or(z.literal("")),
   isActive: z.boolean().default(true),
 });

@@ -71,12 +71,12 @@ export default function CustomerDetailsPage() {
         const data = await response.json();
         setCustomer(data);
       } else {
-        showError("Error", "Failed to fetch customer details");
+        showError("Error", "Something went wrong. Please try again.");
         router.push("/dashboard/customers");
       }
     } catch (error) {
       console.error("Error fetching customer:", error);
-      showError("Error", "Error loading customer details");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }

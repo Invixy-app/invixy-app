@@ -33,7 +33,9 @@ export const useAlertStore = create<AlertStore>((set) => ({
     isOpen: false, 
     loading: false,
     onConfirm: undefined,
-    onCancel: undefined 
+    onCancel: undefined,
+    confirmText: undefined,
+    cancelText: undefined,
   }),
   setLoading: (loading) => set({ loading }),
 }));

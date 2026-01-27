@@ -87,12 +87,12 @@ export default function EditProductPage() {
           isActive: product.isActive,
         });
       } else {
-        showError("Error", "Failed to fetch product details");
+        showError("Error", "Something went wrong. Please try again.");
         router.push("/dashboard/products");
       }
     } catch (error) {
       console.error("Error fetching product:", error);
-      showError("Error", "Error loading product details");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -171,11 +171,11 @@ export default function EditProductPage() {
         router.push("/dashboard/products");
       } else {
         const errorData = await response.json();
-        showError("Error", errorData.error || "Failed to update product");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error updating product:", error);
-      showError("Error", "Error updating product");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }

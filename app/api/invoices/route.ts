@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const businessId = searchParams.get("businessId");
-    const status = searchParams.get("status") as InvoiceStatus | null;
+    const status = searchParams.get("status") as InvoiceStatus;
     const customerId = searchParams.get("customerId");
     const dateFrom = searchParams.get("dateFrom");
     const dateTo = searchParams.get("dateTo");

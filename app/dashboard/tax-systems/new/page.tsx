@@ -195,11 +195,11 @@ function NewTaxSystemContent() {
         router.push("/dashboard/tax-systems");
       } else {
         const errorData = await response.json();
-        showError("Error", errorData.error || "Failed to create tax system");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error creating tax system:", error);
-      showError("Error", "Error creating tax system");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -244,11 +244,11 @@ function NewTaxSystemContent() {
         showSuccess("Success", "All tax rates created successfully");
         router.push("/dashboard/tax-systems");
       } else {
-        showError("Error", `Failed to create ${failures.length} tax rates`);
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error creating multiple tax rates:", error);
-      showError("Error", "Error creating tax systems");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -437,7 +437,11 @@ function NewTaxSystemContent() {
                         value={formData.description}
                         onChange={(e) => handleInputChange("description", e.target.value)}
                         rows={3}
+                        className={errors.description ? "border-red-500" : ""}
                       />
+                      {errors.description && (
+                        <p className="text-sm text-red-500">{errors.description}</p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -455,7 +459,7 @@ function NewTaxSystemContent() {
                       <div className="space-y-2">
                         <Label htmlFor="taxType">Tax Type</Label>
                         <Select value={formData.taxType} onValueChange={(value) => handleInputChange("taxType", value)}>
-                          <SelectTrigger>
+                          <SelectTrigger className={errors.taxType ? "border-red-500" : ""}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -474,6 +478,9 @@ function NewTaxSystemContent() {
                             <SelectItem value="INCLUSIVE">Inclusive Tax</SelectItem>
                           </SelectContent>
                         </Select>
+                        {errors.taxType && (
+                          <p className="text-sm text-red-500">{errors.taxType}</p>
+                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -529,7 +536,11 @@ function NewTaxSystemContent() {
                           type="date"
                           value={formData.validFrom}
                           onChange={(e) => handleInputChange("validFrom", e.target.value)}
+                          className={errors.validFrom ? "border-red-500" : ""}
                         />
+                        {errors.validFrom && (
+                          <p className="text-sm text-red-500">{errors.validFrom}</p>
+                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -539,7 +550,11 @@ function NewTaxSystemContent() {
                           type="date"
                           value={formData.validTo}
                           onChange={(e) => handleInputChange("validTo", e.target.value)}
+                          className={errors.validTo ? "border-red-500" : ""}
                         />
+                        {errors.validTo && (
+                          <p className="text-sm text-red-500">{errors.validTo}</p>
+                        )}
                       </div>
                     </div>
                   </CardContent>
