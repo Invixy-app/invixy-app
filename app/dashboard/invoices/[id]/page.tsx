@@ -29,6 +29,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -36,6 +42,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { showError, showSuccess } from "@/lib/alert-store";
 import { 
   ArrowLeft, 
   Edit, 
@@ -53,7 +60,8 @@ import {
   Copy,
   Mail,
   Printer,
-  ChevronDown
+  ChevronDown,
+  Lock
 } from "lucide-react";
 import Link from "next/link";
 import { InvoiceEmailDialog } from "@/components/invoices/invoice-email-dialog";
@@ -191,11 +199,11 @@ export default function InvoiceDetailPage() {
       if (response.ok) {
         await fetchInvoice();
       } else {
-        alert("Failed to update invoice status");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error updating status:", error);
-      alert("Error updating invoice status");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setActionLoading(false);
     }
@@ -211,11 +219,11 @@ export default function InvoiceDetailPage() {
       if (response.ok) {
         router.push("/dashboard/invoices");
       } else {
-        alert("Failed to delete invoice");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error deleting invoice:", error);
-      alert("Error deleting invoice");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setActionLoading(false);
       setShowDeleteDialog(false);
@@ -225,7 +233,7 @@ export default function InvoiceDetailPage() {
   const copyInvoiceNumber = () => {
     if (invoice?.invoiceNumber) {
       navigator.clipboard.writeText(invoice.invoiceNumber);
-      alert("Invoice number copied to clipboard!");
+      showSuccess("Success", "Invoice number copied to clipboard!");
     }
   };
 
@@ -233,7 +241,7 @@ export default function InvoiceDetailPage() {
     if (invoice?.id) {
       const publicUrl = `${window.location.origin}/invoices/${invoice.id}`;
       navigator.clipboard.writeText(publicUrl);
-      alert("Public link copied to clipboard!");
+      showSuccess("Success", "Public link copied to clipboard!");
     }
   };
 
@@ -258,7 +266,7 @@ export default function InvoiceDetailPage() {
       document.body.removeChild(a);
     } catch (error) {
       console.error("Error downloading PDF:", error);
-      alert("Failed to download PDF");
+      showError("Error", "Something went wrong. Please try again.");
     }
   };
 
@@ -354,13 +362,34 @@ export default function InvoiceDetailPage() {
               Download
             </Button>
 
-            <Button 
-              variant="outline" 
-              onClick={() => setShowEmailDialog(true)}
-            >
-              <Mail className="h-4 w-4 mr-2" />
-              Email
-            </Button>
+            {currentBusiness?.plan === 'FREE' ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-block">
+                      <Button 
+                        variant="outline" 
+                        disabled={true}
+                      >
+                       <Lock className="h-4 w-4 mr-2" />
+                        Email
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                   <TooltipContent>
+                     <p>Emailing invoices is available on Pro and Enterprise plans.</p>
+                   </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <Button 
+                variant="outline" 
+                onClick={() => setShowEmailDialog(true)}
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Email
+              </Button>
+            )}
             
             {canEdit && (
                <Link href={`/dashboard/invoices/${invoice.id}/edit`}>

@@ -26,7 +26,11 @@ export interface ProductWithTax {
   } | null;
 }
 
-export async function getProductsByBusiness(businessId: string, userId: string): Promise<ProductWithTax[]> {
+export async function getProductsByBusiness(
+  businessId: string, 
+  userId: string,
+  taxSystemId?: string
+): Promise<ProductWithTax[]> {
   // Verify user has access to this business
   const hasAccess = await prisma.businessUserRole.findUnique({
     where: {
@@ -39,11 +43,17 @@ export async function getProductsByBusiness(businessId: string, userId: string):
 
   if (!hasAccess) throw new Error("Access denied");
 
+  const whereClause: any = {
+    businessId,
+    isActive: true,
+  };
+
+  if (taxSystemId) {
+    whereClause.taxSystemId = taxSystemId;
+  }
+
   const products = await prisma.product.findMany({
-    where: {
-      businessId,
-      isActive: true
-    },
+    where: whereClause,
     include: {
       taxSystem: {
         select: {

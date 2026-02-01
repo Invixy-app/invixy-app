@@ -184,7 +184,7 @@ export default function BusinessSettingsPage() {
         addAlert({
           type: 'error',
           title: 'Update Failed',
-          message: error.message || 'Failed to update business'
+          message: "Something went wrong. Please try again."
         });
       }
     } finally {
@@ -219,7 +219,7 @@ export default function BusinessSettingsPage() {
       addAlert({
         type: 'error',
         title: 'Delete Failed',
-        message: error.message || 'Failed to delete business'
+        message: "Something went wrong. Please try again."
       });
     }
   };
@@ -276,7 +276,7 @@ export default function BusinessSettingsPage() {
       addAlert({
         type: 'error',
         title: 'Failed to Add Member',
-        message: error.message || 'Failed to add team member'
+        message: "Something went wrong. Please try again."
       });
     } finally {
       setLoading(false);
@@ -315,7 +315,7 @@ export default function BusinessSettingsPage() {
       addAlert({
         type: 'error',
         title: 'Update Failed',
-        message: error.message || 'Failed to update role'
+        message: "Something went wrong. Please try again."
       });
     } finally {
       setLoading(false);
@@ -348,7 +348,7 @@ export default function BusinessSettingsPage() {
       addAlert({
         type: 'error',
         title: 'Remove Failed',
-        message: error.message || 'Failed to remove team member'
+        message: "Something went wrong. Please try again."
       });
     } finally {
       setLoading(false);
