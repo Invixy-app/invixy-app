@@ -145,11 +145,11 @@ export default function NewProductPage() {
         router.push("/dashboard/products");
       } else {
         const errorData = await response.json();
-        showError("Error", errorData.error || "Failed to create product");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error creating product:", error);
-      showError("Error", "Error creating product");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -258,6 +258,9 @@ export default function NewProductPage() {
                     onChange={(e) => handleInputChange("description", e.target.value)}
                     rows={3}
                   />
+                   {errors.description && (
+                    <p className="text-sm text-red-500">{errors.description}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -272,9 +275,11 @@ export default function NewProductPage() {
                         onChange={(e) => handleInputChange("sku", e.target.value)}
                         className="pl-10"
                       />
+                       {errors.sku && (
+                    <p className="text-sm text-red-500">{errors.sku}</p>
+                  )}
                     </div>
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="category">Category</Label>
                     <Input
@@ -283,6 +288,9 @@ export default function NewProductPage() {
                       value={formData.category}
                       onChange={(e) => handleInputChange("category", e.target.value)}
                     />
+                     {errors.category && (
+                    <p className="text-sm text-red-500">{errors.category}</p>
+                  )}
                   </div>
                 </div>
 
@@ -300,6 +308,9 @@ export default function NewProductPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.unit && (
+                    <p className="text-sm text-red-500">{errors.unit}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -356,6 +367,9 @@ export default function NewProductPage() {
                         className="pl-10"
                       />
                     </div>
+                    {errors.cost && (
+                      <p className="text-sm text-red-500">{errors.cost}</p>
+                    )}
                   </div>
                 </div>
 
@@ -379,6 +393,9 @@ export default function NewProductPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.taxSystemId && (
+                    <p className="text-sm text-red-500">{errors.taxSystemId}</p>
+                  )}
                 </div>
 
                 {formData.price > 0 && formData.cost !== undefined && formData.cost >= 0 && (
@@ -419,6 +436,9 @@ export default function NewProductPage() {
                     value={formData.stockQuantity || ""}
                     onChange={(e) => handleInputChange("stockQuantity", Number.parseInt(e.target.value) || 0)}
                   />
+                  {errors.stockQuantity && (
+                    <p className="text-sm text-red-500">{errors.stockQuantity}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -431,6 +451,9 @@ export default function NewProductPage() {
                     value={formData.minStockLevel || ""}
                     onChange={(e) => handleInputChange("minStockLevel", Number.parseInt(e.target.value) || 0)}
                   />
+                  {errors.minStockLevel && (
+                    <p className="text-sm text-red-500">{errors.minStockLevel}</p>
+                  )}
                 </div>
               </div>
             </CardContent>

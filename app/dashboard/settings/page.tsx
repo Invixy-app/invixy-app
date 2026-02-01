@@ -165,7 +165,7 @@ export default function UserSettingsPage() {
       addAlert({
         type: 'error',
         title: 'Update Failed',
-        message: error.message || 'Failed to update profile'
+        message: "Something went wrong. Please try again."
       });
     } finally {
       setLoading(false);
@@ -196,7 +196,7 @@ export default function UserSettingsPage() {
       addAlert({
         type: 'error',
         title: 'Update Failed',
-        message: error.message || 'Failed to update notifications'
+        message: "Something went wrong. Please try again."
       });
     } finally {
       setLoading(false);
@@ -254,7 +254,7 @@ export default function UserSettingsPage() {
       addAlert({
         type: 'error',
         title: 'Password Change Failed',
-        message: error.message || 'Failed to change password'
+        message: "Something went wrong. Please try again."
       });
     } finally {
       setLoading(false);
@@ -285,7 +285,7 @@ export default function UserSettingsPage() {
       addAlert({
         type: 'error',
         title: 'Delete Failed',
-        message: error.message || 'Failed to delete account'
+        message: "Something went wrong. Please try again."
       });
     }
   };

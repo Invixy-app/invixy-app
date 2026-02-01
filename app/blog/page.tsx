@@ -9,20 +9,23 @@ const posts = [
   {
     title: "The Future of Invoicing is Automated",
     description: "How AI and automation are changing the way businesses handle finances.",
-    date: "November 15, 2025",
-    slug: "future-of-invoicing"
+    date: "November 15, 2026",
+    slug: "future-of-invoicing",
+    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=2426"
   },
   {
     title: "5 Tips for Getting Paid Faster",
     description: "Simple strategies to improve your cash flow and reduce overdue invoices.",
     date: "November 10, 2025",
-    slug: "getting-paid-faster"
+    slug: "getting-paid-faster",
+    image: "https://images.unsplash.com/photo-1554224155-984bb41e1d08?auto=format&fit=crop&q=80&w=2672"
   },
   {
     title: "Invixy v2.0 Release Notes",
     description: "Everything new in our biggest update yet. Dark mode, API access, and more.",
     date: "November 1, 2025",
-    slug: "v2-release-notes"
+    slug: "v2-release-notes",
+    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=2670"
   }
 ];
 

@@ -416,7 +416,7 @@ export default function DashboardPage() {
                       <div className="text-right">
                         <p className="font-semibold text-sm">{formatCurrency(invoice.totalAmount)}</p>
                         <p className="text-xs text-muted-foreground">
-                          {formatDate(invoice.dueDate)}
+                          {formatDate(invoice.issueDate)}
                         </p>
                       </div>
                     </div>

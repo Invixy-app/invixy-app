@@ -98,11 +98,11 @@ export default function TaxSystemsPage() {
             setTaxSystems(taxSystems.filter(t => t.id !== taxSystemId));
             showSuccess("Success", "Tax system deleted successfully");
           } else {
-            showError("Error", "Failed to delete tax system");
+            showError("Error", "Something went wrong. Please try again.");
           }
         } catch (error) {
           console.error("Error deleting tax system:", error);
-          showError("Error", "Error deleting tax system");
+          showError("Error", "Something went wrong. Please try again.");
         }
       },
       {

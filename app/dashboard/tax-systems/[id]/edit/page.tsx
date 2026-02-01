@@ -5,8 +5,8 @@ import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
-import { showError, showSuccess, showConfirm } from "@/lib/alert-store";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { showError } from "@/lib/alert-store";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -145,19 +145,23 @@ export default function EditTaxSystemPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.taxId || !formData.rate) {
-      setErrors({
-        name: !formData.name ? "Name is required" : "",
-        taxId: !formData.taxId ? "Tax ID is required" : "",
-        rate: !formData.rate ? "Rate is required" : ""
-      });
-      return;
+    // Validate form
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.name) newErrors.name = "Name is required";
+    if (!formData.taxId) newErrors.taxId = "Tax ID is required";
+    if (!formData.rate) newErrors.rate = "Rate is required";
+    
+    const rateValue = parseFloat(formData.rate);
+    if (isNaN(rateValue) || rateValue < 0) {
+      newErrors.rate = "Rate must be a non-negative number";
     }
 
-    const rateValue = parseFloat(formData.rate);
-    if (isNaN(rateValue) || rateValue < 0 || rateValue > 100) {
-      setErrors({ rate: "Rate must be between 0 and 100" });
-      return;
+    if (!formData.validFrom) newErrors.validFrom = "Valid from date is required";
+
+    if (Object.keys(newErrors).length > 0) {
+       setErrors(newErrors);
+       return;
     }
 
     setSaving(true);
@@ -185,12 +189,11 @@ export default function EditTaxSystemPage() {
       if (response.ok) {
         router.push("/dashboard/tax-systems");
       } else {
-        const errorData = await response.json();
-        alert(errorData.error || "Failed to update tax system");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error updating tax system:", error);
-      alert("Error updating tax system");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -206,12 +209,11 @@ export default function EditTaxSystemPage() {
       if (response.ok) {
         router.push("/dashboard/tax-systems");
       } else {
-        const errorData = await response.json();
-        alert(errorData.error || "Failed to delete tax system");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error deleting tax system:", error);
-      alert("Error deleting tax system");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setDeleting(false);
       setShowDeleteDialog(false);
@@ -462,7 +464,9 @@ export default function EditTaxSystemPage() {
                         type="date"
                         value={formData.validFrom}
                         onChange={(e) => handleInputChange("validFrom", e.target.value)}
+                        className={errors.validFrom ? "border-red-500" : ""}
                       />
+                       {errors.validFrom && <p className="text-sm text-red-500">{errors.validFrom}</p>}
                     </div>
 
                     <div className="space-y-2">
