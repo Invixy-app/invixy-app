@@ -670,7 +670,7 @@ export default function UserSettingsPage() {
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={deleteAccount}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-destructive rounded-lg text-white hover:bg-destructive/90 p-2 cursor-pointer"
                           >
                             Yes, delete my account
                           </AlertDialogAction>

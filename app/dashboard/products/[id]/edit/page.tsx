@@ -199,13 +199,19 @@ export default function EditProductPage() {
     { value: "pcs", label: "Pieces" },
     { value: "kg", label: "Kilograms" },
     { value: "g", label: "Grams" },
+    { value: "lb", label: "Pounds" },
+    { value: "oz", label: "Ounces" },
     { value: "l", label: "Liters" },
     { value: "ml", label: "Milliliters" },
     { value: "m", label: "Meters" },
     { value: "cm", label: "Centimeters" },
-    { value: "sqm", label: "Square Meters" },
-    { value: "hours", label: "Hours" },
-    { value: "days", label: "Days" },
+    { value: "ft", label: "Feet" },
+    { value: "in", label: "Inches" },
+    { value: "box", label: "Boxes" },
+    { value: "pack", label: "Packs" },
+    { value: "set", label: "Sets" },
+    { value: "hrs", label: "Hours" },
+    { value: "days", label: "Days" }
   ];
 
   if (loading) {

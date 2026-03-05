@@ -14,6 +14,7 @@ export const businessSchema = z.object({
   logo: z.string().optional().or(z.literal("")),
   currency: z.string().length(3, "Currency must be 3 characters (ISO code)"),
   timezone: z.string().min(1, "Timezone is required"),
+  invoiceTemplate: z.enum(["TEMPLATE_1", "TEMPLATE_2"]).default("TEMPLATE_1"),
   isActive: z.boolean().default(true),
 });
 
