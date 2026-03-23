@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
 import { forgotPasswordSchema } from "@/lib/validations/auth";
+import Image from "next/image";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -70,9 +71,7 @@ export default function ForgotPasswordPage() {
        {/* Left Side - Branding Section */}
       <div className="hidden lg:flex flex-col justify-between bg-primary text-primary-foreground p-10">
         <Link href={"/"} className="flex items-center gap-2 font-bold text-xl tracking-tight">
-          <div className="w-8 h-8 rounded-lg bg-background/20 flex items-center justify-center text-primary-foreground">
-            IV
-          </div>
+        <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
           <span>Invixy</span>
         </Link>
         

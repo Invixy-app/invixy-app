@@ -35,6 +35,7 @@ import { BusinessSwitcher } from "@/components/business-switcher"
 import { useBusinessContext } from "@/components/business-context"
 import { Separator } from "@/components/ui/separator"
 import { GlobalAlert } from "@/components/global-alert"
+import Image from "next/image"
 
 export function DashboardLayout({ children }: { readonly children: React.ReactNode }) {
   const pathname = usePathname()
@@ -104,9 +105,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
                 exit={{ opacity: 0 }}
                 className="flex items-center gap-2 font-bold text-xl tracking-tight"
               >
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-                  IV
-                </div>
+                <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
                 <span>Invixy</span>
               </motion.div>
             ) : (
@@ -116,9 +115,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
                 exit={{ opacity: 0 }}
                 className="mx-auto"
               >
-                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold">
-                  IV
-                </div>
+               <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -216,9 +213,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
       {/* Mobile Header */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-16 border-b bg-background z-40 flex items-center justify-between px-4">
         <div className="flex items-center gap-2 font-bold text-xl">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-            IV
-          </div>
+           <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
           <span>Invixy</span>
         </div>
         <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
