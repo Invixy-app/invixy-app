@@ -202,163 +202,179 @@ export default function DashboardPage() {
           </Alert>
         )}
 
-        {/* Key Metrics */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {/* Total Revenue Card */}
-          <Card className="overflow-hidden border-l-4 border-l-primary shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-muted/20">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <DollarSign className="h-4 w-4 text-primary" />
+        {/* Bento Grid Metrics Workspace */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          
+          {/* Main Revenue Card (Spans 2 columns, maybe 2 rows on large screens) */}
+          <Card className="md:col-span-2 xl:col-span-2 xl:row-span-2 flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-md transition-shadow relative bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
+            <CardHeader className="flex flex-row items-start justify-between pb-2 relative z-10">
+              <div className="space-y-1">
+                <CardTitle className="text-base font-medium text-muted-foreground">Total Revenue</CardTitle>
+                <div className="text-4xl md:text-5xl font-bold tracking-tight">
+                  {formatCurrency(stats.totalRevenue)}
+                </div>
+              </div>
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <DollarSign className="h-6 w-6 text-primary" />
               </div>
             </CardHeader>
-            <CardContent className="pt-4">
-              <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue)}</div>
-              <div className="flex items-center text-xs text-muted-foreground mt-1">
+            <CardContent className="pt-6 relative z-10 space-y-4">
+              <div className="flex items-center text-sm">
                 {stats.revenueGrowth >= 0 ? (
-                  <div className="flex items-center text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded-full">
-                    <TrendingUp className="w-3 h-3 mr-1" />
-                    <span>+{stats.revenueGrowth.toFixed(1)}%</span>
-                  </div>
+                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-none px-2 py-1">
+                    <TrendingUp className="w-3.5 h-3.5 mr-1" />
+                    +{stats.revenueGrowth.toFixed(1)}%
+                  </Badge>
                 ) : (
-                  <div className="flex items-center text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded-full">
-                    <TrendingDown className="w-3 h-3 mr-1" />
-                    <span>{stats.revenueGrowth.toFixed(1)}%</span>
-                  </div>
+                  <Badge variant="secondary" className="bg-rose-100 text-rose-800 hover:bg-rose-100 border-none px-2 py-1">
+                    <TrendingDown className="w-3.5 h-3.5 mr-1" />
+                    {stats.revenueGrowth.toFixed(1)}%
+                  </Badge>
                 )}
-                <span className="ml-2">vs last month</span>
+                <span className="text-muted-foreground ml-2">vs last month</span>
+              </div>
+              
+              <div className="flex items-center gap-4 pt-4 border-t border-primary/10">
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">Last Month</div>
+                  <div className="text-sm font-semibold">{formatCurrency(stats.lastMonthRevenue)}</div>
+                </div>
+                <div className="w-px h-8 bg-border"></div>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-1">This Month</div>
+                  <div className="text-sm font-semibold">{formatCurrency(stats.thisMonthRevenue)}</div>
+                </div>
               </div>
             </CardContent>
+            {/* Background decorative elements */}
+            <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
           </Card>
 
-          {/* Total Invoices Card */}
-          <Card className="overflow-hidden border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-muted/20">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Invoices</CardTitle>
-              <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+          {/* Invoice Performance Card */}
+          <Card className="lg:col-span-1 xl:col-span-1 shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-blue-500 flex flex-col justify-between">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Invoices</CardTitle>
                 <FileText className="h-4 w-4 text-blue-500" />
               </div>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent>
               <div className="text-2xl font-bold">{stats.totalInvoices}</div>
-              <div className="text-xs text-muted-foreground mt-1 mb-2">
+              <p className="text-xs text-muted-foreground mt-1 mb-4">
                 {stats.thisMonthInvoices} issued this month
-              </div>
-              <div className="flex gap-2 text-xs">
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                  {stats.paidInvoices} Paid
-                </span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-                  {stats.pendingInvoices} Pending
-                </span>
+              </p>
+              
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 text-green-700">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    Paid
+                  </div>
+                  <span className="font-medium bg-green-50 px-1.5 py-0.5 rounded text-green-800">{stats.paidInvoices}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-1.5 text-slate-700">
+                    <div className="w-2 h-2 rounded-full bg-slate-400" />
+                    Drafts
+                  </div>
+                  <span className="font-medium bg-slate-100 px-1.5 py-0.5 rounded text-slate-800">{stats.draftInvoices}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Total Customers Card */}
-          <Card className="overflow-hidden border-l-4 border-l-violet-500 shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-muted/20">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Total Customers</CardTitle>
-              <div className="h-8 w-8 rounded-full bg-violet-500/10 flex items-center justify-center">
+          {/* Actionable / Alert Cards (Pending & Overdue) - Stacked vertically on xl screens if possible, or just normal cards */}
+          <Card className="shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center bg-yellow-50/50 border-yellow-200/50 dark:bg-yellow-950/10 dark:border-yellow-900/50">
+            <CardContent className="p-4 md:p-6 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-500">Pending</p>
+                <h3 className="text-2xl font-bold text-yellow-900 dark:text-yellow-400 mt-1">{stats.pendingInvoices}</h3>
+                <p className="text-xs text-yellow-700/80 dark:text-yellow-500/80 mt-1">Awaiting payment</p>
+              </div>
+              <div className="h-10 w-10 shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-900/40 flex items-center justify-center">
+                <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center bg-red-50/50 border-red-200/50 dark:bg-red-950/10 dark:border-red-900/50">
+            <CardContent className="p-4 md:p-6 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-red-800 dark:text-red-500">Overdue</p>
+                <h3 className="text-2xl font-bold text-red-900 dark:text-red-400 mt-1">{stats.overdueInvoices}</h3>
+                <p className="text-xs text-red-700/80 dark:text-red-500/80 mt-1">Action required</p>
+              </div>
+              <div className="h-10 w-10 shrink-0 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
+                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Customers & Products grouped */}
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Customers</CardTitle>
                 <Users className="h-4 w-4 text-violet-500" />
               </div>
             </CardHeader>
-            <CardContent className="pt-4">
-              <div className="text-2xl font-bold">{stats.totalCustomers}</div>
-              <div className="flex items-center justify-between mt-1">
-                <div className="flex items-center text-xs text-muted-foreground">
-                  {stats.customerGrowth >= 0 ? (
-                    <span className="text-emerald-600 flex items-center">
-                      <ArrowUpRight className="w-3 h-3 mr-1" />
-                      +{stats.customerGrowth}%
-                    </span>
-                  ) : (
-                    <span className="text-rose-600 flex items-center">
-                      <ArrowDownRight className="w-3 h-3 mr-1" />
-                      {stats.customerGrowth}%
-                    </span>
-                  )}
-                  <span className="ml-1">growth</span>
+            <CardContent>
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-2xl font-bold">{stats.totalCustomers}</div>
+                  <div className="flex items-center text-xs mt-1">
+                    {stats.customerGrowth >= 0 ? (
+                      <span className="text-emerald-600 flex items-center bg-emerald-50 px-1 py-0.5 rounded">
+                        <ArrowUpRight className="w-3 h-3 mr-0.5" />
+                        +{stats.customerGrowth}%
+                      </span>
+                    ) : (
+                      <span className="text-rose-600 flex items-center bg-rose-50 px-1 py-0.5 rounded">
+                        <ArrowDownRight className="w-3 h-3 mr-0.5" />
+                        {stats.customerGrowth}%
+                      </span>
+                    )}
+                    <span className="text-muted-foreground ml-1">growth</span>
+                  </div>
                 </div>
                 <Link href="/dashboard/customers/new">
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
-                    <Plus className="w-3 h-3" />
+                  <Button variant="secondary" size="icon" className="h-7 w-7 rounded-md bg-muted">
+                    <Plus className="w-3.5 h-3.5" />
                   </Button>
                 </Link>
               </div>
             </CardContent>
           </Card>
 
-          {/* Total Products Card */}
-          <Card className="overflow-hidden border-l-4 border-l-orange-500 shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-muted/20">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Products</CardTitle>
-              <div className="h-8 w-8 rounded-full bg-orange-500/10 flex items-center justify-center">
+          <Card className="shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Products</CardTitle>
                 <Package className="h-4 w-4 text-orange-500" />
               </div>
             </CardHeader>
-            <CardContent className="pt-4">
-              <div className="text-2xl font-bold">{stats.totalProducts}</div>
-              <div className="flex items-center justify-between mt-1">
-                <div className="text-xs text-muted-foreground">
-                  Avg. Value: {formatCurrency(stats.avgInvoiceValue)}
+            <CardContent>
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="text-2xl font-bold">{stats.totalProducts}</div>
+                  <div className="text-xs text-muted-foreground mt-1 bg-muted px-1.5 py-0.5 rounded inline-block">
+                    Avg. Value: <span className="font-semibold text-foreground">{formatCurrency(stats.avgInvoiceValue)}</span>
+                  </div>
                 </div>
                 <Link href="/dashboard/products/new">
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 rounded-full">
-                    <Plus className="w-3 h-3" />
+                  <Button variant="secondary" size="icon" className="h-7 w-7 rounded-md bg-muted">
+                    <Plus className="w-3.5 h-3.5" />
                   </Button>
                 </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Invoice Status Overview */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Pending Payment</p>
-                <h3 className="text-2xl font-bold mt-1">{stats.pendingInvoices}</h3>
-                <p className="text-xs text-muted-foreground mt-1">Invoices awaiting payment</p>
-              </div>
-              <div className="h-10 w-10 rounded-full bg-yellow-500/10 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-yellow-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Overdue</p>
-                <h3 className="text-2xl font-bold mt-1">{stats.overdueInvoices}</h3>
-                <p className="text-xs text-muted-foreground mt-1">Invoices past due date</p>
-              </div>
-              <div className="h-10 w-10 rounded-full bg-red-500/10 flex items-center justify-center">
-                <AlertCircle className="h-5 w-5 text-red-600" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Drafts</p>
-                <h3 className="text-2xl font-bold mt-1">{stats.draftInvoices}</h3>
-                <p className="text-xs text-muted-foreground mt-1">Work in progress</p>
-              </div>
-              <div className="h-10 w-10 rounded-full bg-slate-500/10 flex items-center justify-center">
-                <FileText className="h-5 w-5 text-slate-600" />
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Recent Invoices and Top Customers */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Recent Invoices */}
-          <Card className="shadow-sm">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {/* Recent Invoices - Spans 2 cols on xl screens */}
+          <Card className="shadow-sm xl:col-span-2">
             <CardHeader className="border-b bg-muted/10 pb-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
@@ -370,7 +386,7 @@ export default function DashboardPage() {
                 </div>
                 <Link href="/dashboard/invoices">
                   <Button variant="outline" size="sm" className="h-8">
-                    View All
+                    View All Invoices
                     <ArrowUpRight className="w-3 h-3 ml-1" />
                   </Button>
                 </Link>
@@ -379,7 +395,7 @@ export default function DashboardPage() {
             <CardContent className="p-0">
               {loading && (
                 <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
                   Loading...
                 </div>
               )}
@@ -403,21 +419,36 @@ export default function DashboardPage() {
               {!loading && recentInvoices.length > 0 && (
                 <div className="divide-y">
                   {recentInvoices.map((invoice) => (
-                    <div key={invoice.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                    <div key={invoice.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-muted/30 transition-colors gap-4 sm:gap-0">
                       <div className="flex items-center gap-4">
-                        <div className={`w-2 h-2 rounded-full ${getStatusDotColor(invoice.status)}`} />
+                        <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-muted`}>
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                        </div>
                         <div>
-                          <Link href={`/dashboard/invoices/${invoice.id}`} className="font-medium text-sm hover:text-primary transition-colors">
-                            {invoice.invoiceNumber}
-                          </Link>
-                          <p className="text-xs text-muted-foreground">{invoice.customer.name}</p>
+                          <div className="flex items-center gap-2">
+                            <Link href={`/dashboard/invoices/${invoice.id}`} className="font-semibold text-sm hover:text-primary transition-colors">
+                              {invoice.invoiceNumber}
+                            </Link>
+                            <Badge variant="outline" className={`text-[10px] h-5 px-1.5 ${
+                              invoice.status === 'PAID' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' :
+                              invoice.status === 'PENDING' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800' :
+                              invoice.status === 'OVERDUE' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800' :
+                              'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-800'
+                            }`}>
+                              {invoice.status}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">{invoice.customer.name}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-sm">{formatCurrency(invoice.totalAmount)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(invoice.issueDate)}
-                        </p>
+                      <div className="flex items-center gap-6 justify-between sm:justify-end">
+                        <div className="text-right">
+                          <p className="text-xs text-muted-foreground">Due {formatDate(invoice.dueDate)}</p>
+                          <p className="text-xs text-muted-foreground">{formatDate(invoice.issueDate)}</p>
+                        </div>
+                        <div className="text-right w-24">
+                          <p className="font-semibold text-sm">{formatCurrency(invoice.totalAmount)}</p>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -427,7 +458,7 @@ export default function DashboardPage() {
           </Card>
 
           {/* Top Customers */}
-          <Card className="shadow-sm">
+          <Card className="shadow-sm xl:col-span-1">
             <CardHeader className="border-b bg-muted/10 pb-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 export function SiteHeader() {
   const { status } = useSession();
@@ -11,10 +12,8 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground">
-            IV
-          </div>
+        <Link href="/" className="flex items-center  font-bold text-xl tracking-tight">
+          <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
           <span>Invixy</span>
         </Link>
         <nav className="hidden md:flex gap-8 text-sm font-medium text-muted-foreground">
