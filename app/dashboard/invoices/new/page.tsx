@@ -21,17 +21,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { 
   ArrowLeft, 
   Save, 
   Send, 
   Plus, 
-  Trash2,
-  User,
-  FileText,
-  UserPlus,
-  PackagePlus,
-  Download
+  Trash2, 
+  User, 
+  FileText, 
+  UserPlus, 
+  PackagePlus, 
+  Download,
+  Lock
 } from "lucide-react";
 import Link from "next/link";
 import { z } from "zod";
@@ -165,7 +172,7 @@ function NewInvoiceContent() {
       try {
         // Fetch pending invoices (SENT, OVERDUE, PARTIAL_PAID)
         const response = await fetch(
-          `/api/invoices?businessId=${currentBusiness.id}&customerId=${formData.customerId}&status=SENT,OVERDUE,PARTIAL_PAID`
+          `/api/invoices?businessId=${currentBusiness.id}&customerId=${formData.customerId}&status=SENT`
         );
         
         if (response.ok) {
@@ -178,7 +185,7 @@ function NewInvoiceContent() {
              
              showInfo(
                "Pending Invoices",
-               `This customer has ${count} pending invoice(s) with a total due of ${new Intl.NumberFormat('en-US', { style: 'currency', currency: formData.currency }).format(totalDue)}.`
+               `This customer has ${count} pending invoice(s).`
              );
           }
         }
@@ -379,11 +386,11 @@ function NewInvoiceContent() {
         showSuccess("Success", "Customer created successfully");
       } else {
         const error = await response.json();
-        showError("Error", error.error || "Failed to create customer");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error creating customer:", error);
-      showError("Error", "Failed to create customer");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setSavingCustomer(false);
     }
@@ -438,11 +445,11 @@ function NewInvoiceContent() {
         showSuccess("Success", "Product created successfully");
       } else {
         const error = await response.json();
-        showError("Error", error.error || "Failed to create product");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error creating product:", error);
-      showError("Error", "Failed to create product");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       setSavingProduct(false);
     }
@@ -559,11 +566,11 @@ function NewInvoiceContent() {
         }
       } else {
         const errorData = await response.json();
-        showError("Error", errorData.error || "Failed to create invoice");
+        showError("Error", "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error creating invoice:", error);
-      showError("Error", "Error creating invoice");
+      showError("Error", "Something went wrong. Please try again.");
     } finally {
       if (action !== 'send') {
           setLoading(false);
@@ -668,8 +675,8 @@ function NewInvoiceContent() {
                         <SelectContent>
                           {customers.map((customer) => (
                             <SelectItem key={customer.id} value={customer.id}>
-                              <div>
-                                <div className="font-medium">{customer.name}</div>
+                              <div className="flex flex-col items-start gap-0">
+                                <div className="text-md">{customer.name}</div>
                                 {customer.email && (
                                   <div className="text-sm text-muted-foreground">
                                     {customer.email}
@@ -779,14 +786,14 @@ function NewInvoiceContent() {
                                 <SelectValue placeholder="Select a product" />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="custom">Custom item</SelectItem>
+                                {/* <SelectItem value="custom">Custom item</SelectItem> */}
                                 {products.map((product) => (
                                   <SelectItem key={product.id} value={product.id}>
-                                    <div>
+                                    <div className="flex flex-col align-start">
                                       <div className="font-medium">{product.name}</div>
-                                      <div className="text-sm text-muted-foreground">
+                                      {/* <div className="text-xsm text-muted-foreground">
                                         {formatCurrency(product.price)} per {product.unit}
-                                      </div>
+                                      </div> */}
                                     </div>
                                   </SelectItem>
                                 ))}
@@ -864,7 +871,11 @@ function NewInvoiceContent() {
                               placeholder="0.00"
                               value={item.discount || ""}
                               onChange={(e) => updateItem(index, "discount", parseFloat(e.target.value) || 0)}
+                              className={errors[`items.${index}.discount`] ? "border-red-500" : ""}
                             />
+                            {errors[`items.${index}.discount`] && (
+                                <p className="text-xs text-red-500 mt-1">{errors[`items.${index}.discount`]}</p>
+                            )}
                           </div>
 
                           <div className="space-y-2">
@@ -936,7 +947,11 @@ function NewInvoiceContent() {
                       value={formData.notes}
                       onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                       rows={3}
+                      className={errors.notes ? "border-red-500" : ""}
                     />
+                    {errors.notes && (
+                      <p className="text-sm text-red-500">{errors.notes}</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -947,7 +962,11 @@ function NewInvoiceContent() {
                       value={formData.terms}
                       onChange={(e) => setFormData(prev => ({ ...prev, terms: e.target.value }))}
                       rows={3}
+                      className={errors.terms ? "border-red-500" : ""}
                     />
+                     {errors.terms && (
+                      <p className="text-sm text-red-500">{errors.terms}</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -1056,15 +1075,37 @@ function NewInvoiceContent() {
                       Save & Download
                     </Button>
 
-                    <Button 
-                      type="button"
-                      className="w-full"
-                      onClick={(e) => handleSubmit(e, 'send')}
-                      disabled={loading}
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Save & Send
-                    </Button>
+                    {currentBusiness?.plan === 'FREE' ? (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="w-full">
+                              <Button 
+                                type="button"
+                                className="w-full"
+                                disabled={true}
+                              >
+                                <Lock className="h-4 w-4 mr-2" />
+                                Save & Send
+                              </Button>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Emailing invoices is available on Pro and Enterprise plans.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : (
+                      <Button 
+                        type="button"
+                        className="w-full"
+                        onClick={(e) => handleSubmit(e, 'send')}
+                        disabled={loading}
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Save & Send
+                      </Button>
+                    )}
 
                     <Link href="/dashboard/invoices">
                       <Button variant="ghost" className="w-full">
@@ -1373,6 +1414,9 @@ function NewInvoiceContent() {
             onOpenChange={setShowEmailDialog}
             onSuccess={() => {
               // Redirect handled by dialog or we can do it here
+              router.push(`/dashboard/invoices/${createdInvoice.id}`);
+            }}
+            onCancel={() => {
               router.push(`/dashboard/invoices/${createdInvoice.id}`);
             }}
           />

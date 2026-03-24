@@ -1,29 +1,8 @@
 import prisma from "@/lib/db";
 import { Plan } from "@prisma/client";
+import { LIMITS } from "@/lib/constants-limits";
 
-export const LIMITS = {
-  FREE: {
-    INVOICES: 5,
-    PRODUCTS: 5,
-    CUSTOMERS: 2,
-    BUSINESSES: 1,
-    CAN_SEND_EMAIL: false,
-  },
-  PRO: {
-    INVOICES: Infinity,
-    PRODUCTS: Infinity,
-    CUSTOMERS: Infinity,
-    BUSINESSES: 5,
-    CAN_SEND_EMAIL: true,
-  },
-  ENTERPRISE: {
-    INVOICES: Infinity,
-    PRODUCTS: Infinity,
-    CUSTOMERS: Infinity,
-    BUSINESSES: Infinity,
-    CAN_SEND_EMAIL: true,
-  }
-};
+export { LIMITS };
 
 export async function getBusinessSubscription(businessId: string): Promise<Plan> {
   const subscription = await prisma.subscription.findFirst({

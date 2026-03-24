@@ -17,6 +17,7 @@ import Link from "next/link";
 import { CURRENCY_OPTIONS, TIMEZONE_OPTIONS } from "@/lib/business";
 import { businessSchema, type BusinessFormValues } from "@/lib/validations/business";
 import { z } from "zod";
+import { InvoiceTemplateSelector } from "@/components/invoices/invoice-template-selector";
 
 export default function NewBusinessPage() {
   const { refreshBusinesses } = useBusinessContext();
@@ -31,6 +32,7 @@ export default function NewBusinessPage() {
     website: "",
     currency: "USD",
     timezone: "UTC",
+    invoiceTemplate: "TEMPLATE_1",
     isActive: true,
     logo: "",
   });
@@ -83,11 +85,11 @@ export default function NewBusinessPage() {
         await refreshBusinesses();
         router.push("/dashboard");
       } else {
-        setError(data.error || "Something went wrong");
+        setError("Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error(error);
-      setError("Something went wrong");
+      setError("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -336,6 +338,15 @@ export default function NewBusinessPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div>
+                    <InvoiceTemplateSelector
+                      value={formData.invoiceTemplate}
+                      onChange={(value) => handleSelectChange("invoiceTemplate", value)}
+                    />
                   </div>
                 </div>
               </div>

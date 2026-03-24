@@ -1,5 +1,5 @@
 import prisma from "@/lib/db";
-import { Role } from "@prisma/client";
+import { Role, Plan, InvoiceTemplate } from "@prisma/client";
 
 export interface BusinessWithRole {
   id: string;
@@ -14,8 +14,10 @@ export interface BusinessWithRole {
   logo: string | null;
   currency: string;
   timezone: string;
+  invoiceTemplate: InvoiceTemplate;
   isActive: boolean;
   role: Role;
+  plan: Plan;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -24,13 +26,23 @@ export async function getUserBusinessesWithRoles(userId: string): Promise<Busine
   const businessRoles = await prisma.businessUserRole.findMany({
     where: { userId },
     include: {
-      business: true
+      business: {
+        include: {
+          subscriptions: {
+            where: { status: "ACTIVE" },
+            orderBy: { createdAt: "desc" },
+            take: 1
+          }
+        }
+      }
     }
   });
 
   return businessRoles.map(br => ({
     ...br.business,
-    role: br.role
+    role: br.role,
+    plan: br.business.subscriptions[0]?.plan || "FREE",
+    subscriptions: undefined // Remove subscriptions from the returned object to match interface
   }));
 }
 
@@ -43,7 +55,15 @@ export async function getBusinessById(businessId: string, userId: string): Promi
       }
     },
     include: {
-      business: true
+      business: {
+        include: {
+          subscriptions: {
+            where: { status: "ACTIVE" },
+            orderBy: { createdAt: "desc" },
+            take: 1
+          }
+        }
+      }
     }
   });
 
@@ -51,7 +71,8 @@ export async function getBusinessById(businessId: string, userId: string): Promi
 
   return {
     ...businessRole.business,
-    role: businessRole.role
+    role: businessRole.role,
+    plan: businessRole.business.subscriptions[0]?.plan || "FREE",
   };
 }
 

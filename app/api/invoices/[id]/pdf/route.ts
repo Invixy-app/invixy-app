@@ -42,6 +42,7 @@ export async function GET(
       include: {
         business: true,
         customer: true,
+        // creator: true, // Removed as requested
         items: {
           include: {
             product: true,
@@ -83,11 +84,14 @@ export async function GET(
       currency: invoice.currency,
       notes: invoice.notes || undefined,
       terms: invoice.terms || undefined,
+      // salespersonName: invoice.creator?.name || undefined, // Removed as requested
       business: {
         name: invoice.business.name,
+        description: invoice.business.description || undefined,
         email: invoice.business.email,
         phone: invoice.business.phone,
-        address: invoice.business.billingAddress
+        address: invoice.business.billingAddress,
+        invoiceTemplate: invoice.business.invoiceTemplate
       },
       customer: {
         name: invoice.customer.name,
@@ -175,6 +179,7 @@ export async function POST(
       include: {
         business: true,
         customer: true,
+        // creator: true, // Removed as requested
         items: {
           include: {
             product: true,
@@ -229,11 +234,14 @@ export async function POST(
       currency: invoice.currency,
       notes: invoice.notes || undefined,
       terms: invoice.terms || undefined,
+      // salespersonName: invoice.creator?.name || undefined, // Removed as requested
       business: {
         name: invoice.business.name,
+        description: invoice.business.description || undefined,
         email: invoice.business.email,
         phone: invoice.business.phone,
-        address: invoice.business.billingAddress
+        address: invoice.business.billingAddress,
+        invoiceTemplate: invoice.business.invoiceTemplate
       },
       customer: {
         name: invoice.customer.name,

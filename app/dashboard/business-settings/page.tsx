@@ -61,6 +61,7 @@ import { useAlert } from "@/lib/alert-store";
 import { useBusinessContext } from "@/components/business-context";
 import { businessSchema } from "@/lib/validations/business";
 import { z } from "zod";
+import { InvoiceTemplateSelector } from "@/components/invoices/invoice-template-selector";
 
 interface TeamMember {
   id: string;
@@ -107,7 +108,8 @@ export default function BusinessSettingsPage() {
     taxId: "",
     website: "",
     description: "",
-    currency: "USD"
+    currency: "USD",
+    invoiceTemplate: "TEMPLATE_1"
   });
 
   useEffect(() => {
@@ -120,7 +122,8 @@ export default function BusinessSettingsPage() {
         taxId: currentBusiness.taxRegistrationNumber || "",
         website: currentBusiness.website || "",
         description: currentBusiness.description || "",
-        currency: currentBusiness.currency || "USD"
+        currency: currentBusiness.currency || "USD",
+        invoiceTemplate: currentBusiness.invoiceTemplate || "TEMPLATE_1"
       });
     }
   }, [currentBusiness]);
@@ -141,7 +144,8 @@ export default function BusinessSettingsPage() {
         taxRegistrationNumber: businessInfo.taxId,
         website: businessInfo.website,
         description: businessInfo.description,
-        currency: businessInfo.currency
+        currency: businessInfo.currency,
+        invoiceTemplate: businessInfo.invoiceTemplate
       };
 
       // Validate payload
@@ -184,7 +188,7 @@ export default function BusinessSettingsPage() {
         addAlert({
           type: 'error',
           title: 'Update Failed',
-          message: error.message || 'Failed to update business'
+          message: "Something went wrong. Please try again."
         });
       }
     } finally {
@@ -216,10 +220,11 @@ export default function BusinessSettingsPage() {
       router.refresh();
 
     } catch (error: any) {
+      console.error('Failed to delete business:', error);
       addAlert({
         type: 'error',
         title: 'Delete Failed',
-        message: error.message || 'Failed to delete business'
+        message: "Something went wrong. Please try again."
       });
     }
   };
@@ -276,7 +281,7 @@ export default function BusinessSettingsPage() {
       addAlert({
         type: 'error',
         title: 'Failed to Add Member',
-        message: error.message || 'Failed to add team member'
+        message: "Something went wrong. Please try again."
       });
     } finally {
       setLoading(false);
@@ -315,7 +320,7 @@ export default function BusinessSettingsPage() {
       addAlert({
         type: 'error',
         title: 'Update Failed',
-        message: error.message || 'Failed to update role'
+        message: "Something went wrong. Please try again."
       });
     } finally {
       setLoading(false);
@@ -348,7 +353,7 @@ export default function BusinessSettingsPage() {
       addAlert({
         type: 'error',
         title: 'Remove Failed',
-        message: error.message || 'Failed to remove team member'
+        message: "Something went wrong. Please try again."
       });
     } finally {
       setLoading(false);
@@ -593,6 +598,11 @@ export default function BusinessSettingsPage() {
                       <option value="AUD">AUD - Australian Dollar</option>
                     </select>
                   </div>
+
+                  <InvoiceTemplateSelector
+                    value={businessInfo.invoiceTemplate}
+                    onChange={(value) => setBusinessInfo(prev => ({ ...prev, invoiceTemplate: value }))}
+                  />
                 </div>
 
                 <div className="space-y-2">
@@ -910,7 +920,7 @@ export default function BusinessSettingsPage() {
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           onClick={deleteBusiness}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          className="bg-destructive rounded-lg text-white hover:bg-destructive/90 p-2 cursor-pointer"
                         >
                           Yes, delete this business
                         </AlertDialogAction>

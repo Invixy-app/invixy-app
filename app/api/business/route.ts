@@ -66,26 +66,45 @@ export async function GET(req: Request) {
         
         const user=await prisma.user.findUnique({
             where:{email:session.user.email},
-            include:{BusinessUserRole:{include:{business:true}}}
+            include:{BusinessUserRole:{
+                include:{
+                    business:{
+                        include: {
+                            subscriptions: {
+                                where: { status: "ACTIVE" },
+                                orderBy: { createdAt: "desc" },
+                                take: 1
+                            }
+                        }
+                    }
+                }
+            }}
         });
         if(!user){
             return NextResponse.json({error:"User not found!"},{status:404});
         }
 
-        const businesses=user.BusinessUserRole.map((bur)=>({
-            id:bur.business.id,
-            name:bur.business.name,
-            description:bur.business.description,
-            billingAddress:bur.business.billingAddress,
-            shippingAddress:bur.business.shippingAddress,
-            taxRegistrationNumber:bur.business.taxRegistrationNumber,
-            phone:bur.business.phone,
-            email:bur.business.email,
-            website:bur.business.website,
-            currency:bur.business.currency,
-            role:bur.role,
-            createdAt:bur.business.createdAt,
-            updatedAt:bur.business.updatedAt
+        const businesses = user.BusinessUserRole
+        .filter((bur) => bur.business.isActive)
+        .map((bur) => ({
+            id: bur.business.id,
+            name: bur.business.name,
+            description: bur.business.description,
+            billingAddress: bur.business.billingAddress,
+            shippingAddress: bur.business.shippingAddress,
+            taxRegistrationNumber: bur.business.taxRegistrationNumber,
+            phone: bur.business.phone,
+            email: bur.business.email,
+            website: bur.business.website,
+            logo: bur.business.logo,
+            currency: bur.business.currency,
+            timezone: bur.business.timezone,
+            invoiceTemplate: bur.business.invoiceTemplate,
+            isActive: bur.business.isActive,
+            role: bur.role,
+            plan: bur.business.subscriptions[0]?.plan || "FREE",
+            createdAt: bur.business.createdAt,
+            updatedAt: bur.business.updatedAt
         }));
 
         return NextResponse.json({businesses},{status:200});

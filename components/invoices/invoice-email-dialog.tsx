@@ -24,6 +24,7 @@ interface InvoiceEmailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 export function InvoiceEmailDialog({
@@ -34,6 +35,7 @@ export function InvoiceEmailDialog({
   open,
   onOpenChange,
   onSuccess,
+  onCancel,
 }: InvoiceEmailDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -159,7 +161,10 @@ export function InvoiceEmailDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => onOpenChange(false)}
+              onClick={() => {
+                onOpenChange(false);
+                onCancel?.();
+              }}
               disabled={isLoading}
             >
               Cancel

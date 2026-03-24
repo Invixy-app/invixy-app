@@ -124,6 +124,9 @@ export class EmailService {
       day: 'numeric'
     });
 
+    const primaryColor = '#0F172A'; // Slate 900
+    const accentColor = '#3B82F6'; // Blue 500
+
     return `
       <!DOCTYPE html>
       <html>
@@ -133,279 +136,252 @@ export class EmailService {
           <title>Invoice ${invoice.invoiceNumber}</title>
           <style>
             body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
               line-height: 1.6;
-              color: #333333;
+              color: #334155;
               max-width: 600px;
               margin: 0 auto;
-              padding: 20px;
-              background-color: #f8f9fa;
+              padding: 40px 20px;
+              background-color: #F8FAFC;
             }
             
             .email-container {
-              background: white;
-              border-radius: 8px;
-              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+              background: #FFFFFF;
+              border-radius: 12px;
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
               overflow: hidden;
+              border: 1px solid #E2E8F0;
             }
             
             .header {
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white;
-              padding: 30px;
-              text-align: center;
+              background-color: #FFFFFF;
+              padding: 32px 32px 24px;
+              border-bottom: 1px solid #F1F5F9;
             }
             
-            .header h1 {
+            .business-name {
+              font-size: 24px;
+              font-weight: 700;
+              color: ${primaryColor};
               margin: 0;
-              font-size: 28px;
-              font-weight: 300;
             }
             
-            .header p {
-              margin: 8px 0 0 0;
-              opacity: 0.9;
+            .invoice-title {
+              font-size: 14px;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+              color: #64748B;
+              font-weight: 600;
+              margin-top: 4px;
             }
             
             .content {
-              padding: 30px;
+              padding: 32px;
             }
             
             .greeting {
-              font-size: 18px;
-              margin-bottom: 20px;
-              color: #2c3e50;
+              font-size: 16px;
+              margin-bottom: 24px;
+              color: #334155;
             }
             
-            .message {
-              background: #f8f9fa;
-              padding: 20px;
-              border-radius: 6px;
-              margin-bottom: 25px;
-              border-left: 4px solid #667eea;
-            }
-            
-            .invoice-summary {
-              background: #ffffff;
-              border: 1px solid #e9ecef;
+            .message-box {
+              background-color: #F8FAFC;
+              border: 1px solid #E2E8F0;
               border-radius: 8px;
-              padding: 25px;
-              margin: 25px 0;
+              padding: 16px;
+              margin-bottom: 32px;
+              font-size: 14px;
+              color: #475569;
             }
             
-            .summary-row {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
+            .amount-section {
+              text-align: center;
+              margin: 32px 0;
+              padding: 24px;
+              background-color: #F8FAFC;
+              border-radius: 8px;
+            }
+            
+            .amount-label {
+              font-size: 14px;
+              color: #64748B;
+              text-transform: uppercase;
+              letter-spacing: 0.05em;
+              margin-bottom: 8px;
+              font-weight: 600;
+            }
+            
+            .amount-value {
+              font-size: 36px;
+              font-weight: 700;
+              color: ${primaryColor};
+            }
+            
+            .details-grid {
+              display: table;
+              width: 100%;
+              margin-bottom: 32px;
+              border-collapse: collapse;
+            }
+            
+            .detail-row {
+              display: table-row;
+            }
+            
+            .detail-label {
+              display: table-cell;
               padding: 8px 0;
-              border-bottom: 1px solid #f1f3f5;
+              color: #64748B;
+              font-size: 14px;
+              width: 40%;
             }
             
-            .summary-row:last-child {
-              border-bottom: none;
-              font-weight: bold;
-              font-size: 18px;
-              color: #2c3e50;
-              padding-top: 15px;
-              margin-top: 10px;
-              border-top: 2px solid #e9ecef;
-            }
-            
-            .summary-label {
-              color: #6c757d;
-            }
-            
-            .summary-value {
+            .detail-value {
+              display: table-cell;
+              padding: 8px 0;
+              color: ${primaryColor};
               font-weight: 500;
+              font-size: 14px;
+              text-align: right;
             }
             
             .status-badge {
               display: inline-block;
               padding: 4px 12px;
-              border-radius: 20px;
+              border-radius: 9999px;
               font-size: 12px;
               font-weight: 600;
               text-transform: uppercase;
+              letter-spacing: 0.05em;
             }
             
-            .status-sent { background: #dbeafe; color: #1d4ed8; }
-            .status-paid { background: #d1fae5; color: #065f46; }
-            .status-partial-paid { background: #fef3c7; color: #92400e; }
-            .status-overdue { background: #fee2e2; color: #dc2626; }
-            
-            .overdue-notice {
-              background: #fee2e2;
-              border: 1px solid #fca5a5;
-              color: #dc2626;
-              padding: 15px;
-              border-radius: 6px;
-              margin: 20px 0;
-              font-weight: 600;
-              text-align: center;
-            }
-            
-            .payment-info {
-              background: #e8f5e8;
-              border: 1px solid #c3e6c3;
-              color: #2d5a2d;
-              padding: 15px;
-              border-radius: 6px;
-              margin: 20px 0;
-            }
+            .status-paid { background-color: #DCFCE7; color: #166534; }
+            .status-sent { background-color: #DBEAFE; color: #1E40AF; }
+            .status-overdue { background-color: #FEE2E2; color: #991B1B; }
+            .status-pending { background-color: #FEF3C7; color: #92400E; }
             
             .action-button {
-              display: inline-block;
-              background: #667eea;
-              color: white;
-              padding: 12px 30px;
-              text-decoration: none;
-              border-radius: 6px;
-              font-weight: 600;
+              display: block;
+              width: 100%;
+              background-color: ${primaryColor};
+              color: #FFFFFF;
               text-align: center;
-              margin: 20px 0;
+              padding: 16px 0;
+              border-radius: 8px;
+              text-decoration: none;
+              font-weight: 600;
+              font-size: 16px;
+              margin: 32px 0;
+              transition: background-color 0.2s;
             }
             
             .action-button:hover {
-              background: #5a6fd8;
+              background-color: #334155;
+            }
+            
+            .divider {
+              border-top: 1px solid #E2E8F0;
+              margin: 32px 0;
             }
             
             .business-info {
-              margin-top: 30px;
-              padding-top: 20px;
-              border-top: 1px solid #e9ecef;
+              margin-top: 32px;
+              text-align: center;
               font-size: 14px;
-              color: #6c757d;
-            }
-            
-            .business-name {
-              font-weight: 600;
-              color: #2c3e50;
-              margin-bottom: 5px;
+              color: #64748B;
             }
             
             .footer {
-              background: #f8f9fa;
-              padding: 20px;
               text-align: center;
+              margin-top: 32px;
               font-size: 12px;
-              color: #6c757d;
+              color: #94A3B8;
             }
-            
-            @media (max-width: 600px) {
-              body { padding: 10px; }
-              .content { padding: 20px; }
-              .header { padding: 20px; }
-              .invoice-summary { padding: 15px; }
+
+            .footer p {
+              margin: 4px 0;
             }
           </style>
         </head>
         <body>
           <div class="email-container">
             <div class="header">
-              <h1>Invoice ${invoice.invoiceNumber}</h1>
-              <p>from ${invoice.business.name}</p>
+              <h1 class="business-name">${invoice.business.name}</h1>
+              <div class="invoice-title">Invoice #${invoice.invoiceNumber}</div>
             </div>
             
             <div class="content">
               <div class="greeting">
-                Hello ${invoice.customer.name},
+                Hi ${invoice.customer.name},
               </div>
               
               ${message ? `
-              <div class="message">
+              <div class="message-box">
                 ${message.replace(/\n/g, '<br>')}
               </div>
-              ` : ''}
-              
-              ${isOverdue ? `
-              <div class="overdue-notice">
-                ⚠️ This invoice is overdue. Payment was due on ${formatDate(invoice.dueDate)}.
-              </div>
-              ` : ''}
-              
-              ${invoice.status === 'PAID' ? `
-              <div class="payment-info">
-                ✅ Thank you! This invoice has been fully paid.
-              </div>
               ` : `
-              <p>
-                ${invoice.status === 'SENT' ? 
-                  `We hope this email finds you well. Please find attached invoice #${invoice.invoiceNumber} for your review and payment.` :
-                  invoice.status === 'PARTIAL_PAID' ?
-                  `Thank you for your partial payment. Please find the updated invoice showing your remaining balance.` :
-                  `Please find your invoice #${invoice.invoiceNumber} attached.`
-                }
+              <p style="margin-bottom: 24px; font-size: 14px; color: #475569;">
+                Here's your invoice for the recent period. We appreciate your business.
               </p>
               `}
               
-              <div class="invoice-summary">
-                <div class="summary-row">
-                  <span class="summary-label">Invoice Number:</span>
-                  <span class="summary-value">#${invoice.invoiceNumber}</span>
-                </div>
+              <div class="amount-section">
+                <div class="amount-label">${invoice.status === 'PAID' ? 'Amount Paid' : 'Amount Due'}</div>
+                <div class="amount-value">${formatCurrency(balanceAmount > 0 ? balanceAmount : invoice.totalAmount)}</div>
                 
-                <div class="summary-row">
-                  <span class="summary-label">Issue Date:</span>
-                  <span class="summary-value">${formatDate(invoice.issueDate)}</span>
+                ${isOverdue ? `
+                <div style="margin-top: 12px;">
+                  <span class="status-badge status-overdue">Desc Due</span>
                 </div>
-                
-                <div class="summary-row">
-                  <span class="summary-label">Due Date:</span>
-                  <span class="summary-value">${formatDate(invoice.dueDate)}</span>
+                ` : ''}
+              </div>
+
+              <div class="details-grid">
+                <div class="detail-row">
+                  <span class="detail-label">Invoice Number</span>
+                  <span class="detail-value">#${invoice.invoiceNumber}</span>
                 </div>
-                
-                <div class="summary-row">
-                  <span class="summary-label">Status:</span>
-                  <span class="summary-value">
+                <div class="detail-row">
+                  <span class="detail-label">Issue Date</span>
+                  <span class="detail-value">${formatDate(invoice.issueDate)}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Due Date</span>
+                  <span class="detail-value">${formatDate(invoice.dueDate)}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Status</span>
+                  <span class="detail-value" style="padding: 4px 0;">
                     <span class="status-badge status-${invoice.status.toLowerCase().replace('_', '-')}">
                       ${invoice.status.replace('_', ' ')}
                     </span>
                   </span>
                 </div>
-                
-                ${invoice.paidAmount > 0 ? `
-                <div class="summary-row">
-                  <span class="summary-label">Amount Paid:</span>
-                  <span class="summary-value" style="color: #10b981;">
-                    ${formatCurrency(invoice.paidAmount)}
-                  </span>
-                </div>
-                ` : ''}
-                
-                <div class="summary-row">
-                  <span class="summary-label">${balanceAmount > 0 ? 'Amount Due:' : 'Total Amount:'}</span>
-                  <span class="summary-value">
-                    ${formatCurrency(balanceAmount > 0 ? balanceAmount : invoice.totalAmount)}
-                  </span>
-                </div>
               </div>
+
               
-              ${balanceAmount > 0 && invoice.status !== 'PAID' ? `
-              <p>
-                You can view and pay this invoice online by clicking the button below:
-              </p>
-              
-              <a href="${process.env.NEXTAUTH_URL}/invoices/${invoice.id}/pay" class="action-button">
-                View & Pay Invoice
+              <a href="${process.env.NEXTAUTH_URL}/invoices/${invoice.id}" class="action-button">
+                View Invoice
               </a>
-              
-              <p style="font-size: 14px; color: #6c757d; margin-top: 20px;">
-                If you have any questions about this invoice, please don't hesitate to contact us.
-              </p>
-              ` : ''}
-              
+
               <div class="business-info">
-                <div class="business-name">${invoice.business.name}</div>
-                ${invoice.business.email ? `<div>${invoice.business.email}</div>` : ''}
-                ${invoice.business.phone ? `<div>${invoice.business.phone}</div>` : ''}
-                ${invoice.business.address ? `<div>${invoice.business.address.replace(/\n/g, '<br>')}</div>` : ''}
+                 <p style="margin: 0; font-weight: 600; color: #334155;">${invoice.business.name}</p>
+                 ${invoice.business.address ? `<p style="margin: 4px 0;">${invoice.business.address.replace(/\n/g, ', ')}</p>` : ''}
+                 ${invoice.business.email || invoice.business.phone ? `
+                   <p style="margin: 4px 0;">
+                     ${invoice.business.email ? `${invoice.business.email}` : ''}
+                     ${invoice.business.email && invoice.business.phone ? ' • ' : ''}
+                     ${invoice.business.phone ? `${invoice.business.phone}` : ''}
+                   </p>
+                 ` : ''}
               </div>
             </div>
-            
-            <div class="footer">
-              <p>This is an automated message. Please do not reply to this email.</p>
-              <p>© ${new Date().getFullYear()} ${invoice.business.name}. All rights reserved.</p>
-            </div>
+          </div>
+          
+          <div class="footer">
+            <p>Sent by ${invoice.business.name} via Invixy</p>
+            <p>© ${new Date().getFullYear()} ${invoice.business.name}. All rights reserved.</p>
           </div>
         </body>
       </html>
