@@ -300,10 +300,10 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
                 className="w-64 pl-9 h-9 bg-muted/50 border-none focus-visible:ring-1" 
               />
             </div> */}
-            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
+            {/* <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
               <Bell className="h-5 w-5" />
               <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive ring-2 ring-background"></span>
-            </Button>
+            </Button> */}
           </div>
         </header>
 
