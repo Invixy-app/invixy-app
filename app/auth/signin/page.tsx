@@ -109,7 +109,7 @@ function SignInContent() {
       {/* Left Side - Branding Section */}
       <div className="hidden lg:flex flex-col justify-between bg-primary text-primary-foreground p-10">
         <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
-          <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
+          {/* <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} /> */}
           <span>Invixy</span>
         </Link>
         
