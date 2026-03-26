@@ -131,13 +131,14 @@ export default function InvoicesPage() {
 
     // Filter by active tab
     if (activeTab !== "all") {
-      const tabStatusMap: Record<string, string> = {
-        draft: "DRAFT",
-        sent: "SENT",
-        paid: "PAID",
-        overdue: "OVERDUE"
+      const tabStatusMap: Record<string, string[]> = {
+        draft: ["DRAFT"],
+        sent: ["SENT"],
+        paid: ["PAID"],
+        cancelled: ["CANCELLED"]
       };
-      filtered = filtered.filter(invoice => invoice.status === tabStatusMap[activeTab]);
+      const mappedStatuses = tabStatusMap[activeTab] || [];
+      filtered = filtered.filter(invoice => mappedStatuses.includes(invoice.status));
     }
 
     // Filter by search term
@@ -176,8 +177,8 @@ export default function InvoicesPage() {
             setInvoices(invoices.filter(i => i.id !== invoiceId));
             showSuccess("Success", "Invoice deleted successfully");
           } else {
-            const errorData = await response.json();
-            showError("Error", "Something went wrong. Please try again.");
+            const errorData = await response.json().catch(() => null);
+            showError("Error", errorData?.error || "Something went wrong. Please try again.");
           }
         } catch (error) {
           console.error("Error deleting invoice:", error);
@@ -308,12 +309,7 @@ export default function InvoicesPage() {
       case "paid":
         return <CheckCircle className="h-4 w-4 text-[var(--brand-teal)]" />;
       case "sent":
-      case "viewed":
         return <Clock className="h-4 w-4 text-[var(--brand-cobalt)]" />;
-      case "partial_paid":
-        return <Clock className="h-4 w-4 text-[var(--brand-cyan)]" />;
-      case "overdue":
-        return <AlertTriangle className="h-4 w-4 text-destructive" />;
       case "cancelled":
         return <XCircle className="h-4 w-4 text-muted-foreground" />;
       default:
@@ -326,26 +322,12 @@ export default function InvoicesPage() {
       case "paid":
         return "default";
       case "sent":
-      case "viewed":
         return "secondary";
-      case "partial_paid":
-        return "outline";
-      case "overdue":
-        return "destructive";
       case "cancelled":
         return "secondary";
       default:
         return "outline";
     }
-  };
-
-  const getDaysOverdue = (dueDate?: string | null) => {
-    if (!dueDate) return 0;
-    const due = new Date(dueDate);
-    const today = new Date();
-    const diffTime = today.getTime() - due.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
   };
 
   // Calculate stats
@@ -354,13 +336,17 @@ export default function InvoicesPage() {
     draft: invoices.filter(i => i.status === "DRAFT").length,
     sent: invoices.filter(i => i.status === "SENT").length,
     paid: invoices.filter(i => i.status === "PAID").length,
-    overdue: invoices.filter(i => i.status === "OVERDUE").length,
-    totalRevenue: invoices.reduce((sum, inv) => sum + inv.totalAmount, 0),
+    cancelled: invoices.filter(i => i.status === "CANCELLED").length,
+    totalRevenue: invoices
+      .filter(inv => inv.status === "SENT" || inv.status === "PAID")
+      .reduce((sum, inv) => sum + inv.totalAmount, 0),
     totalPaid: invoices.reduce((sum, inv) => sum + inv.paidAmount, 0),
-    totalOutstanding: invoices.reduce((sum, inv) => sum + (inv.totalAmount - inv.paidAmount), 0)
+    totalOutstanding: invoices
+      .filter(inv => inv.status === "SENT")
+      .reduce((sum, inv) => sum + Math.max(inv.totalAmount - inv.paidAmount, 0), 0)
   };
 
-  const statusOptions = ["DRAFT", "SENT", "VIEWED", "PAID", "OVERDUE", "CANCELLED"];
+  const statusOptions = ["DRAFT", "SENT", "PAID", "CANCELLED"];
   
   // Calculate limits
   const currentPlan = currentBusiness?.plan || "FREE";
@@ -457,7 +443,7 @@ export default function InvoicesPage() {
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(stats.totalOutstanding, currentBusiness?.currency || 'USD')}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.sent + stats.overdue} invoices pending
+                {stats.sent} invoices pending
               </p>
             </CardContent>
           </Card>
@@ -470,7 +456,7 @@ export default function InvoicesPage() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.total}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.paid} paid, {stats.overdue} overdue
+                {stats.paid} paid, {stats.cancelled} cancelled
               </p>
             </CardContent>
           </Card>
@@ -510,7 +496,7 @@ export default function InvoicesPage() {
                 <TabsTrigger value="draft">Draft ({stats.draft})</TabsTrigger>
                 <TabsTrigger value="sent">Sent ({stats.sent})</TabsTrigger>
                 <TabsTrigger value="paid">Paid ({stats.paid})</TabsTrigger>
-                <TabsTrigger value="overdue">Overdue ({stats.overdue})</TabsTrigger>
+                <TabsTrigger value="cancelled">Cancelled ({stats.cancelled})</TabsTrigger>
               </TabsList>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -590,11 +576,6 @@ export default function InvoicesPage() {
                               <Badge variant={getStatusBadgeVariant(invoice.status)}>
                                 {invoice.status.replace('_', ' ')}
                               </Badge>
-                              {invoice.status === "OVERDUE" && invoice.dueDate && (
-                                <div className="text-xs text-destructive mt-1">
-                                  {getDaysOverdue(invoice.dueDate)} days overdue
-                                </div>
-                              )}
                             </TableCell>
                             <TableCell>
                               {invoice.dueDate ? (
@@ -719,7 +700,7 @@ export default function InvoicesPage() {
                 )}
               </TabsContent>
 
-              {["draft", "sent", "paid", "overdue"].map((status) => (
+              {["draft", "sent", "paid", "cancelled"].map((status) => (
                 <TabsContent key={status} value={status} className="space-y-4">
                   {filteredInvoices.length > 0 ? (
                     <div className="rounded-xl border border-border/80 overflow-hidden">
@@ -773,11 +754,6 @@ export default function InvoicesPage() {
                                 <Badge variant={getStatusBadgeVariant(invoice.status)}>
                                   {invoice.status.replace('_', ' ')}
                                 </Badge>
-                                {invoice.status === "OVERDUE" && invoice.dueDate && (
-                                  <div className="text-xs text-destructive mt-1">
-                                    {getDaysOverdue(invoice.dueDate)} days overdue
-                                  </div>
-                                )}
                               </TableCell>
                               <TableCell>
                                 {invoice.dueDate ? (

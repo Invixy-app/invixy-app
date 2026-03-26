@@ -176,10 +176,7 @@ export default function TaxSystemDetailPage() {
     const config: { [key: string]: { color: string, icon: any, label: string } } = {
       DRAFT: { color: "bg-muted-foreground", icon: FileText, label: "Draft" },
       SENT: { color: "bg-[var(--brand-cobalt)]", icon: Activity, label: "Sent" },
-      VIEWED: { color: "bg-[var(--brand-indigo)]", icon: Activity, label: "Viewed" },
       PAID: { color: "bg-[var(--brand-teal)]", icon: CheckCircle, label: "Paid" },
-      PARTIAL_PAID: { color: "bg-[var(--brand-cyan)]", icon: Activity, label: "Partial" },
-      OVERDUE: { color: "bg-destructive", icon: XCircle, label: "Overdue" },
       CANCELLED: { color: "bg-muted-foreground", icon: XCircle, label: "Cancelled" }
     };
 

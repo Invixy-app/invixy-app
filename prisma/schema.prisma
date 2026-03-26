@@ -338,12 +338,8 @@ enum TaxType {
 enum InvoiceStatus {
   DRAFT
   SENT
-  VIEWED
-  PARTIAL_PAID
   PAID
-  OVERDUE
   CANCELLED
-  REFUNDED
 }
 
 enum PaymentMethod {

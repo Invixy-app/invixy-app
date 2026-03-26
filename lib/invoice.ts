@@ -976,8 +976,8 @@ export async function recordPayment(
   let newStatus = invoice.status;
   if (newPaidAmount >= totalAmount) {
     newStatus = InvoiceStatus.PAID;
-  } else if (newPaidAmount > 0) {
-    newStatus = InvoiceStatus.PARTIAL_PAID;
+  } else {
+    newStatus = InvoiceStatus.SENT;
   }
 
   await prisma.invoice.update({

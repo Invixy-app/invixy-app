@@ -6,7 +6,7 @@ import { z } from "zod";
 import { updateProductStock } from "@/lib/product";
 
 const updateStatusSchema = z.object({
-  status: z.enum(["DRAFT", "SENT", "VIEWED", "PAID", "PARTIAL_PAID", "OVERDUE", "CANCELLED", "REFUNDED"])
+  status: z.enum(["DRAFT", "SENT", "PAID", "CANCELLED"])
 });
 
 export async function PATCH(
@@ -49,7 +49,7 @@ export async function PATCH(
     const newStatus = validatedData.status;
     
     // Statuses that imply stock has been deducted
-    const stockDeductedStatuses = ["SENT", "VIEWED", "PAID", "PARTIAL_PAID", "OVERDUE"];
+    const stockDeductedStatuses = ["SENT", "PAID"];
     
     const wasDeducted = stockDeductedStatuses.includes(oldStatus);
     const willBeDeducted = stockDeductedStatuses.includes(newStatus);

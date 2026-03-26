@@ -146,24 +146,29 @@ export default function DashboardPage() {
     if (status === "PAID") {
       return "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800";
     }
-    if (status === "PENDING") {
+    if (status === "SENT") {
       return "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800";
     }
-    if (status === "OVERDUE") {
-      return "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
+    if (status === "CANCELLED") {
+      return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-800";
     }
     return "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-800";
   };
 
-  const atRiskRevenue = Math.max(
-    stats.totalRevenue - stats.paidRevenue,
-    stats.pendingRevenue
-  );
+  const formatInvoiceStatus = (status: string) => {
+    return status
+      .toLowerCase()
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  };
+
+  const atRiskRevenue = stats.pendingRevenue;
   const computedTotalInvoices =
-    stats.draftInvoices + stats.pendingInvoices + stats.paidInvoices + stats.overdueInvoices;
+    stats.draftInvoices + stats.pendingInvoices + stats.paidInvoices;
   const totalInvoicesCount =
     stats.totalInvoices > 0 ? stats.totalInvoices : computedTotalInvoices;
-  const openInvoicesCountRaw = stats.pendingInvoices + stats.overdueInvoices;
+  const openInvoicesCountRaw = stats.pendingInvoices;
   const openInvoicesCount = Math.min(openInvoicesCountRaw, totalInvoicesCount);
 
   const growthPrefix = stats.revenueGrowth >= 0 ? "+" : "";
@@ -183,6 +188,89 @@ export default function DashboardPage() {
     return "bg-muted text-muted-foreground";
   };
 
+  const downloadCsv = (fileName: string, csvContent: string) => {
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const escapeCsvValue = (value: string | number) => {
+    const text = String(value ?? "");
+    if (text.includes(",") || text.includes("\n") || text.includes('"')) {
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+    return text;
+  };
+
+  const handleExportReport = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const businessName = (currentBusiness?.name || "business").replace(/\s+/g, "-").toLowerCase();
+
+    const summaryRows = [
+      ["Metric", "Value"],
+      ["Business", currentBusiness?.name || "-"],
+      ["Total Revenue", stats.totalRevenue],
+      ["Paid Revenue", stats.paidRevenue],
+      ["Pending Revenue", stats.pendingRevenue],
+      ["Total Invoices", totalInvoicesCount],
+      ["Draft Invoices", stats.draftInvoices],
+      ["Open Invoices", openInvoicesCount],
+      ["Paid Invoices", stats.paidInvoices],
+      ["Cancelled Invoices", Math.max(totalInvoicesCount - stats.draftInvoices - stats.pendingInvoices - stats.paidInvoices, 0)],
+      ["Total Customers", stats.totalCustomers],
+      ["Total Products", stats.totalProducts],
+      ["Revenue Growth (%)", stats.revenueGrowth.toFixed(2)],
+      ["This Month Revenue", stats.thisMonthRevenue],
+      ["Last Month Revenue", stats.lastMonthRevenue],
+      ["Average Invoice Value", stats.avgInvoiceValue],
+    ];
+
+    const invoiceRows = [
+      ["Invoice Number", "Customer", "Issue Date", "Due Date", "Status", "Total Amount"],
+      ...recentInvoices.map((invoice) => [
+        invoice.invoiceNumber,
+        invoice.customer.name,
+        formatDate(invoice.issueDate),
+        getDueDateLabel(invoice.dueDate),
+        invoice.status,
+        invoice.totalAmount,
+      ]),
+    ];
+
+    const customerRows = [
+      ["Customer", "Email", "Invoice Count", "Total Spent"],
+      ...topCustomers.map((customer) => [
+        customer.name,
+        customer.email || "-",
+        customer.invoiceCount,
+        customer.totalSpent,
+      ]),
+    ];
+
+    const toCsv = (rows: Array<Array<string | number>>) => rows
+      .map((row) => row.map((cell) => escapeCsvValue(cell)).join(","))
+      .join("\n");
+
+    const csv = [
+      "Dashboard Summary",
+      toCsv(summaryRows),
+      "",
+      "Recent Invoices",
+      toCsv(invoiceRows),
+      "",
+      "Top Customers",
+      toCsv(customerRows),
+    ].join("\n");
+
+    downloadCsv(`${businessName}-dashboard-report-${today}.csv`, csv);
+  };
+
   const kpiCards = [
     {
       label: "Total Revenue",
@@ -195,7 +283,7 @@ export default function DashboardPage() {
     {
       label: "Outstanding",
       value: formatCurrency(atRiskRevenue),
-      meta: `${openInvoicesCount} open invoices (pending + overdue)`,
+      meta: `${openInvoicesCount} open invoices (sent)`,
       pill: `${openInvoicesCount} Open`,
       icon: TrendingDown,
       tone: "warning",
@@ -229,7 +317,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" className="h-10 rounded-md border-border/70 bg-background px-4">
+            <Button variant="outline" size="sm" className="h-10 rounded-md border-border/70 bg-background px-4" onClick={handleExportReport}>
               <Download className="mr-2 h-4 w-4" />
               Export Report
             </Button>
@@ -351,7 +439,7 @@ export default function DashboardPage() {
                           </td>
                           <td className="px-5 py-3">
                             <Badge variant="outline" className={`h-5 px-1.5 text-[10px] ${getInvoiceStatusBadgeClass(invoice.status)}`}>
-                              {invoice.status.charAt(0) + invoice.status.slice(1).toLowerCase()}
+                              {formatInvoiceStatus(invoice.status)}
                             </Badge>
                           </td>
                         </tr>

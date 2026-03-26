@@ -308,10 +308,8 @@ export default function InvoicePaymentsPage() {
     switch (invoice.status) {
       case "PAID":
         return "text-green-600";
-      case "PARTIAL_PAID":
-        return "text-yellow-600";
-      case "OVERDUE":
-        return "text-destructive";
+      case "CANCELLED":
+        return "text-muted-foreground";
       default:
         return "text-[var(--brand-cobalt)]";
     }
@@ -344,7 +342,7 @@ export default function InvoicePaymentsPage() {
     );
   }
 
-  const canAddPayments = ["SENT", "VIEWED", "PARTIAL_PAID", "OVERDUE"].includes(invoice.status);
+  const canAddPayments = ["SENT"].includes(invoice.status);
 
   return (
     <DashboardLayout>

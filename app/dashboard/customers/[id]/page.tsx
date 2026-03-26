@@ -113,8 +113,8 @@ export default function CustomerDetailsPage() {
         return 'bg-[var(--brand-cobalt)]/12 text-[var(--brand-cobalt)]';
       case 'DRAFT':
         return 'bg-muted text-muted-foreground';
-      case 'OVERDUE':
-        return 'bg-destructive/12 text-destructive';
+      case 'CANCELLED':
+        return 'bg-muted text-muted-foreground';
       default:
         return 'bg-muted text-muted-foreground';
     }

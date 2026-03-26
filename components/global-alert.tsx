@@ -1,15 +1,5 @@
 "use client";
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useAlertStore } from "@/lib/alert-store";
 import {
@@ -56,6 +46,11 @@ export function GlobalAlert() {
   const iconStyle = alertStyles[type];
 
   const handleConfirm = async () => {
+    if (type === "confirm") {
+      // Close the confirm first so any follow-up alert (success/error) is not immediately hidden.
+      hideAlert();
+    }
+
     if (onConfirm) {
       try {
         setLoading(true);
@@ -66,7 +61,10 @@ export function GlobalAlert() {
         setLoading(false);
       }
     }
-    hideAlert();
+
+    if (type !== "confirm") {
+      hideAlert();
+    }
   };
 
   const handleCancel = () => {
@@ -76,44 +74,42 @@ export function GlobalAlert() {
     hideAlert();
   };
 
+  if (!isOpen) {
+    return null;
+  }
+
   return (
-    <AlertDialog open={isOpen} onOpenChange={(open) => !open && hideAlert()}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle className="flex items-center gap-2">
-            <Icon className={`h-5 w-5 ${iconStyle}`} />
-            {title}
-          </AlertDialogTitle>
-          <AlertDialogDescription>{message}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg rounded-lg border bg-background p-6 shadow-xl">
+        <div className="flex items-center gap-2 text-lg font-semibold">
+          <Icon className={`h-5 w-5 ${iconStyle}`} />
+          <span>{title}</span>
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">{message}</p>
+
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           {type === "confirm" ? (
             <>
-              <AlertDialogCancel asChild>
-                <Button variant="outline" onClick={handleCancel} disabled={loading}>
-                  {cancelText}
-                </Button>
-              </AlertDialogCancel>
-              <AlertDialogAction asChild>
-                <Button
-                  variant="default"
-                  onClick={handleConfirm}
-                  disabled={loading}
-                >
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {confirmText}
-                </Button>
-              </AlertDialogAction>
-            </>
-          ) : (
-            <AlertDialogAction asChild>
-              <Button onClick={handleConfirm} disabled={loading}>
+              <Button variant="outline" onClick={handleCancel} disabled={loading} type="button">
+                {cancelText}
+              </Button>
+              <Button
+                variant="default"
+                onClick={handleConfirm}
+                disabled={loading}
+                type="button"
+              >
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {confirmText}
               </Button>
-            </AlertDialogAction>
+            </>
+          ) : (
+            <Button onClick={handleConfirm} disabled={loading} type="button">
+              {confirmText}
+            </Button>
           )}
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        </div>
+      </div>
+    </div>
   );
 }

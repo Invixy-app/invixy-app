@@ -28,6 +28,7 @@ import {
 import Link from "next/link";
 import { z } from "zod";
 import { taxSystemSchema, type TaxSystemFormValues } from "@/lib/validations/tax";
+import { formatCurrency } from "@/lib/utils";
 
 type TaxSystemFormData = Omit<TaxSystemFormValues, "validFrom" | "validTo" | "rate"> & {
   validFrom: string;
@@ -259,6 +260,10 @@ function NewTaxSystemContent() {
     return taxTemplates[selectedTemplate as keyof typeof taxTemplates];
   };
 
+  const formatPercentage = (rate: number) => {
+    return `${(rate * 100).toFixed(2)}%`;
+  };
+
   const templateInfo = getTemplateInfo();
 
   if (businessLoading) {
@@ -337,7 +342,15 @@ function NewTaxSystemContent() {
               <Calculator className="h-4 w-4 text-[var(--brand-indigo)]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formData.taxType === "FIXED_AMOUNT" ? formatCurrency(formData.rate) : formatPercentage(formData.rate)}</div>
+              <div className="text-2xl font-bold">
+                {(() => {
+                  const numericRate = Number(formData.rate || 0);
+                  if (formData.taxType === "FIXED_AMOUNT") {
+                    return formatCurrency(numericRate);
+                  }
+                  return formatPercentage(numericRate / 100);
+                })()}
+              </div>
             </CardContent>
           </Card>
         </div>

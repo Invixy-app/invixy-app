@@ -138,12 +138,8 @@ interface Invoice {
 const statusConfig = {
   DRAFT: { color: "bg-muted-foreground", icon: FileText, label: "Draft" },
   SENT: { color: "bg-[var(--brand-cobalt)]", icon: Send, label: "Sent" },
-  VIEWED: { color: "bg-[var(--brand-indigo)]", icon: Clock, label: "Viewed" },
   PAID: { color: "bg-[var(--brand-teal)]", icon: CheckCircle, label: "Paid" },
-  PARTIAL_PAID: { color: "bg-[var(--brand-cyan)]", icon: AlertCircle, label: "Partial" },
-  OVERDUE: { color: "bg-destructive", icon: XCircle, label: "Overdue" },
-  CANCELLED: { color: "bg-muted-foreground", icon: XCircle, label: "Cancelled" },
-  REFUNDED: { color: "bg-[var(--brand-cobalt)]", icon: XCircle, label: "Refunded" }
+  CANCELLED: { color: "bg-muted-foreground", icon: XCircle, label: "Cancelled" }
 };
 
 export default function InvoiceDetailPage() {
@@ -210,16 +206,22 @@ export default function InvoiceDetailPage() {
   };
 
   const deleteInvoice = async () => {
+    if (!currentBusiness?.id) {
+      showError("Error", "No business selected");
+      return;
+    }
+
     setActionLoading(true);
     try {
-      const response = await fetch(`/api/invoices/${invoice?.id}`, {
+      const response = await fetch(`/api/invoices/${invoice?.id}?businessId=${currentBusiness.id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
         router.push("/dashboard/invoices");
       } else {
-        showError("Error", "Something went wrong. Please try again.");
+        const errorData = await response.json().catch(() => null);
+        showError("Error", errorData?.error || "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error deleting invoice:", error);

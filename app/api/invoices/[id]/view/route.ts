@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
-import { InvoiceStatus } from "@prisma/client";
 
 export async function POST(
   request: NextRequest,
@@ -18,13 +17,7 @@ export async function POST(
       return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
     }
 
-    // Only update to VIEWED if current status is SENT
-    if (invoice.status === InvoiceStatus.SENT) {
-      await db.invoice.update({
-        where: { id },
-        data: { status: InvoiceStatus.VIEWED }
-      });
-    }
+    // No status transition on view: statuses are limited to DRAFT, SENT, PAID, CANCELLED.
 
     return NextResponse.json({ success: true });
 

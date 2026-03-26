@@ -15,14 +15,11 @@ import {
   Calculator,
   LogOut,
   ChevronRight,
-  Bell,
-  Search,
   PanelLeftClose,
   PanelLeftOpen,
   Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { useSession, signOut } from "next-auth/react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -36,7 +33,6 @@ import {
 import { BusinessSwitcher } from "@/components/business-switcher"
 import { useBusinessContext } from "@/components/business-context"
 import { Separator } from "@/components/ui/separator"
-import { GlobalAlert } from "@/components/global-alert"
 import { ThemeToggle } from "@/components/theme-toggle"
 import Image from "next/image"
 
@@ -192,13 +188,6 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
         </div>
 
         <div className="p-3 mt-auto border-t border-sidebar-border/20 space-y-3">
-          {isSidebarOpen && (
-            <Link href="/dashboard/invoices/new">
-              <Button className="w-full rounded-md bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
-                + New Invoice
-              </Button>
-            </Link>
-          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className={`w-full justify-start p-2 h-auto hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${!isSidebarOpen && "justify-center"}`}>
@@ -323,21 +312,6 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
               )}
             </div>
           </div>
-
-          <div className="flex items-center gap-3">
-            <div className="relative hidden lg:block">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search operations..."
-                className="h-9 w-72 rounded-full border-border/70 bg-muted/40 pl-9"
-              />
-            </div>
-            <ThemeToggle className="text-muted-foreground hover:text-foreground" />
-            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
-              <Bell className="h-5 w-5" />
-            </Button>
-          </div>
         </header>
 
         {/* Page Content */}
@@ -369,7 +343,6 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
         )}
       </AnimatePresence>
       
-      <GlobalAlert />
     </div>
   )
 }
