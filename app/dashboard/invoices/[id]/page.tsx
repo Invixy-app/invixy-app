@@ -332,8 +332,7 @@ export default function InvoiceDetailPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
+      <div className="space-y-8">
         <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className="flex items-center space-x-4">
             <Link href="/dashboard/invoices">
@@ -357,7 +356,7 @@ export default function InvoiceDetailPage() {
           </div>
 
           <div className="flex items-center space-x-2">
-             <Button variant="outline" onClick={downloadPDF}>
+            <Button variant="outline" onClick={downloadPDF}>
               <Download className="h-4 w-4 mr-2" />
               Download
             </Button>
@@ -460,7 +459,7 @@ export default function InvoiceDetailPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Customer Information */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <User className="h-5 w-5 mr-2" />
@@ -486,7 +485,7 @@ export default function InvoiceDetailPage() {
             </Card>
 
             {/* Line Items */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <FileText className="h-5 w-5 mr-2" />
@@ -557,7 +556,7 @@ export default function InvoiceDetailPage() {
 
             {/* Notes & Terms */}
             {(invoice.notes || invoice.terms) && (
-              <Card>
+              <Card className="shadow-sm border-border/80">
                 <CardHeader>
                   <CardTitle>Additional Information</CardTitle>
                 </CardHeader>

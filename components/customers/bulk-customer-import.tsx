@@ -82,7 +82,14 @@ export function BulkCustomerImport() {
   };
 
   const handleUpload = async () => {
-    if (!file || !currentBusiness?.id) return;
+    if (!currentBusiness?.id) {
+      showError("Missing Business", "Please select a business before importing customers.");
+      return;
+    }
+    if (!file) {
+      showError("No File Selected", "Please choose an Excel file to import.");
+      return;
+    }
 
     setUploading(true);
     const formData = new FormData();
@@ -95,15 +102,26 @@ export function BulkCustomerImport() {
         body: formData,
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      const data = await response.json().catch(() => null);
+
+      if (response.ok && data) {
         setResult(data);
         if (data.count > 0) {
            showSuccess("Import Completed", `Successfully imported ${data.count} customers.`);
            router.refresh();
+        } else if (data.errors?.length) {
+           showError("Import Validation Failed", data.errors[0]);
         }
       } else {
-        showError("Import Failed", "Failed to upload file. Please try again.");
+        const apiErrors: string[] = data?.errors && Array.isArray(data.errors) ? data.errors : [];
+        const fallbackMessage = data?.error || "Failed to upload file. Please try again.";
+        setResult({
+          success: false,
+          count: 0,
+          totalRows: 0,
+          errors: apiErrors.length ? apiErrors : [fallbackMessage],
+        });
+        showError("Import Failed", apiErrors[0] || fallbackMessage);
       }
     } catch (error) {
       console.error("Upload error:", error);
@@ -127,7 +145,7 @@ export function BulkCustomerImport() {
           Bulk Import
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
           <DialogTitle>Import Customers</DialogTitle>
           <DialogDescription>
@@ -135,10 +153,10 @@ export function BulkCustomerImport() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          <div className="flex items-center justify-between p-4 border rounded-lg bg-slate-50">
+        <div className="space-y-6 py-2">
+          <div className="flex items-center justify-between rounded-xl border border-border/80 bg-muted/40 p-4 shadow-sm">
             <div className="flex items-center space-x-3">
-              <FileSpreadsheet className="h-8 w-8 text-green-600" />
+              <FileSpreadsheet className="h-8 w-8 text-[var(--brand-teal)]" />
               <div>
                 <p className="font-medium text-sm">Step 1: Get Template</p>
                 <p className="text-xs text-muted-foreground">Download the formatted Excel template</p>
@@ -150,10 +168,10 @@ export function BulkCustomerImport() {
             </Button>
           </div>
 
-          <div className="space-y-4">
+           <div className="space-y-4 rounded-xl border border-border/80 bg-card p-4 shadow-sm">
              <div className="flex items-center space-x-3">
-                 <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
-                    2
+                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-[var(--brand-cobalt)]/12 text-[var(--brand-cobalt)]">
+                  <Upload className="h-4 w-4" />
                  </div>
                  <div>
                     <p className="font-medium text-sm">Step 2: Upload File</p>
@@ -168,6 +186,7 @@ export function BulkCustomerImport() {
                     type="file" 
                     accept=".xlsx, .xls"
                     onChange={handleFileChange} 
+                  className="border-border/80"
                 />
              </div>
           </div>

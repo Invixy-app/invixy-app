@@ -254,9 +254,8 @@ export default function EditTaxSystemPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="space-y-8">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className="flex items-center space-x-4">
             <Link href="/dashboard/tax-systems">
               <Button variant="outline" size="sm">
@@ -315,7 +314,7 @@ export default function EditTaxSystemPage() {
           <div className="lg:col-span-2 space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Information */}
-              <Card>
+              <Card className="shadow-sm border-border/80">
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <FileText className="h-5 w-5 mr-2" />
@@ -367,7 +366,7 @@ export default function EditTaxSystemPage() {
               </Card>
 
               {/* Tax Configuration */}
-              <Card>
+              <Card className="shadow-sm border-border/80">
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Calculator className="h-5 w-5 mr-2" />
@@ -448,7 +447,7 @@ export default function EditTaxSystemPage() {
               </Card>
 
               {/* Validity Period */}
-              <Card>
+              <Card className="shadow-sm border-border/80">
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Calendar className="h-5 w-5 mr-2" />
@@ -488,7 +487,7 @@ export default function EditTaxSystemPage() {
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex gap-3">
-                    <Button type="submit" disabled={saving}>
+                    <Button type="submit" disabled={saving} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                       {saving ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

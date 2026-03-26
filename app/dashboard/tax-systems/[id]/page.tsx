@@ -241,8 +241,7 @@ export default function TaxSystemDetailPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
+      <div className="space-y-8">
         <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className="flex items-center space-x-4">
             <Link href="/dashboard/tax-systems">
@@ -304,7 +303,7 @@ export default function TaxSystemDetailPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Tax System Details */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Calculator className="h-5 w-5 mr-2" />
@@ -371,7 +370,7 @@ export default function TaxSystemDetailPage() {
 
             {/* Products Using This Tax */}
             {products.length > 0 && (
-              <Card>
+              <Card className="shadow-sm border-border/80">
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Package className="h-5 w-5 mr-2" />
@@ -413,7 +412,7 @@ export default function TaxSystemDetailPage() {
 
             {/* Recent Invoice Usage */}
             {invoiceUsage.length > 0 && (
-              <Card>
+              <Card className="shadow-sm border-border/80">
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <FileText className="h-5 w-5 mr-2" />
@@ -507,7 +506,7 @@ export default function TaxSystemDetailPage() {
                     </Button>
                   </Link>
                   <Link href="/dashboard/products/new">
-                    <Button variant="outline" className="w-full justify-start">
+                    <Button className="w-full justify-start bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                       <Package className="h-4 w-4 mr-2" />
                       Create Product with This Tax
                     </Button>

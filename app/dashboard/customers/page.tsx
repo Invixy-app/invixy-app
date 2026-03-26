@@ -31,7 +31,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { LIMITS } from "@/lib/constants-limits";
-import { Edit, Eye, Mail, MapPin, MoreHorizontal, Phone, Plus, Search, Trash2 } from "lucide-react";
+import { Edit, Eye, Mail, MapPin, MoreHorizontal, Phone, Plus, Search, Trash2, Users, UserCheck, AtSign } from "lucide-react";
 import Link from "next/link";
 import { BulkCustomerImport } from "@/components/customers/bulk-customer-import";
 
@@ -205,6 +205,46 @@ export default function CustomersPage() {
           </div>
         </div>
 
+        {/* Summary Stats */}
+        {customers.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+                <Users className="h-4 w-4 text-[var(--brand-cobalt)]" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{customers.length}</div>
+                <p className="text-xs text-muted-foreground">Customer records</p>
+              </CardContent>
+            </Card>
+            <Card className="border-[var(--brand-teal)]/25 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
+                <UserCheck className="h-4 w-4 text-[var(--brand-teal)]" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {customers.filter(c => c.isActive).length}
+                </div>
+                <p className="text-xs text-muted-foreground">Currently active profiles</p>
+              </CardContent>
+            </Card>
+            <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">With Email</CardTitle>
+                <AtSign className="h-4 w-4 text-[var(--brand-indigo)]" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {customers.filter(c => c.email).length}
+                </div>
+                <p className="text-xs text-muted-foreground">Reachable by email</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Search and Filters */}
         <Card className="shadow-sm border-border/80">
           <CardHeader>
@@ -377,39 +417,6 @@ export default function CustomersPage() {
           </CardContent>
         </Card>
 
-        {/* Summary Stats */}
-        {customers.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{customers.length}</div>
-              </CardContent>
-            </Card>
-            <Card className="border-[var(--brand-teal)]/25 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {customers.filter(c => c.isActive).length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">With Email</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {customers.filter(c => c.email).length}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
       </div>
     </DashboardLayout>
   );

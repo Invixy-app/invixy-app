@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { FormField, FormTextareaField, FormGrid } from "@/components/ui/form-fields";
-import { ArrowLeft, Save, User, MapPin } from "lucide-react";
+import { ArrowLeft, Save, User, MapPin, Map, AtSign } from "lucide-react";
 import Link from "next/link";
 import { z } from "zod";
 import { customerSchema } from "@/lib/validations/customer";
@@ -186,9 +186,8 @@ export default function EditCustomerPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
+      <div className="space-y-8">
+        <div className="flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <Button variant="outline" size="icon" asChild>
             <Link href={`/dashboard/customers/${customerId}`}>
               <ArrowLeft className="h-4 w-4" />
@@ -202,10 +201,40 @@ export default function EditCustomerPage() {
           </div>
         </div>
 
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Profile</CardTitle>
+              <User className="h-4 w-4 text-[var(--brand-cobalt)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formData.name ? "Ready" : "Draft"}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Contact</CardTitle>
+              <AtSign className="h-4 w-4 text-[var(--brand-teal)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formData.email ? "Complete" : "Optional"}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Address</CardTitle>
+              <Map className="h-4 w-4 text-[var(--brand-indigo)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formData.billingAddress ? "Set" : "Pending"}</div>
+            </CardContent>
+          </Card>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Basic Information */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
@@ -259,7 +288,7 @@ export default function EditCustomerPage() {
             </Card>
 
             {/* Address Information */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <MapPin className="h-5 w-5" />
@@ -305,7 +334,7 @@ export default function EditCustomerPage() {
           </div>
 
           {/* Additional Information */}
-          <Card>
+          <Card className="shadow-sm border-border/80">
             <CardHeader>
               <CardTitle>Additional Information</CardTitle>
               <CardDescription>
@@ -344,7 +373,7 @@ export default function EditCustomerPage() {
             <Button type="button" variant="outline" asChild>
               <Link href={`/dashboard/customers/${customerId}`}>Cancel</Link>
             </Button>
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
               {saving && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>}
               <Save className="h-4 w-4 mr-2" />
               {saving ? "Saving..." : "Save Changes"}

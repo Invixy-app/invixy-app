@@ -216,338 +216,233 @@ export default function ProductsPage() {
     );
   }
 
-  return (
- <DashboardLayout>
-  <div className="space-y-8">
-    {/* Header */}
-    <div className="flex justify-between items-center rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-        <p className="text-muted-foreground">
-          Manage your product catalog and inventory
-        </p>
-      </div>
-      <div className="flex items-center space-x-2">
-        <BulkProductImport />
-        <TooltipProvider>
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <span>
-                <Button disabled={!canCreateProduct} asChild={canCreateProduct} className="bg-[var(--brand-cobalt)] hover:bg-[var(--brand-indigo)] text-white">
-                  {canCreateProduct ? (
-                    <Link href="/dashboard/products/new">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Product
-                    </Link>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Product
-                    </>
-                  )}
-                </Button>
-              </span>
-            </TooltipTrigger>
-            {!canCreateProduct && (
-              <TooltipContent side="left">
-                <p>You have reached the limit of {productLimit} products for the {currentPlan} plan.</p>
-                <p className="font-semibold text-primary mt-1">Upgrade to Pro for unlimited products.</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-    </div>
+  const activeProducts = products.filter((p) => p.isActive).length;
+  const lowStockProducts = products.filter(
+    (p) =>
+      p.stockQuantity !== null &&
+      p.minStockLevel !== null &&
+      typeof p.stockQuantity === "number" &&
+      typeof p.minStockLevel === "number" &&
+      p.stockQuantity <= p.minStockLevel
+  ).length;
 
-    {/* Search and Filters */}
-    <Card className="border border-border/80 shadow-sm rounded-xl">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold text-foreground">
-          Product Catalog
-        </CardTitle>
-        <CardDescription>Search and manage your products</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col sm:flex-row gap-4 mb-5">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search products by name, description, or Item Code..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
+  return (
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight">Product Catalog</h1>
+            <p className="text-muted-foreground">Manage your enterprise inventory and pricing structures.</p>
           </div>
-          {categories.length > 0 && (
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm"
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category || ""}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          )}
+          <div className="flex items-center gap-2">
+            <BulkProductImport />
+            <TooltipProvider>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button disabled={!canCreateProduct} asChild={canCreateProduct} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
+                      {canCreateProduct ? (
+                        <Link href="/dashboard/products/new">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Product
+                        </Link>
+                      ) : (
+                        <>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Product
+                        </>
+                      )}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!canCreateProduct && (
+                  <TooltipContent side="left">
+                    <p>You reached the limit of {productLimit} products for {currentPlan}.</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
 
-        {/* Products Table */}
-        {filteredProducts.length > 0 ? (
-          <div className="overflow-x-auto border border-border/80 rounded-xl">
-            <Table>
-              <TableHeader className="bg-muted/40">
-                <TableRow>
-                  <TableHead className="font-semibold text-foreground max-w-[250px]">
-                    Product
-                  </TableHead>
-                  <TableHead className="w-[120px]">Item Code</TableHead>
-                  <TableHead className="w-[120px]">Price</TableHead>
-                  <TableHead className="w-[150px]">Stock</TableHead>
-                  <TableHead className="w-[120px]">Category</TableHead>
-                  <TableHead className="w-[150px]">Tax System</TableHead>
-                  <TableHead className="w-[100px]">Status</TableHead>
-                  <TableHead className="text-right w-[50px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProducts.map((product) => {
-                  const stockStatus = getStockStatus(product);
-                  return (
-                    <TableRow
-                      key={product.id}
-                      className="hover:bg-muted/30 transition-colors"
-                    >
-                      <TableCell className="max-w-[250px]">
-                        <div>
-                          <div className="font-medium text-foreground line-clamp-2" title={product.name}>
-                            {product.name}
-                          </div>
-                          {product.description && (
-                            <div className="text-sm text-muted-foreground line-clamp-2" title={product.description}>
-                              {product.description}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {product.sku && (
-                          <div className="flex items-center text-sm text-foreground">
-                            {/* <Hash className="h-3 w-3 mr-1 text-gray-400" /> */}
-                            {product.sku}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center text-foreground">
-                          {/* <DollarSign className="h-3 w-3 mr-1 text-gray-400" /> */}
-                          {formatCurrency(product.price)}
-                        </div>
-                        {product.cost && (
-                          <div className="text-xs text-muted-foreground">
-                            Cost: {formatCurrency(product.cost)}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          {product.stockQuantity === null ? (
-                            <span className="text-sm text-muted-foreground">
-                              Not tracked
-                            </span>
-                          ) : (
-                            <>
-                              <span className="font-medium text-foreground">
-                                {product.stockQuantity}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                {product.unit}
-                              </span>
-                              {getStockStatus(product).status === "Low stock" && (
-                                <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                              )}
-                            </>
-                          )}
-                        </div>
-                        <Badge
-                          variant={stockStatus.variant}
-                          className="text-xs mt-1"
-                        >
-                          {stockStatus.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {product.category && (
-                          <Badge variant="outline" className="text-xs">
-                            {product.category}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {product.taxSystem && (
-                          <div className="text-sm text-foreground">
-                            <div className="font-medium">
-                              {product.taxSystem.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {(product.taxSystem.rate * 100).toFixed(2)}%
-                            </div>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={product.isActive ? "default" : "secondary"}
-                          className="text-xs"
-                        >
-                          {product.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="h-8 w-8 p-0 hover:bg-muted"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <Link href={`/dashboard/products/${product.id}`}>
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </DropdownMenuItem>
-                            </Link>
-                            <Link href={`/dashboard/products/${product.id}/edit`}>
-                              <DropdownMenuItem>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit Product
-                              </DropdownMenuItem>
-                            </Link>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteProduct(product.id)}
-                              className="text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="text-center py-14">
-            <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
-              <Package className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">
-              {searchTerm || selectedCategory
-                ? "No products found"
-                : "No products yet"}
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              {searchTerm || selectedCategory
-                ? "Try adjusting your search terms or filters."
-                : "Get started by adding your first product."}
-            </p>
-            {!(searchTerm || selectedCategory) && (
-              <TooltipProvider>
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button disabled={!canCreateProduct} asChild={canCreateProduct} className="bg-[var(--brand-cobalt)] hover:bg-[var(--brand-indigo)] text-white">
-                        {canCreateProduct ? (
-                          <Link href="/dashboard/products/new">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Your First Product
-                          </Link>
-                        ) : (
-                          <>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Your First Product
-                          </>
-                        )}
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  {!canCreateProduct && (
-                    <TooltipContent>
-                      <p>Limit reached on {currentPlan} plan.</p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-
-    {/* Summary Stats */}
-    {products.length > 0 && (
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          {
-            title: "Total Products",
-            value: products.length,
-          },
-          {
-            title: "Active Products",
-            value: products.filter((p) => p.isActive).length,
-          },
-          {
-            title: "Low Stock Items",
-            value: products.filter(
-              (p) =>
-                p.stockQuantity !== null &&
-                p.minStockLevel !== null &&
-                typeof p.stockQuantity === "number" &&
-                typeof p.minStockLevel === "number" &&
-                p.stockQuantity <= p.minStockLevel
-            ).length,
-            color: "text-yellow-600",
-          },
-          {
-            title: "Categories",
-            value: categories.length,
-          },
-        ].map((stat) => (
-          <Card
-            key={stat.title}
-            className="border border-border/80 shadow-sm rounded-xl hover:shadow-md transition-shadow"
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
+        <div className="grid gap-3 md:grid-cols-4">
+          <Card className="rounded-2xl border-border/80 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <Package className="h-4 w-4 text-[var(--brand-cobalt)]" />
             </CardHeader>
             <CardContent>
-              <div
-                className={`text-3xl font-semibold ${
-                  stat.color || "text-foreground"
-                }`}
-              >
-                {stat.value}
-              </div>
+              <div className="text-2xl font-bold">{products.length.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Catalog volume</p>
             </CardContent>
           </Card>
-        ))}
-      </div>
-    )}
-  </div>
-</DashboardLayout>
+          <Card className="rounded-2xl border-border/80 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+              <Eye className="h-4 w-4 text-[var(--brand-teal)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{activeProducts.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Published and available</p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-border/80 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{lowStockProducts.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Needs restocking attention</p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-border/80 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Categories</CardTitle>
+              <Hash className="h-4 w-4 text-[var(--brand-indigo)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{categories.length.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Active taxonomy groups</p>
+            </CardContent>
+          </Card>
+        </div>
 
+        <Card className="rounded-2xl border-border/80 shadow-sm">
+          <CardHeader className="border-b bg-muted/20 pb-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative w-full max-w-md">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search products, Item Code, category..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-10 pl-9"
+                  />
+                </div>
+                {categories.length > 0 && (
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="h-10 rounded-md border border-border/80 bg-background px-4 text-sm shadow-sm"
+                  >
+                    <option value="">All Categories</option>
+                    {categories.map((category) => (
+                      <option key={category} value={category || ""}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Showing {filteredProducts.length} of {products.length.toLocaleString()} products
+              </p>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {filteredProducts.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead className="px-5 text-[10px] uppercase tracking-[0.14em]">Product Name</TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-[0.14em]">Item Code</TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-[0.14em]">Category</TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-[0.14em]">Price</TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-[0.14em]">Stock</TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-[0.14em]">Tax System</TableHead>
+                      <TableHead className="text-[10px] uppercase tracking-[0.14em]">Status</TableHead>
+                      <TableHead className="text-right text-[10px] uppercase tracking-[0.14em]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredProducts.map((product) => {
+                      const stockStatus = getStockStatus(product);
+                      return (
+                        <TableRow key={product.id} className="hover:bg-muted/20">
+                          <TableCell className="px-5 py-3">
+                            <div className="font-medium">{product.name}</div>
+                            <div className="text-xs text-muted-foreground line-clamp-1">{product.description || "-"}</div>
+                          </TableCell>
+                          <TableCell className="py-3 text-sm text-muted-foreground">{product.sku || "-"}</TableCell>
+                          <TableCell className="py-3">
+                            {product.category ? <Badge variant="outline">{product.category}</Badge> : "-"}
+                          </TableCell>
+                          <TableCell className="py-3 font-semibold">{formatCurrency(product.price)}</TableCell>
+                          <TableCell className="py-3">
+                            <div className="text-sm font-medium">{product.stockQuantity ?? "-"}</div>
+                            <Badge variant={stockStatus.variant} className="mt-1 text-[10px]">
+                              {stockStatus.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="py-3 text-xs text-muted-foreground">
+                            {product.taxSystem ? `${product.taxSystem.name} ${(product.taxSystem.rate * 100).toFixed(0)}%` : "-"}
+                          </TableCell>
+                          <TableCell className="py-3">
+                            <Badge variant={product.isActive ? "default" : "secondary"} className="text-[10px]">
+                              {product.isActive ? "Active" : "Inactive"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="py-3 text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-muted">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <Link href={`/dashboard/products/${product.id}`}>
+                                  <DropdownMenuItem>
+                                    <Eye className="mr-2 h-4 w-4" />
+                                    View Details
+                                  </DropdownMenuItem>
+                                </Link>
+                                <Link href={`/dashboard/products/${product.id}/edit`}>
+                                  <DropdownMenuItem>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit Product
+                                  </DropdownMenuItem>
+                                </Link>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => handleDeleteProduct(product.id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="py-14 text-center">
+                <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-muted">
+                  <Package className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold text-foreground">
+                  {searchTerm || selectedCategory ? "No products found" : "No products yet"}
+                </h3>
+                <p className="mb-4 text-muted-foreground">
+                  {searchTerm || selectedCategory
+                    ? "Try adjusting your search terms or filters."
+                    : "Get started by adding your first product."}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+      </div>
+    </DashboardLayout>
   );
 }

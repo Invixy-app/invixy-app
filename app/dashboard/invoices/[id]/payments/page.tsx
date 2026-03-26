@@ -348,9 +348,8 @@ export default function InvoicePaymentsPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="space-y-8">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className="flex items-center space-x-4">
             <Link href={`/dashboard/invoices/${invoice.id}`}>
               <Button variant="outline" size="sm">
@@ -369,7 +368,7 @@ export default function InvoicePaymentsPage() {
           </div>
 
           {canAddPayments && (
-            <Button onClick={() => setShowAddPayment(true)}>
+            <Button onClick={() => setShowAddPayment(true)} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
               <Plus className="h-4 w-4 mr-2" />
               Record Payment
             </Button>
@@ -380,7 +379,7 @@ export default function InvoicePaymentsPage() {
           {/* Payment Summary */}
           <div className="lg:col-span-2 space-y-6">
             {/* Payment Progress */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <TrendingUp className="h-5 w-5 mr-2" />
@@ -398,19 +397,19 @@ export default function InvoicePaymentsPage() {
                   <Progress value={getPaymentProgress()} className="h-3" />
                   
                   <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className="p-3 bg-muted/50 rounded-lg">
+                    <div className="rounded-lg border border-border/80 bg-muted/50 p-3 shadow-sm">
                       <div className="text-2xl font-bold text-[var(--brand-cobalt)]">
                         {formatCurrency(invoice.totalAmount)}
                       </div>
                       <div className="text-xs text-muted-foreground">Total Amount</div>
                     </div>
-                    <div className="p-3 bg-green-50 rounded-lg">
+                    <div className="rounded-lg border border-border/80 bg-muted/50 p-3 shadow-sm">
                       <div className="text-2xl font-bold text-green-600">
                         {formatCurrency(invoice.paidAmount)}
                       </div>
                       <div className="text-xs text-muted-foreground">Paid Amount</div>
                     </div>
-                    <div className="p-3 bg-red-50 rounded-lg">
+                    <div className="rounded-lg border border-border/80 bg-muted/50 p-3 shadow-sm">
                       <div className={`text-2xl font-bold ${invoice.balanceAmount > 0 ? 'text-destructive' : 'text-[var(--brand-teal)]'}`}>
                         {formatCurrency(invoice.balanceAmount)}
                       </div>
@@ -422,7 +421,7 @@ export default function InvoicePaymentsPage() {
             </Card>
 
             {/* Payment History */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Receipt className="h-5 w-5 mr-2" />
@@ -527,7 +526,7 @@ export default function InvoicePaymentsPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Invoice Info */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle>Invoice Information</CardTitle>
               </CardHeader>
@@ -578,7 +577,7 @@ export default function InvoicePaymentsPage() {
                   Download Receipt
                 </Button>
                 {canAddPayments && (
-                  <Button size="sm" className="w-full" onClick={() => setShowAddPayment(true)}>
+                  <Button size="sm" className="w-full bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]" onClick={() => setShowAddPayment(true)}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Payment
                   </Button>

@@ -16,11 +16,13 @@ import {
   LogOut,
   ChevronRight,
   Bell,
+  Search,
   PanelLeftClose,
   PanelLeftOpen,
   Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useSession, signOut } from "next-auth/react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -83,6 +85,18 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
       icon: Settings,
     },
   ]
+
+  const routeMeta = [
+    { key: "invoices", label: "Invoices", icon: FileText },
+    { key: "customers", label: "Customers", icon: Users },
+    { key: "products", label: "Products", icon: Package },
+    { key: "tax-systems", label: "Tax Systems", icon: Calculator },
+    { key: "business-settings", label: "Business Settings", icon: Settings },
+    { key: "settings", label: "Settings", icon: Settings },
+    { key: "businesses", label: "Businesses", icon: LayoutDashboard },
+  ]
+
+  const activeRouteMeta = routeMeta.find((item) => pathname.includes(item.key))
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen)
 
@@ -177,7 +191,14 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
           })}
         </div>
 
-        <div className="p-3 mt-auto border-t border-sidebar-border/20">
+        <div className="p-3 mt-auto border-t border-sidebar-border/20 space-y-3">
+          {isSidebarOpen && (
+            <Link href="/dashboard/invoices/new">
+              <Button className="w-full rounded-md bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
+                + New Invoice
+              </Button>
+            </Link>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className={`w-full justify-start p-2 h-auto hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${!isSidebarOpen && "justify-center"}`}>
@@ -287,35 +308,40 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
             
             {/* Breadcrumbs or Page Title could go here */}
             <div className="hidden md:flex items-center text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Dashboard</span>
+              <span className="font-medium text-foreground inline-flex items-center gap-2">
+                <LayoutDashboard className="h-4 w-4 text-[var(--brand-cobalt)]" />
+                Dashboard
+              </span>
               {pathname !== "/dashboard" && (
                 <>
                   <ChevronRight className="h-4 w-4 mx-1" />
-                  <span className="capitalize">{pathname.split("/").pop()?.replaceAll(/-/g, " ")}</span>
+                  <span className="capitalize inline-flex items-center gap-1.5">
+                    {activeRouteMeta && <activeRouteMeta.icon className="h-3.5 w-3.5" />}
+                    {activeRouteMeta ? activeRouteMeta.label : pathname.split("/").pop()?.replaceAll(/-/g, " ")}
+                  </span>
                 </>
               )}
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <ThemeToggle className="text-muted-foreground hover:text-foreground" />
-            {/* <div className="relative hidden sm:block">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="Search..." 
-                className="w-64 pl-9 h-9 bg-muted/50 border-none focus-visible:ring-1" 
+            <div className="relative hidden lg:block">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search operations..."
+                className="h-9 w-72 rounded-full border-border/70 bg-muted/40 pl-9"
               />
-            </div> */}
-            {/* <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
+            </div>
+            <ThemeToggle className="text-muted-foreground hover:text-foreground" />
+            <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
               <Bell className="h-5 w-5" />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive ring-2 ring-background"></span>
-            </Button> */}
+            </Button>
           </div>
         </header>
 
         {/* Page Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth">
+        <div className="flex-1 overflow-y-auto p-3 md:p-6 scroll-smooth bg-muted/30 dark:bg-zinc-950/40">
           <div className="max-w-7xl mx-auto space-y-6">
             {children}
           </div>

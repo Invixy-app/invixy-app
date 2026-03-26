@@ -135,9 +135,8 @@ export default function NewCustomerPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center space-x-4">
+      <div className="space-y-8">
+        <div className="flex items-center space-x-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <Link href="/dashboard/customers">
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -152,10 +151,34 @@ export default function NewCustomerPage() {
           </div>
         </div>
 
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Name</CardTitle>
+              <User className="h-4 w-4 text-[var(--brand-cobalt)]" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">{formData.name ? "Set" : "Required"}</div></CardContent>
+          </Card>
+          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Contact</CardTitle>
+              <Mail className="h-4 w-4 text-[var(--brand-teal)]" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">{formData.email ? "Complete" : "Optional"}</div></CardContent>
+          </Card>
+          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Address</CardTitle>
+              <MapPin className="h-4 w-4 text-[var(--brand-indigo)]" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">{formData.billingAddress ? "Set" : "Pending"}</div></CardContent>
+          </Card>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Basic Information */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <User className="h-5 w-5 mr-2" />
@@ -235,7 +258,7 @@ export default function NewCustomerPage() {
             </Card>
 
             {/* Address Information */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <MapPin className="h-5 w-5 mr-2" />
@@ -322,7 +345,7 @@ export default function NewCustomerPage() {
                 Cancel
               </Button>
             </Link>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

@@ -414,9 +414,8 @@ export default function BusinessSettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div>
+      <div className="space-y-8">
+        <div className="rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <h1 className="text-2xl font-bold tracking-tight flex items-center">
             <SettingsIcon className="w-6 h-6 mr-2" />
             Business Settings
@@ -424,6 +423,36 @@ export default function BusinessSettingsPage() {
           <p className="text-muted-foreground">
             Manage settings for {currentBusiness.name}
           </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Business Profile</CardTitle>
+              <Building2 className="h-4 w-4 text-[var(--brand-cobalt)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Configured</div>
+            </CardContent>
+          </Card>
+          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Team Members</CardTitle>
+              <Users className="h-4 w-4 text-[var(--brand-teal)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{teamMembers.length}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Security</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-[var(--brand-indigo)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Managed</div>
+            </CardContent>
+          </Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -435,7 +464,7 @@ export default function BusinessSettingsPage() {
 
           {/* General Tab */}
           <TabsContent value="general" className="space-y-6">
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Building2 className="w-5 h-5 mr-2" />
@@ -628,7 +657,7 @@ export default function BusinessSettingsPage() {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button onClick={updateBusinessInfo} disabled={loading}>
+                  <Button onClick={updateBusinessInfo} disabled={loading} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                     <Save className="w-4 h-4 mr-2" />
                     {loading ? 'Saving...' : 'Save Changes'}
                   </Button>
@@ -639,7 +668,7 @@ export default function BusinessSettingsPage() {
 
           {/* Team Tab */}
           <TabsContent value="team" className="space-y-6">
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <div>
                   <CardTitle className="flex items-center">
@@ -652,7 +681,7 @@ export default function BusinessSettingsPage() {
                 </div>
                 <Dialog open={showAddMemberDialog} onOpenChange={setShowAddMemberDialog}>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                       <UserPlus className="w-4 h-4 mr-2" />
                       Add Member
                     </Button>
@@ -697,7 +726,7 @@ export default function BusinessSettingsPage() {
                       <Button variant="outline" onClick={() => setShowAddMemberDialog(false)}>
                         Cancel
                       </Button>
-                      <Button onClick={addTeamMember} disabled={loading || !newMemberEmail}>
+                      <Button onClick={addTeamMember} disabled={loading || !newMemberEmail} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                         {loading ? 'Adding...' : 'Add Member'}
                       </Button>
                     </DialogFooter>
@@ -868,7 +897,7 @@ export default function BusinessSettingsPage() {
                   <Button variant="outline" onClick={() => setShowEditMemberDialog(false)}>
                     Cancel
                   </Button>
-                  <Button onClick={updateTeamMemberRole} disabled={loading}>
+                  <Button onClick={updateTeamMemberRole} disabled={loading} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                     {loading ? 'Updating...' : 'Update Role'}
                   </Button>
                 </DialogFooter>
@@ -878,7 +907,7 @@ export default function BusinessSettingsPage() {
 
           {/* Advanced Tab */}
           <TabsContent value="advanced" className="space-y-6">
-            <Card className="border-destructive/20">
+            <Card className="border-destructive/20 shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center text-destructive">
                   <AlertTriangle className="w-5 h-5 mr-2" />

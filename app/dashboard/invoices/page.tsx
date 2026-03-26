@@ -399,7 +399,6 @@ export default function InvoicesPage() {
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        {/* Header */}
         <div className="flex justify-between items-center rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
@@ -436,7 +435,6 @@ export default function InvoicesPage() {
           </TooltipProvider>
         </div>
 
-        {/* Stats Overview */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -498,7 +496,6 @@ export default function InvoicesPage() {
           </Card>
         </div>
 
-        {/* Invoices List */}
         <Card className="shadow-sm border-border/80">
           <CardHeader>
             <CardTitle>Invoice Management</CardTitle>
@@ -523,13 +520,13 @@ export default function InvoicesPage() {
                     placeholder="Search invoices by number, customer, or email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
+                    className="pl-8 border-border/80"
                   />
                 </div>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm"
+                  className="h-10 rounded-md border border-border/80 bg-background px-3 text-sm shadow-sm outline-none ring-0 transition-colors focus:border-[var(--brand-cobalt)]"
                 >
                   <option value="">All Statuses</option>
                   {statusOptions.map(status => (
@@ -662,14 +659,6 @@ export default function InvoicesPage() {
                                       Mark as Sent
                                     </DropdownMenuItem>
                                   )}
-                                  {/* {invoice.status !== "PAID" && invoice.totalAmount > invoice.paidAmount && (
-                                    <Link href={`/dashboard/invoices/${invoice.id}/payment`}>
-                                      <DropdownMenuItem>
-                                        <DollarSign className="h-4 w-4 mr-2" />
-                                        Record Payment
-                                      </DropdownMenuItem>
-                                    </Link>
-                                  )} */}
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     onClick={() => handleDeleteInvoice(invoice.id)}
@@ -730,7 +719,6 @@ export default function InvoicesPage() {
                 )}
               </TabsContent>
 
-              {/* Additional tab contents for different statuses */}
               {["draft", "sent", "paid", "overdue"].map((status) => (
                 <TabsContent key={status} value={status} className="space-y-4">
                   {filteredInvoices.length > 0 ? (
@@ -854,14 +842,6 @@ export default function InvoicesPage() {
                                         Mark as Sent
                                       </DropdownMenuItem>
                                     )}
-                                    {/* {invoice.status !== "PAID" && invoice.totalAmount > invoice.paidAmount && (
-                                      <Link href={`/dashboard/invoices/${invoice.id}/payment`}>
-                                        <DropdownMenuItem>
-                                          <DollarSign className="h-4 w-4 mr-2" />
-                                          Record Payment
-                                        </DropdownMenuItem>
-                                      </Link>
-                                    )} */}
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem 
                                       onClick={() => handleDeleteInvoice(invoice.id)}
@@ -927,7 +907,6 @@ export default function InvoicesPage() {
         </Card>
       </div>
 
-      {/* Email Dialog */}
       {selectedInvoiceForEmail && (
         <InvoiceEmailDialog
           invoiceId={selectedInvoiceForEmail.id}

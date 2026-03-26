@@ -496,9 +496,8 @@ export default function EditInvoicePage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="space-y-8">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className="flex items-center space-x-4">
             <Button variant="outline" size="sm" onClick={handleCancel}>
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -519,7 +518,7 @@ export default function EditInvoicePage() {
             <Button variant="outline" onClick={handleCancel} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
               {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -539,7 +538,7 @@ export default function EditInvoicePage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Invoice Details */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle>Invoice Details</CardTitle>
                 <CardDescription>
@@ -626,7 +625,7 @@ export default function EditInvoicePage() {
             </Card>
 
             {/* Line Items */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -743,7 +742,7 @@ export default function EditInvoicePage() {
             </Card>
 
             {/* Notes & Terms */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle>Additional Information</CardTitle>
                 <CardDescription>
@@ -837,7 +836,7 @@ export default function EditInvoicePage() {
 
             {/* Customer Info */}
             {formData.customerId && (
-              <Card>
+              <Card className="shadow-sm border-border/80">
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <User className="h-5 w-5 mr-2" />

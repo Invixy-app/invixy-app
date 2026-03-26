@@ -291,9 +291,8 @@ function NewTaxSystemContent() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center space-x-4">
+      <div className="space-y-8">
+        <div className="flex items-center space-x-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <Link href="/dashboard/tax-systems">
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -313,12 +312,42 @@ function NewTaxSystemContent() {
           </div>
         </div>
 
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Tax Name</CardTitle>
+              <Info className="h-4 w-4 text-[var(--brand-cobalt)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formData.name ? "Set" : "Required"}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Type</CardTitle>
+              <Percent className="h-4 w-4 text-[var(--brand-teal)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formData.taxType.replace("_", " ")}</div>
+            </CardContent>
+          </Card>
+          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Rate</CardTitle>
+              <Calculator className="h-4 w-4 text-[var(--brand-indigo)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formData.taxType === "FIXED_AMOUNT" ? formatCurrency(formData.rate) : formatPercentage(formData.rate)}</div>
+            </CardContent>
+          </Card>
+        </div>
+
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Form */}
           <div className="lg:col-span-2 space-y-6">
             {/* Template Info */}
             {templateInfo && (
-              <Card>
+              <Card className="shadow-sm border-border/80">
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <Info className="h-5 w-5 mr-2" />
@@ -348,7 +377,7 @@ function NewTaxSystemContent() {
                         ))}
                       </div>
                       <div className="flex gap-2">
-                        <Button onClick={createMultipleRates} disabled={loading}>
+                        <Button onClick={createMultipleRates} disabled={loading} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                           {loading ? (
                             <>
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -566,7 +595,7 @@ function NewTaxSystemContent() {
                 <Card>
                   <CardContent className="pt-6">
                     <div className="flex gap-3">
-                      <Button type="submit" disabled={loading}>
+                      <Button type="submit" disabled={loading} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                         {loading ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
