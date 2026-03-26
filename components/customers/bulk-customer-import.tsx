@@ -175,10 +175,10 @@ export function BulkCustomerImport() {
           {result && (
             <div className="space-y-4">
                 {result.count > 0 && (
-                    <Alert className="border-green-200 bg-green-50">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <AlertTitle className="text-green-800">Success</AlertTitle>
-                        <AlertDescription className="text-green-700">
+                    <Alert className="border-[var(--brand-teal)]/30 bg-[var(--brand-teal)]/10">
+                      <CheckCircle className="h-4 w-4 text-[var(--brand-teal)]" />
+                      <AlertTitle className="text-[var(--brand-teal)]">Success</AlertTitle>
+                      <AlertDescription className="text-[var(--brand-teal)]">
                             Successfully imported {result.count} out of {result.totalRows} customers.
                         </AlertDescription>
                     </Alert>
@@ -190,10 +190,10 @@ export function BulkCustomerImport() {
                         <AlertTitle>Import Issues</AlertTitle>
                         <AlertDescription>
                             {result.errors.length} rows failed to import.
-                            <ScrollArea className="h-[100px] w-full mt-2 rounded border border-red-200 bg-white p-2">
+                            <ScrollArea className="h-[100px] w-full mt-2 rounded border border-destructive/30 bg-background p-2">
                                 <ul className="text-xs space-y-1">
                                     {result.errors.map((err, i) => (
-                                        <li key={`${i}-${err}`} className="text-red-600">{err}</li>
+                                  <li key={`${i}-${err}`} className="text-destructive">{err}</li>
                                     ))}
                                 </ul>
                             </ScrollArea>

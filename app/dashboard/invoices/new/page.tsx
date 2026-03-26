@@ -591,7 +591,7 @@ function NewInvoiceContent() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -800,12 +800,12 @@ function NewInvoiceContent() {
                               </SelectContent>
                             </Select>
                             {item.productId && productHistories[item.productId]?.hasHistory && (
-                              <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-md text-sm">
-                                <div className="font-medium text-blue-900">Last Purchase Price</div>
-                                <div className="text-blue-700">
+                              <div className="mt-2 p-2 bg-[var(--brand-cobalt)]/10 border border-[var(--brand-cobalt)]/25 rounded-md text-sm">
+                                <div className="font-medium text-[var(--brand-cobalt)]">Last Purchase Price</div>
+                                <div className="text-[var(--brand-cobalt)]">
                                   {formatCurrency(productHistories[item.productId].lastPrice || 0)}
                                   {productHistories[item.productId].lastInvoice && (
-                                    <span className="text-xs text-blue-600 ml-1">
+                                    <span className="text-xs text-[var(--brand-cobalt)] ml-1">
                                       (Invoice {productHistories[item.productId].lastInvoice?.number})
                                     </span>
                                   )}

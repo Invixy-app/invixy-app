@@ -139,7 +139,7 @@ export default function CustomersPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -165,9 +165,9 @@ export default function CustomersPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
             <p className="text-muted-foreground">
@@ -180,7 +180,7 @@ export default function CustomersPage() {
               <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <span>
-                  <Button disabled={!canCreateCustomer} asChild={canCreateCustomer}>
+                  <Button disabled={!canCreateCustomer} asChild={canCreateCustomer} className="bg-[var(--brand-cobalt)] hover:bg-[var(--brand-indigo)] text-white">
                     {canCreateCustomer ? (
                       <Link href="/dashboard/customers/new">
                         <Plus className="h-4 w-4 mr-2" />
@@ -206,7 +206,7 @@ export default function CustomersPage() {
         </div>
 
         {/* Search and Filters */}
-        <Card>
+        <Card className="shadow-sm border-border/80">
           <CardHeader>
             <CardTitle>Customer Directory</CardTitle>
             <CardDescription>
@@ -228,7 +228,7 @@ export default function CustomersPage() {
 
             {/* Customers Table */}
             {filteredCustomers.length > 0 ? (
-              <div className="rounded-md border">
+              <div className="rounded-xl border border-border/80 overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -317,7 +317,7 @@ export default function CustomersPage() {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 onClick={() => handleDeleteCustomer(customer.id)}
-                                className="text-red-600"
+                                className="text-destructive"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Delete
@@ -380,7 +380,7 @@ export default function CustomersPage() {
         {/* Summary Stats */}
         {customers.length > 0 && (
           <div className="grid gap-4 md:grid-cols-3">
-            <Card>
+            <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
               </CardHeader>
@@ -388,7 +388,7 @@ export default function CustomersPage() {
                 <div className="text-2xl font-bold">{customers.length}</div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-[var(--brand-teal)]/25 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
               </CardHeader>
@@ -398,7 +398,7 @@ export default function CustomersPage() {
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">With Email</CardTitle>
               </CardHeader>

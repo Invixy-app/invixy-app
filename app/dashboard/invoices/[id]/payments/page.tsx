@@ -303,7 +303,7 @@ export default function InvoicePaymentsPage() {
   };
 
   const getStatusColor = () => {
-    if (!invoice) return "bg-gray-500";
+    if (!invoice) return "bg-muted-foreground";
     
     switch (invoice.status) {
       case "PAID":
@@ -311,9 +311,9 @@ export default function InvoicePaymentsPage() {
       case "PARTIAL_PAID":
         return "text-yellow-600";
       case "OVERDUE":
-        return "text-red-600";
+        return "text-destructive";
       default:
-        return "text-blue-600";
+        return "text-[var(--brand-cobalt)]";
     }
   };
 
@@ -321,7 +321,7 @@ export default function InvoicePaymentsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -399,7 +399,7 @@ export default function InvoicePaymentsPage() {
                   
                   <div className="grid grid-cols-3 gap-4 text-center">
                     <div className="p-3 bg-muted/50 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">
+                      <div className="text-2xl font-bold text-[var(--brand-cobalt)]">
                         {formatCurrency(invoice.totalAmount)}
                       </div>
                       <div className="text-xs text-muted-foreground">Total Amount</div>
@@ -411,7 +411,7 @@ export default function InvoicePaymentsPage() {
                       <div className="text-xs text-muted-foreground">Paid Amount</div>
                     </div>
                     <div className="p-3 bg-red-50 rounded-lg">
-                      <div className={`text-2xl font-bold ${invoice.balanceAmount > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                      <div className={`text-2xl font-bold ${invoice.balanceAmount > 0 ? 'text-destructive' : 'text-[var(--brand-teal)]'}`}>
                         {formatCurrency(invoice.balanceAmount)}
                       </div>
                       <div className="text-xs text-muted-foreground">Balance Due</div>

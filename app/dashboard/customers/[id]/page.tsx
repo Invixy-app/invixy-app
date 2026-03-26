@@ -108,15 +108,15 @@ export default function CustomerDetailsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PAID':
-        return 'bg-green-100 text-green-800';
+        return 'bg-[var(--brand-teal)]/12 text-[var(--brand-teal)]';
       case 'SENT':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-[var(--brand-cobalt)]/12 text-[var(--brand-cobalt)]';
       case 'DRAFT':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
       case 'OVERDUE':
-        return 'bg-red-100 text-red-800';
+        return 'bg-destructive/12 text-destructive';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -124,7 +124,7 @@ export default function CustomerDetailsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );

@@ -174,13 +174,13 @@ export default function TaxSystemDetailPage() {
 
   const getStatusBadge = (status: string) => {
     const config: { [key: string]: { color: string, icon: any, label: string } } = {
-      DRAFT: { color: "bg-gray-500", icon: FileText, label: "Draft" },
-      SENT: { color: "bg-blue-500", icon: Activity, label: "Sent" },
-      VIEWED: { color: "bg-purple-500", icon: Activity, label: "Viewed" },
-      PAID: { color: "bg-green-500", icon: CheckCircle, label: "Paid" },
-      PARTIAL_PAID: { color: "bg-yellow-500", icon: Activity, label: "Partial" },
-      OVERDUE: { color: "bg-red-500", icon: XCircle, label: "Overdue" },
-      CANCELLED: { color: "bg-gray-400", icon: XCircle, label: "Cancelled" }
+      DRAFT: { color: "bg-muted-foreground", icon: FileText, label: "Draft" },
+      SENT: { color: "bg-[var(--brand-cobalt)]", icon: Activity, label: "Sent" },
+      VIEWED: { color: "bg-[var(--brand-indigo)]", icon: Activity, label: "Viewed" },
+      PAID: { color: "bg-[var(--brand-teal)]", icon: CheckCircle, label: "Paid" },
+      PARTIAL_PAID: { color: "bg-[var(--brand-cyan)]", icon: Activity, label: "Partial" },
+      OVERDUE: { color: "bg-destructive", icon: XCircle, label: "Overdue" },
+      CANCELLED: { color: "bg-muted-foreground", icon: XCircle, label: "Cancelled" }
     };
 
     const statusConfig = config[status] || config.DRAFT;
@@ -198,7 +198,7 @@ export default function TaxSystemDetailPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -243,7 +243,7 @@ export default function TaxSystemDetailPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className="flex items-center space-x-4">
             <Link href="/dashboard/tax-systems">
               <Button variant="outline" size="sm">
@@ -292,7 +292,7 @@ export default function TaxSystemDetailPage() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">
+              <DropdownMenuItem className="text-destructive">
                 <Trash2 className="h-4 w-4 mr-2" />
                 Delete Tax System
               </DropdownMenuItem>

@@ -355,7 +355,7 @@ export default function NewBusinessPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="flex-1 bg-[var(--brand-cobalt)] hover:bg-[var(--brand-indigo)] text-white"
                 >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Business

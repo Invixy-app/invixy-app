@@ -306,18 +306,18 @@ export default function InvoicesPage() {
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case "paid":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-[var(--brand-teal)]" />;
       case "sent":
       case "viewed":
-        return <Clock className="h-4 w-4 text-blue-600" />;
+        return <Clock className="h-4 w-4 text-[var(--brand-cobalt)]" />;
       case "partial_paid":
-        return <Clock className="h-4 w-4 text-yellow-600" />;
+        return <Clock className="h-4 w-4 text-[var(--brand-cyan)]" />;
       case "overdue":
-        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+        return <AlertTriangle className="h-4 w-4 text-destructive" />;
       case "cancelled":
-        return <XCircle className="h-4 w-4 text-gray-600" />;
+        return <XCircle className="h-4 w-4 text-muted-foreground" />;
       default:
-        return <FileText className="h-4 w-4 text-gray-600" />;
+        return <FileText className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -372,7 +372,7 @@ export default function InvoicesPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -398,9 +398,9 @@ export default function InvoicesPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
             <p className="text-muted-foreground">
@@ -411,7 +411,7 @@ export default function InvoicesPage() {
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <span>
-                  <Button disabled={!canCreateInvoice} asChild={canCreateInvoice}>
+                  <Button disabled={!canCreateInvoice} asChild={canCreateInvoice} className="bg-[var(--brand-cobalt)] hover:bg-[var(--brand-indigo)] text-white">
                     {canCreateInvoice ? (
                       <Link href="/dashboard/invoices/new">
                         <Plus className="h-4 w-4 mr-2" />
@@ -438,10 +438,10 @@ export default function InvoicesPage() {
 
         {/* Stats Overview */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="h-4 w-4 text-[var(--brand-cobalt)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue, currentBusiness?.currency || 'USD')}</div>
@@ -451,10 +451,10 @@ export default function InvoicesPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Outstanding</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <Clock className="h-4 w-4 text-[var(--brand-teal)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(stats.totalOutstanding, currentBusiness?.currency || 'USD')}</div>
@@ -464,10 +464,10 @@ export default function InvoicesPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <FileText className="h-4 w-4 text-[var(--brand-indigo)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.total}</div>
@@ -477,10 +477,10 @@ export default function InvoicesPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--brand-cyan)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">This Month</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Calendar className="h-4 w-4 text-[var(--brand-cyan)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -499,7 +499,7 @@ export default function InvoicesPage() {
         </div>
 
         {/* Invoices List */}
-        <Card>
+        <Card className="shadow-sm border-border/80">
           <CardHeader>
             <CardTitle>Invoice Management</CardTitle>
             <CardDescription>
@@ -508,7 +508,7 @@ export default function InvoicesPage() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-              <TabsList>
+              <TabsList className="bg-muted/60">
                 <TabsTrigger value="all">All ({stats.total})</TabsTrigger>
                 <TabsTrigger value="draft">Draft ({stats.draft})</TabsTrigger>
                 <TabsTrigger value="sent">Sent ({stats.sent})</TabsTrigger>
@@ -529,7 +529,7 @@ export default function InvoicesPage() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-input bg-background rounded-md text-sm"
+                  className="px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm"
                 >
                   <option value="">All Statuses</option>
                   {statusOptions.map(status => (
@@ -542,7 +542,7 @@ export default function InvoicesPage() {
 
               <TabsContent value="all" className="space-y-4">
                 {filteredInvoices.length > 0 ? (
-                  <div className="rounded-md border">
+                  <div className="rounded-xl border border-border/80 overflow-hidden">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -584,7 +584,7 @@ export default function InvoicesPage() {
                                 {formatCurrency(invoice.totalAmount, invoice.currency)}
                               </div>
                               {invoice.paidAmount > 0 && (
-                                <div className="text-sm text-green-600">
+                                <div className="text-sm text-[var(--brand-teal)]">
                                   {formatCurrency(invoice.paidAmount, invoice.currency)} paid
                                 </div>
                               )}
@@ -594,7 +594,7 @@ export default function InvoicesPage() {
                                 {invoice.status.replace('_', ' ')}
                               </Badge>
                               {invoice.status === "OVERDUE" && invoice.dueDate && (
-                                <div className="text-xs text-red-600 mt-1">
+                                <div className="text-xs text-destructive mt-1">
                                   {getDaysOverdue(invoice.dueDate)} days overdue
                                 </div>
                               )}
@@ -662,18 +662,18 @@ export default function InvoicesPage() {
                                       Mark as Sent
                                     </DropdownMenuItem>
                                   )}
-                                  {invoice.status !== "PAID" && invoice.totalAmount > invoice.paidAmount && (
+                                  {/* {invoice.status !== "PAID" && invoice.totalAmount > invoice.paidAmount && (
                                     <Link href={`/dashboard/invoices/${invoice.id}/payment`}>
                                       <DropdownMenuItem>
                                         <DollarSign className="h-4 w-4 mr-2" />
                                         Record Payment
                                       </DropdownMenuItem>
                                     </Link>
-                                  )}
+                                  )} */}
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     onClick={() => handleDeleteInvoice(invoice.id)}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Delete
@@ -734,7 +734,7 @@ export default function InvoicesPage() {
               {["draft", "sent", "paid", "overdue"].map((status) => (
                 <TabsContent key={status} value={status} className="space-y-4">
                   {filteredInvoices.length > 0 ? (
-                    <div className="rounded-md border">
+                    <div className="rounded-xl border border-border/80 overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -776,7 +776,7 @@ export default function InvoicesPage() {
                                   {formatCurrency(invoice.totalAmount, invoice.currency)}
                                 </div>
                                 {invoice.paidAmount > 0 && (
-                                  <div className="text-sm text-green-600">
+                                  <div className="text-sm text-[var(--brand-teal)]">
                                     {formatCurrency(invoice.paidAmount, invoice.currency)} paid
                                   </div>
                                 )}
@@ -786,7 +786,7 @@ export default function InvoicesPage() {
                                   {invoice.status.replace('_', ' ')}
                                 </Badge>
                                 {invoice.status === "OVERDUE" && invoice.dueDate && (
-                                  <div className="text-xs text-red-600 mt-1">
+                                  <div className="text-xs text-destructive mt-1">
                                     {getDaysOverdue(invoice.dueDate)} days overdue
                                   </div>
                                 )}
@@ -854,18 +854,18 @@ export default function InvoicesPage() {
                                         Mark as Sent
                                       </DropdownMenuItem>
                                     )}
-                                    {invoice.status !== "PAID" && invoice.totalAmount > invoice.paidAmount && (
+                                    {/* {invoice.status !== "PAID" && invoice.totalAmount > invoice.paidAmount && (
                                       <Link href={`/dashboard/invoices/${invoice.id}/payment`}>
                                         <DropdownMenuItem>
                                           <DollarSign className="h-4 w-4 mr-2" />
                                           Record Payment
                                         </DropdownMenuItem>
                                       </Link>
-                                    )}
+                                    )} */}
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem 
                                       onClick={() => handleDeleteInvoice(invoice.id)}
-                                      className="text-red-600"
+                                      className="text-destructive"
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
                                       Delete

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Users, 
-  Package, 
+  Package,
   FileText, 
   TrendingUp, 
   TrendingDown,
@@ -16,7 +16,6 @@ import {
   Plus,
   Settings as SettingsIcon,
   Clock,
-  Edit,
   Activity,
   ArrowUpRight,
   ArrowDownRight,
@@ -136,15 +135,6 @@ export default function DashboardPage() {
     );
   }
 
-  const getStatusDotColor = (status: string) => {
-    switch (status) {
-      case 'PAID': return 'bg-green-500';
-      case 'PENDING': return 'bg-yellow-500';
-      case 'OVERDUE': return 'bg-red-500';
-      default: return 'bg-gray-400';
-    }
-  };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -160,23 +150,46 @@ export default function DashboardPage() {
     });
   };
 
+  const getInvoiceStatusBadgeClass = (status: string) => {
+    if (status === "PAID") {
+      return "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800";
+    }
+    if (status === "PENDING") {
+      return "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800";
+    }
+    if (status === "OVERDUE") {
+      return "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800";
+    }
+    return "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-800";
+  };
+
+  const collectionRate =
+    stats.totalInvoices > 0
+      ? Math.round((stats.paidInvoices / stats.totalInvoices) * 100)
+      : 0;
+
+  const atRiskRevenue = Math.max(
+    stats.totalRevenue - stats.paidRevenue,
+    stats.pendingRevenue
+  );
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Header with Business Info and Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
             <p className="text-muted-foreground mt-1 flex items-center gap-2">
               Overview for <span className="font-semibold text-foreground">{currentBusiness.name}</span>
-              <Badge variant="outline" className="text-xs font-normal">
+              <Badge variant="outline" className="text-xs font-normal border-[var(--brand-cobalt)]/30 text-[var(--brand-cobalt)] bg-[var(--brand-cobalt)]/10">
                 Plan: {stats.subscriptionPlan || "Loading..."}
               </Badge>
             </p>
           </div>
           <div className="flex gap-2">
             <Link href="/dashboard/business-settings">
-              <Button variant="outline" size="sm" className="h-9">
+              <Button variant="outline" size="sm" className="h-9 border-[var(--brand-cobalt)]/30 hover:bg-[var(--brand-cobalt)] hover:text-white">
                 <SettingsIcon className="w-4 h-4 mr-2" />
                 Business Settings
               </Button>
@@ -186,7 +199,7 @@ export default function DashboardPage() {
 
         {/* Subscription Alert for Free Plan */}
         {(!stats.subscriptionPlan || stats.subscriptionPlan === "FREE") && (
-          <Alert className="bg-primary/5 border-primary/20">
+          <Alert className="bg-[var(--brand-cobalt)]/10 border-[var(--brand-cobalt)]/30">
             <Crown className="h-4 w-4 text-primary" />
             <AlertTitle className="text-primary font-semibold">Upgrade to Pro</AlertTitle>
             <AlertDescription className="flex items-center justify-between flex-wrap gap-2 mt-1">
@@ -194,7 +207,7 @@ export default function DashboardPage() {
                 You are currently on the Free plan. Upgrade to Pro to unlock unlimited invoices, custom branding, and more.
               </span>
               <Link href="/pricing">
-                <Button size="sm" className="whitespace-nowrap">
+                <Button size="sm" className="whitespace-nowrap bg-[var(--brand-cobalt)] hover:bg-[var(--brand-indigo)] text-white">
                   Upgrade Now
                 </Button>
               </Link>
@@ -206,7 +219,7 @@ export default function DashboardPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           
           {/* Main Revenue Card (Spans 2 columns, maybe 2 rows on large screens) */}
-          <Card className="md:col-span-2 xl:col-span-2 xl:row-span-2 flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-md transition-shadow relative bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
+          <Card className="md:col-span-2 xl:col-span-2 xl:row-span-2 flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-md transition-shadow relative border-[var(--brand-cobalt)]/25 bg-card">
             <CardHeader className="flex flex-row items-start justify-between pb-2 relative z-10">
               <div className="space-y-1">
                 <CardTitle className="text-base font-medium text-muted-foreground">Total Revenue</CardTitle>
@@ -214,8 +227,8 @@ export default function DashboardPage() {
                   {formatCurrency(stats.totalRevenue)}
                 </div>
               </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <DollarSign className="h-6 w-6 text-primary" />
+              <div className="h-12 w-12 rounded-full bg-[var(--brand-cobalt)]/15 flex items-center justify-center shrink-0">
+                <DollarSign className="h-6 w-6 text-[var(--brand-cobalt)]" />
               </div>
             </CardHeader>
             <CardContent className="pt-6 relative z-10 space-y-4">
@@ -234,7 +247,7 @@ export default function DashboardPage() {
                 <span className="text-muted-foreground ml-2">vs last month</span>
               </div>
               
-              <div className="flex items-center gap-4 pt-4 border-t border-primary/10">
+              <div className="flex items-center gap-4 pt-4 border-t border-[var(--brand-cobalt)]/15">
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">Last Month</div>
                   <div className="text-sm font-semibold">{formatCurrency(stats.lastMonthRevenue)}</div>
@@ -251,11 +264,11 @@ export default function DashboardPage() {
           </Card>
 
           {/* Invoice Performance Card */}
-          <Card className="lg:col-span-1 xl:col-span-1 shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-blue-500 flex flex-col justify-between">
+          <Card className="lg:col-span-1 xl:col-span-1 shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-[var(--brand-cobalt)] flex flex-col justify-between">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Invoices</CardTitle>
-                <FileText className="h-4 w-4 text-blue-500" />
+                <FileText className="h-4 w-4 text-[var(--brand-cobalt)]" />
               </div>
             </CardHeader>
             <CardContent>
@@ -266,11 +279,11 @@ export default function DashboardPage() {
               
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 text-green-700">
+                  <div className="flex items-center gap-1.5 text-[var(--brand-teal)]">
                     <div className="w-2 h-2 rounded-full bg-green-500" />
                     Paid
                   </div>
-                  <span className="font-medium bg-green-50 px-1.5 py-0.5 rounded text-green-800">{stats.paidInvoices}</span>
+                  <span className="font-medium bg-[var(--brand-teal)]/15 px-1.5 py-0.5 rounded text-[var(--brand-teal)]">{stats.paidInvoices}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-1.5 text-slate-700">
@@ -283,16 +296,18 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Actionable / Alert Cards (Pending & Overdue) - Stacked vertically on xl screens if possible, or just normal cards */}
-          <Card className="shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center bg-yellow-50/50 border-yellow-200/50 dark:bg-yellow-950/10 dark:border-yellow-900/50">
+          {/* Collection Health Card */}
+          <Card className="shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center bg-[var(--brand-teal)]/10 border-[var(--brand-teal)]/25">
             <CardContent className="p-4 md:p-6 flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-500">Pending</p>
-                <h3 className="text-2xl font-bold text-yellow-900 dark:text-yellow-400 mt-1">{stats.pendingInvoices}</h3>
-                <p className="text-xs text-yellow-700/80 dark:text-yellow-500/80 mt-1">Awaiting payment</p>
+                <p className="text-sm font-medium text-[var(--brand-teal)]">Collection Rate</p>
+                <h3 className="text-2xl font-bold text-foreground mt-1">{collectionRate}%</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {stats.paidInvoices} paid of {stats.totalInvoices} total
+                </p>
               </div>
-              <div className="h-10 w-10 shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-900/40 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />
+              <div className="h-10 w-10 shrink-0 rounded-full bg-[var(--brand-teal)]/15 flex items-center justify-center">
+                <Activity className="h-5 w-5 text-[var(--brand-teal)]" />
               </div>
             </CardContent>
           </Card>
@@ -300,22 +315,24 @@ export default function DashboardPage() {
           <Card className="shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center bg-red-50/50 border-red-200/50 dark:bg-red-950/10 dark:border-red-900/50">
             <CardContent className="p-4 md:p-6 flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-medium text-red-800 dark:text-red-500">Overdue</p>
-                <h3 className="text-2xl font-bold text-red-900 dark:text-red-400 mt-1">{stats.overdueInvoices}</h3>
-                <p className="text-xs text-red-700/80 dark:text-red-500/80 mt-1">Action required</p>
+                <p className="text-sm font-medium text-red-800 dark:text-red-500">At Risk Revenue</p>
+                <h3 className="text-2xl font-bold text-red-900 dark:text-red-400 mt-1">{formatCurrency(atRiskRevenue)}</h3>
+                <p className="text-xs text-red-700/80 dark:text-red-500/80 mt-1">
+                  {stats.overdueInvoices} overdue, {stats.pendingInvoices} pending
+                </p>
               </div>
               <div className="h-10 w-10 shrink-0 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
-                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-500" />
+                <AlertCircle className="h-5 w-5 text-destructive" />
               </div>
             </CardContent>
           </Card>
 
           {/* Customers & Products grouped */}
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <Card className="shadow-sm hover:shadow-md transition-shadow border-[var(--brand-indigo)]/20">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Customers</CardTitle>
-                <Users className="h-4 w-4 text-violet-500" />
+                <Users className="h-4 w-4 text-[var(--brand-indigo)]" />
               </div>
             </CardHeader>
             <CardContent>
@@ -346,22 +363,22 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <Card className="shadow-sm hover:shadow-md transition-shadow border-[var(--brand-cyan)]/20">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Products</CardTitle>
-                <Package className="h-4 w-4 text-orange-500" />
+                <CardTitle className="text-sm font-medium text-muted-foreground">Avg Invoice Value</CardTitle>
+                <DollarSign className="h-4 w-4 text-[var(--brand-cyan)]" />
               </div>
             </CardHeader>
             <CardContent>
               <div className="flex items-end justify-between">
                 <div>
-                  <div className="text-2xl font-bold">{stats.totalProducts}</div>
+                  <div className="text-2xl font-bold">{formatCurrency(stats.avgInvoiceValue)}</div>
                   <div className="text-xs text-muted-foreground mt-1 bg-muted px-1.5 py-0.5 rounded inline-block">
-                    Avg. Value: <span className="font-semibold text-foreground">{formatCurrency(stats.avgInvoiceValue)}</span>
+                    Across {stats.totalInvoices} invoices
                   </div>
                 </div>
-                <Link href="/dashboard/products/new">
+                <Link href="/dashboard/invoices/new">
                   <Button variant="secondary" size="icon" className="h-7 w-7 rounded-md bg-muted">
                     <Plus className="w-3.5 h-3.5" />
                   </Button>
@@ -374,8 +391,8 @@ export default function DashboardPage() {
         {/* Recent Invoices and Top Customers */}
         <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {/* Recent Invoices - Spans 2 cols on xl screens */}
-          <Card className="shadow-sm xl:col-span-2">
-            <CardHeader className="border-b bg-muted/10 pb-4">
+          <Card className="shadow-sm xl:col-span-2 border-border/80">
+            <CardHeader className="border-b bg-muted/20 pb-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <CardTitle className="text-lg font-semibold flex items-center">
@@ -426,15 +443,10 @@ export default function DashboardPage() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <Link href={`/dashboard/invoices/${invoice.id}`} className="font-semibold text-sm hover:text-primary transition-colors">
+                            <Link href={`/dashboard/invoices/${invoice.id}`} className="font-semibold text-sm hover:text-[var(--brand-cobalt)] transition-colors">
                               {invoice.invoiceNumber}
                             </Link>
-                            <Badge variant="outline" className={`text-[10px] h-5 px-1.5 ${
-                              invoice.status === 'PAID' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' :
-                              invoice.status === 'PENDING' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800' :
-                              invoice.status === 'OVERDUE' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800' :
-                              'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-800'
-                            }`}>
+                            <Badge variant="outline" className={`text-[10px] h-5 px-1.5 ${getInvoiceStatusBadgeClass(invoice.status)}`}>
                               {invoice.status}
                             </Badge>
                           </div>
@@ -458,8 +470,8 @@ export default function DashboardPage() {
           </Card>
 
           {/* Top Customers */}
-          <Card className="shadow-sm xl:col-span-1">
-            <CardHeader className="border-b bg-muted/10 pb-4">
+          <Card className="shadow-sm xl:col-span-1 border-border/80">
+            <CardHeader className="border-b bg-muted/20 pb-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <CardTitle className="text-lg font-semibold flex items-center">
@@ -479,7 +491,7 @@ export default function DashboardPage() {
             <CardContent className="p-0">
               {loading && (
                 <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)] mr-2"></div>
                   Loading...
                 </div>
               )}
@@ -505,11 +517,11 @@ export default function DashboardPage() {
                   {topCustomers.map((customer, index) => (
                     <div key={customer.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-2 ring-background">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-cobalt)]/12 text-xs font-bold text-[var(--brand-cobalt)] ring-2 ring-background">
                           {index + 1}
                         </div>
                         <div>
-                          <Link href={`/dashboard/customers/${customer.id}`} className="font-medium text-sm hover:text-primary transition-colors">
+                          <Link href={`/dashboard/customers/${customer.id}`} className="font-medium text-sm hover:text-[var(--brand-cobalt)] transition-colors">
                             {customer.name}
                           </Link>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -521,7 +533,7 @@ export default function DashboardPage() {
                         <p className="font-semibold text-sm">{formatCurrency(customer.totalSpent)}</p>
                         <div className="w-16 h-1.5 bg-muted rounded-full mt-1 ml-auto overflow-hidden">
                           <div 
-                            className="h-full bg-primary rounded-full" 
+                            className="h-full bg-[var(--brand-cobalt)] rounded-full" 
                             style={{ width: `${Math.min((customer.totalSpent / (topCustomers[0]?.totalSpent || 1)) * 100, 100)}%` }}
                           />
                         </div>
@@ -535,32 +547,32 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <Card className="bg-muted/20 border-dashed">
+        <Card className="bg-muted/20 border-dashed border-[var(--brand-cobalt)]/25">
           <CardHeader className="pb-3">
             <CardTitle className="text-base font-medium">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
               <Link href="/dashboard/invoices/new">
-                <Button variant="outline" className="w-full justify-start bg-background hover:bg-primary hover:text-primary-foreground transition-colors border-primary/20">
+                <Button variant="outline" className="w-full justify-start bg-background hover:bg-[var(--brand-cobalt)] hover:text-white transition-colors border-[var(--brand-cobalt)]/25">
                   <Plus className="w-4 h-4 mr-2" />
                   Create Invoice
                 </Button>
               </Link>
               <Link href="/dashboard/customers/new">
-                <Button variant="outline" className="w-full justify-start bg-background hover:bg-primary hover:text-primary-foreground transition-colors">
+                <Button variant="outline" className="w-full justify-start bg-background hover:bg-[var(--brand-cobalt)] hover:text-white transition-colors border-[var(--brand-cobalt)]/25">
                   <Users className="w-4 h-4 mr-2" />
                   Add Customer
                 </Button>
               </Link>
               <Link href="/dashboard/products/new">
-                <Button variant="outline" className="w-full justify-start bg-background hover:bg-primary hover:text-primary-foreground transition-colors">
+                <Button variant="outline" className="w-full justify-start bg-background hover:bg-[var(--brand-cobalt)] hover:text-white transition-colors border-[var(--brand-cobalt)]/25">
                   <Package className="w-4 h-4 mr-2" />
                   Add Product
                 </Button>
               </Link>
               <Link href="/dashboard/tax-systems/new">
-                <Button variant="outline" className="w-full justify-start bg-background hover:bg-primary hover:text-primary-foreground transition-colors">
+                <Button variant="outline" className="w-full justify-start bg-background hover:bg-[var(--brand-cobalt)] hover:text-white transition-colors border-[var(--brand-cobalt)]/25">
                   <Calculator className="w-4 h-4 mr-2" />
                   Add Tax System
                 </Button>

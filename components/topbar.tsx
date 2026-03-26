@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BusinessSwitcher } from "@/components/business-switcher";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { 
   ChevronDown, 
   LogOut, 
@@ -39,7 +40,7 @@ export function Topbar({ className, showBusinessSwitcher = true }: TopbarProps) 
     .toUpperCase() || "U";
 
   return (
-    <div className={`sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8 ${className}`}>
+    <div className={`sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-border bg-background px-6 shadow-sm sm:gap-x-6 lg:px-8 ${className}`}>
       <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
         {/* Left side - Business Switcher */}
         {showBusinessSwitcher && (
@@ -50,11 +51,12 @@ export function Topbar({ className, showBusinessSwitcher = true }: TopbarProps) 
         
         {/* Right side - User actions */}
         <div className={`flex items-center gap-x-4 lg:gap-x-6 ${showBusinessSwitcher ? 'ml-auto' : 'ml-auto'}`}>
+          <ThemeToggle className="text-muted-foreground hover:text-foreground" />
           {/* Notifications button */}
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
             {/* Notification dot - can be conditionally rendered */}
-            <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+            <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-[var(--brand-cyan)]"></span>
           </Button>
           
           {/* User dropdown */}
@@ -66,14 +68,14 @@ export function Topbar({ className, showBusinessSwitcher = true }: TopbarProps) 
                   <AvatarFallback className="text-xs">{userInitials}</AvatarFallback>
                 </Avatar>
                 <div className="hidden sm:flex sm:flex-col sm:items-start">
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-foreground">
                     {session?.user?.name || "User"}
                   </span>
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground">
                     {session?.user?.email}
                   </span>
                 </div>
-                <ChevronDown className="h-4 w-4 text-gray-400" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -105,7 +107,7 @@ export function Topbar({ className, showBusinessSwitcher = true }: TopbarProps) 
               
               <DropdownMenuSeparator />
               
-              <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+              <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
               </DropdownMenuItem>

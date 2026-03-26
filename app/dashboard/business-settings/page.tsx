@@ -387,7 +387,7 @@ export default function BusinessSettingsPage() {
   if (!currentBusiness) {
     return (
       <DashboardLayout>
-        <div className="container mx-auto py-8">
+        <div className="mx-auto py-8">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">

@@ -192,7 +192,7 @@ export default function ProductsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -218,9 +218,9 @@ export default function ProductsPage() {
 
   return (
  <DashboardLayout>
-  <div className="space-y-6">
+  <div className="space-y-8">
     {/* Header */}
-    <div className="flex justify-between items-center">
+    <div className="flex justify-between items-center rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Products</h1>
         <p className="text-muted-foreground">
@@ -233,7 +233,7 @@ export default function ProductsPage() {
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <span>
-                <Button disabled={!canCreateProduct} asChild={canCreateProduct}>
+                <Button disabled={!canCreateProduct} asChild={canCreateProduct} className="bg-[var(--brand-cobalt)] hover:bg-[var(--brand-indigo)] text-white">
                   {canCreateProduct ? (
                     <Link href="/dashboard/products/new">
                       <Plus className="h-4 w-4 mr-2" />
@@ -260,9 +260,9 @@ export default function ProductsPage() {
     </div>
 
     {/* Search and Filters */}
-    <Card className="border border-gray-100 shadow-sm rounded-xl">
+    <Card className="border border-border/80 shadow-sm rounded-xl">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold text-gray-900">
+        <CardTitle className="text-lg font-semibold text-foreground">
           Product Catalog
         </CardTitle>
         <CardDescription>Search and manage your products</CardDescription>
@@ -270,7 +270,7 @@ export default function ProductsPage() {
       <CardContent>
         <div className="flex flex-col sm:flex-row gap-4 mb-5">
           <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search products by name, description, or Item Code..."
               value={searchTerm}
@@ -282,7 +282,7 @@ export default function ProductsPage() {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 border border-gray-300 bg-white rounded-md text-sm shadow-sm"
+              className="px-3 py-2 border border-input bg-background rounded-md text-sm shadow-sm"
             >
               <option value="">All Categories</option>
               {categories.map((category) => (
@@ -296,11 +296,11 @@ export default function ProductsPage() {
 
         {/* Products Table */}
         {filteredProducts.length > 0 ? (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+          <div className="overflow-x-auto border border-border/80 rounded-xl">
             <Table>
-              <TableHeader className="bg-gray-50">
+              <TableHeader className="bg-muted/40">
                 <TableRow>
-                  <TableHead className="font-semibold text-gray-700 max-w-[250px]">
+                  <TableHead className="font-semibold text-foreground max-w-[250px]">
                     Product
                   </TableHead>
                   <TableHead className="w-[120px]">Item Code</TableHead>
@@ -318,15 +318,15 @@ export default function ProductsPage() {
                   return (
                     <TableRow
                       key={product.id}
-                      className="hover:bg-gray-50 transition-colors"
+                      className="hover:bg-muted/30 transition-colors"
                     >
                       <TableCell className="max-w-[250px]">
                         <div>
-                          <div className="font-medium text-gray-900 line-clamp-2" title={product.name}>
+                          <div className="font-medium text-foreground line-clamp-2" title={product.name}>
                             {product.name}
                           </div>
                           {product.description && (
-                            <div className="text-sm text-gray-500 line-clamp-2" title={product.description}>
+                            <div className="text-sm text-muted-foreground line-clamp-2" title={product.description}>
                               {product.description}
                             </div>
                           )}
@@ -334,19 +334,19 @@ export default function ProductsPage() {
                       </TableCell>
                       <TableCell>
                         {product.sku && (
-                          <div className="flex items-center text-sm text-gray-700">
+                          <div className="flex items-center text-sm text-foreground">
                             {/* <Hash className="h-3 w-3 mr-1 text-gray-400" /> */}
                             {product.sku}
                           </div>
                         )}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center text-gray-900">
+                        <div className="flex items-center text-foreground">
                           {/* <DollarSign className="h-3 w-3 mr-1 text-gray-400" /> */}
                           {formatCurrency(product.price)}
                         </div>
                         {product.cost && (
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground">
                             Cost: {formatCurrency(product.cost)}
                           </div>
                         )}
@@ -354,15 +354,15 @@ export default function ProductsPage() {
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           {product.stockQuantity === null ? (
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-muted-foreground">
                               Not tracked
                             </span>
                           ) : (
                             <>
-                              <span className="font-medium text-gray-900">
+                              <span className="font-medium text-foreground">
                                 {product.stockQuantity}
                               </span>
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-muted-foreground">
                                 {product.unit}
                               </span>
                               {getStockStatus(product).status === "Low stock" && (
@@ -387,11 +387,11 @@ export default function ProductsPage() {
                       </TableCell>
                       <TableCell>
                         {product.taxSystem && (
-                          <div className="text-sm text-gray-800">
+                          <div className="text-sm text-foreground">
                             <div className="font-medium">
                               {product.taxSystem.name}
                             </div>
-                            <div className="text-xs text-gray-500">
+                            <div className="text-xs text-muted-foreground">
                               {(product.taxSystem.rate * 100).toFixed(2)}%
                             </div>
                           </div>
@@ -410,7 +410,7 @@ export default function ProductsPage() {
                           <DropdownMenuTrigger asChild>
                             <Button
                               variant="ghost"
-                              className="h-8 w-8 p-0 hover:bg-gray-100"
+                              className="h-8 w-8 p-0 hover:bg-muted"
                             >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
@@ -433,7 +433,7 @@ export default function ProductsPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onClick={() => handleDeleteProduct(product.id)}
-                              className="text-red-600"
+                              className="text-destructive"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete
@@ -449,15 +449,15 @@ export default function ProductsPage() {
           </div>
         ) : (
           <div className="text-center py-14">
-            <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Package className="h-8 w-8 text-gray-400" />
+            <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+              <Package className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               {searchTerm || selectedCategory
                 ? "No products found"
                 : "No products yet"}
             </h3>
-            <p className="text-gray-500 mb-4">
+            <p className="text-muted-foreground mb-4">
               {searchTerm || selectedCategory
                 ? "Try adjusting your search terms or filters."
                 : "Get started by adding your first product."}
@@ -467,7 +467,7 @@ export default function ProductsPage() {
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
                     <span>
-                      <Button disabled={!canCreateProduct} asChild={canCreateProduct} className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Button disabled={!canCreateProduct} asChild={canCreateProduct} className="bg-[var(--brand-cobalt)] hover:bg-[var(--brand-indigo)] text-white">
                         {canCreateProduct ? (
                           <Link href="/dashboard/products/new">
                             <Plus className="h-4 w-4 mr-2" />
@@ -526,17 +526,17 @@ export default function ProductsPage() {
         ].map((stat) => (
           <Card
             key={stat.title}
-            className="border border-gray-100 shadow-sm rounded-xl hover:shadow-md transition-shadow"
+            className="border border-border/80 shadow-sm rounded-xl hover:shadow-md transition-shadow"
           >
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-700">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 {stat.title}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div
                 className={`text-3xl font-semibold ${
-                  stat.color || "text-gray-900"
+                  stat.color || "text-foreground"
                 }`}
               >
                 {stat.value}

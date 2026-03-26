@@ -35,6 +35,7 @@ import { BusinessSwitcher } from "@/components/business-switcher"
 import { useBusinessContext } from "@/components/business-context"
 import { Separator } from "@/components/ui/separator"
 import { GlobalAlert } from "@/components/global-alert"
+import { ThemeToggle } from "@/components/theme-toggle"
 import Image from "next/image"
 
 export function DashboardLayout({ children }: { readonly children: React.ReactNode }) {
@@ -99,6 +100,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
         <div className="p-4 flex items-center justify-between h-16 shrink-0">
           <AnimatePresence mode="wait">
             {isSidebarOpen ? (
+              <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl tracking-tight">
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -108,6 +110,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
                 <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
                 <span>Invixy</span>
               </motion.div>
+              </Link>
             ) : (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -216,9 +219,12 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
            <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
           <span>Invixy</span>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-          {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </Button>
+        <div className="flex items-center gap-1">
+          <ThemeToggle className="text-muted-foreground hover:text-foreground" />
+          <Button variant="ghost" size="icon" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </Button>
+        </div>
       </div>
 
       {/* Mobile Menu */}
@@ -292,6 +298,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
           </div>
 
           <div className="flex items-center gap-3">
+            <ThemeToggle className="text-muted-foreground hover:text-foreground" />
             {/* <div className="relative hidden sm:block">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 

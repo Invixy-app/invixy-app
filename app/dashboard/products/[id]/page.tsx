@@ -52,7 +52,7 @@ export default function ProductDetailsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -157,13 +157,13 @@ export default function ProductDetailsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-sm font-medium text-muted-foreground">Profit Margin</div>
-                    <div className={`mt-1 text-lg font-semibold ${margin < 0 ? "text-red-600" : "text-green-600"}`}>
+                    <div className={`mt-1 text-lg font-semibold ${margin < 0 ? "text-destructive" : "text-[var(--brand-teal)]"}`}>
                       {margin.toFixed(2)}%
                     </div>
                   </div>
                   <div>
                     <div className="text-sm font-medium text-muted-foreground">Profit per Unit</div>
-                    <div className={`mt-1 text-lg font-semibold ${profit < 0 ? "text-red-600" : "text-green-600"}`}>
+                    <div className={`mt-1 text-lg font-semibold ${profit < 0 ? "text-destructive" : "text-[var(--brand-teal)]"}`}>
                       {formatCurrency(profit)}
                     </div>
                   </div>

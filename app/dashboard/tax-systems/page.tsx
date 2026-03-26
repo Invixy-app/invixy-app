@@ -160,7 +160,7 @@ export default function TaxSystemsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -220,7 +220,7 @@ export default function TaxSystemsPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center">
-                <Clock className="h-4 w-4 mr-2 text-gray-600" />
+                <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
                 Inactive/Expired
               </CardTitle>
             </CardHeader>
@@ -232,7 +232,7 @@ export default function TaxSystemsPage() {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center">
-                <Calculator className="h-4 w-4 mr-2 text-blue-600" />
+                <Calculator className="h-4 w-4 mr-2 text-[var(--brand-cobalt)]" />
                 Total Systems
               </CardTitle>
             </CardHeader>
@@ -352,7 +352,7 @@ export default function TaxSystemsPage() {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     onClick={() => handleDeleteTaxSystem(tax.id)}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Delete
@@ -454,7 +454,7 @@ export default function TaxSystemsPage() {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     onClick={() => handleDeleteTaxSystem(tax.id)}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Delete
@@ -563,7 +563,7 @@ export default function TaxSystemsPage() {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     onClick={() => handleDeleteTaxSystem(tax.id)}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Delete

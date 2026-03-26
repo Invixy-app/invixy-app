@@ -450,7 +450,7 @@ export default function EditInvoicePage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -643,7 +643,7 @@ export default function EditInvoicePage() {
               </CardHeader>
               <CardContent>
                 {errors.items && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                  <div className="mb-4 p-3 bg-destructive/10 border border-destructive/25 rounded-md text-destructive text-sm">
                     {errors.items}
                   </div>
                 )}
@@ -899,13 +899,13 @@ export default function EditInvoicePage() {
                   </SelectContent>
                 </Select>
                 {newItem.productId && productHistories[newItem.productId]?.hasHistory && (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm">
-                    <div className="font-medium text-blue-900 mb-1">Last Purchase Price for This Customer</div>
-                    <div className="text-blue-700 font-semibold text-lg">
+                  <div className="mt-2 p-3 bg-[var(--brand-cobalt)]/10 border border-[var(--brand-cobalt)]/25 rounded-md text-sm">
+                    <div className="font-medium text-[var(--brand-cobalt)] mb-1">Last Purchase Price for This Customer</div>
+                    <div className="text-[var(--brand-cobalt)] font-semibold text-lg">
                       ${productHistories[newItem.productId].lastPrice?.toFixed(2) || '0.00'}
                     </div>
                     {productHistories[newItem.productId].lastInvoice && (
-                      <div className="text-xs text-blue-600 mt-1">
+                      <div className="text-xs text-[var(--brand-cobalt)] mt-1">
                         From Invoice #{productHistories[newItem.productId].lastInvoice?.number} 
                         {' '}({new Date(productHistories[newItem.productId].lastInvoice?.date || '').toLocaleDateString()})
                       </div>

@@ -30,11 +30,11 @@ const alertIcons = {
 };
 
 const alertStyles = {
-  success: "text-green-600",
+  success: "text-[var(--brand-teal)]",
   error: "text-red-600",
-  warning: "text-yellow-600",
-  info: "text-blue-600",
-  confirm: "text-gray-600",
+  warning: "text-[var(--brand-cobalt)]",
+  info: "text-[var(--brand-cobalt)]",
+  confirm: "text-muted-foreground",
 };
 
 export function GlobalAlert() {
