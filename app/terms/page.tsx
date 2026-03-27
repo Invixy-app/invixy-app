@@ -9,7 +9,7 @@ export default function TermsPage() {
       <SiteHeader />
 
       <main className="flex-1">
-        <div className="container mx-auto px-4 md:px-6 py-16">
+        <div className=" mx-auto px-4 md:px-6 py-16">
           <div className="mx-auto max-w-3xl">
 
             {/* Title */}

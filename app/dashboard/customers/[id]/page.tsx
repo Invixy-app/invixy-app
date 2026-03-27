@@ -108,15 +108,15 @@ export default function CustomerDetailsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'PAID':
-        return 'bg-green-100 text-green-800';
+        return 'bg-[var(--brand-teal)]/12 text-[var(--brand-teal)]';
       case 'SENT':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-[var(--brand-cobalt)]/12 text-[var(--brand-cobalt)]';
       case 'DRAFT':
-        return 'bg-gray-100 text-gray-800';
-      case 'OVERDUE':
-        return 'bg-red-100 text-red-800';
+        return 'bg-muted text-muted-foreground';
+      case 'CANCELLED':
+        return 'bg-muted text-muted-foreground';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
@@ -124,7 +124,7 @@ export default function CustomerDetailsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -168,9 +168,8 @@ export default function CustomerDetailsPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="space-y-8">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" asChild>
               <Link href="/dashboard/customers">
@@ -197,7 +196,7 @@ export default function CustomerDetailsPage() {
               </Button>
             </Link>
             <Link href={`/dashboard/invoices/new?customerId=${customer.id}`}>
-              <Button>
+              <Button className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                 <FileText className="h-4 w-4 mr-2" />
                 Create Invoice
               </Button>
@@ -207,7 +206,7 @@ export default function CustomerDetailsPage() {
 
         <div className="grid gap-6 md:grid-cols-2">
           {/* Customer Information */}
-          <Card>
+          <Card className="shadow-sm border-border/80">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
@@ -245,7 +244,7 @@ export default function CustomerDetailsPage() {
           </Card>
 
           {/* Addresses */}
-          <Card>
+          <Card className="shadow-sm border-border/80">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MapPin className="h-5 w-5" />
@@ -285,7 +284,7 @@ export default function CustomerDetailsPage() {
         )}
 
         {/* Recent Invoices */}
-        <Card>
+        <Card className="shadow-sm border-border/80">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
@@ -299,7 +298,7 @@ export default function CustomerDetailsPage() {
             {recentInvoices.length > 0 ? (
               <div className="space-y-3">
                 {recentInvoices.map((invoice) => (
-                  <div key={invoice.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={invoice.id} className="flex items-center justify-between rounded-lg border border-border/80 p-3">
                     <div className="flex items-center gap-3">
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <div>
@@ -338,7 +337,7 @@ export default function CustomerDetailsPage() {
                 <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground mb-3">No invoices yet</p>
                 <Link href={`/dashboard/invoices/new?customerId=${customer.id}`}>
-                  <Button size="sm">Create First Invoice</Button>
+                    <Button size="sm" className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">Create First Invoice</Button>
                 </Link>
               </div>
             )}

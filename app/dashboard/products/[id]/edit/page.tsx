@@ -218,7 +218,7 @@ export default function EditProductPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -263,7 +263,7 @@ export default function EditProductPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Basic Information */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Package className="h-5 w-5" />
@@ -316,7 +316,7 @@ export default function EditProductPage() {
             </Card>
 
             {/* Pricing */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5" />
@@ -391,7 +391,7 @@ export default function EditProductPage() {
             </Card>
 
             {/* Inventory */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Hash className="h-5 w-5" />
@@ -426,7 +426,7 @@ export default function EditProductPage() {
             </Card>
 
             {/* Tax & Settings */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calculator className="h-5 w-5" />
@@ -479,7 +479,7 @@ export default function EditProductPage() {
             <Button type="button" variant="outline" asChild>
               <Link href="/dashboard/products">Cancel</Link>
             </Button>
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
               {saving && <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>}
               <Save className="h-4 w-4 mr-2" />
               {saving ? "Saving..." : "Save Changes"}

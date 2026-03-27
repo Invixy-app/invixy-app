@@ -3,8 +3,8 @@ import Link from "next/link";
 
 export function SiteFooter() {
   return (
-    <footer className="border-t bg-background">
-      <div className="container mx-auto px-4 md:px-6 py-8">
+    <footer className="border-t border-border/70 bg-background">
+      <div className=" mx-auto px-6 py-8 lg:px-8">
         {/* Top section */}
         <div className="grid gap-10 md:grid-cols-4">
           {/* Brand */}
@@ -12,7 +12,7 @@ export function SiteFooter() {
             <div className="flex items-center gap-3 font-semibold text-lg">
               <Link
                 href="/"
-                className="flex items-center  font-bold text-xl tracking-tight"
+                className="flex items-center font-bold text-xl tracking-tight"
               >
                 <Image
                   src={"/logo.png"}
@@ -20,7 +20,7 @@ export function SiteFooter() {
                   width={40}
                   height={40}
                 />
-                <span>Invixy</span>
+                <span className="text-foreground">Invixy</span>
               </Link>
             </div>
             <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
@@ -38,7 +38,7 @@ export function SiteFooter() {
               <li>
                 <Link
                   href="/#features"
-                  className="hover:text-foreground transition-colors"
+                  className="hover:text-[var(--brand-cobalt)] transition-colors"
                 >
                   Features
                 </Link>
@@ -46,7 +46,7 @@ export function SiteFooter() {
               <li>
                 <Link
                   href="/#pricing"
-                  className="hover:text-foreground transition-colors"
+                  className="hover:text-[var(--brand-cobalt)] transition-colors"
                 >
                   Pricing
                 </Link>
@@ -63,7 +63,7 @@ export function SiteFooter() {
               <li>
                 <Link
                   href="/about"
-                  className="hover:text-foreground transition-colors"
+                  className="hover:text-[var(--brand-cobalt)] transition-colors"
                 >
                   About
                 </Link>
@@ -71,7 +71,7 @@ export function SiteFooter() {
               <li>
                 <Link
                   href="/blog"
-                  className="hover:text-foreground transition-colors"
+                  className="hover:text-[var(--brand-cobalt)] transition-colors"
                 >
                   Blog
                 </Link>
@@ -79,7 +79,7 @@ export function SiteFooter() {
               <li>
                 <Link
                   href="/careers"
-                  className="hover:text-foreground transition-colors"
+                  className="hover:text-[var(--brand-cobalt)] transition-colors"
                 >
                   Careers
                 </Link>
@@ -96,7 +96,7 @@ export function SiteFooter() {
               <li>
                 <Link
                   href="/privacy"
-                  className="hover:text-foreground transition-colors"
+                  className="hover:text-[var(--brand-cobalt)] transition-colors"
                 >
                   Privacy Policy
                 </Link>
@@ -104,7 +104,7 @@ export function SiteFooter() {
               <li>
                 <Link
                   href="/terms"
-                  className="hover:text-foreground transition-colors"
+                  className="hover:text-[var(--brand-cobalt)] transition-colors"
                 >
                   Terms & Conditions
                 </Link>

@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { loginSchema } from "@/lib/validations/auth";
-import Image from "next/image";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 function SignInContent() {
   const [formData, setFormData] = useState({
@@ -105,37 +105,11 @@ function SignInContent() {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left Side - Branding Section */}
-      <div className="hidden lg:flex flex-col justify-between bg-primary text-primary-foreground p-10">
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
-          {/* <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} /> */}
-          <span>Invixy</span>
-        </Link>
-        
-        <div className="space-y-6 max-w-lg">
-          <blockquote className="text-2xl font-medium leading-relaxed">
-            "Invixy has completely transformed how we handle our invoicing. It's fast, reliable, and looks great."
-          </blockquote>
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-primary-foreground/20 flex items-center justify-center font-bold">
-              JD
-            </div>
-            <div>
-              <div className="font-semibold">John Doe</div>
-              <div className="text-sm text-primary-foreground/70">CEO, TechStart Inc.</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="text-sm text-primary-foreground/50">
-          © {new Date().getFullYear()} Invixy Inc.
-        </div>
-      </div>
-
-      {/* Right Side - Sign In Form */}
-      <div className="flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-sm space-y-6">
+    <AuthShell
+      heading="Sign in to manage billing, invoices, and customer workflows in one place."
+      subheading="Secure access, organized records, and a faster day-to-day finance process for your business."
+    >
+      <div className="space-y-6">
           <div className="flex flex-col space-y-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">
               Welcome back
@@ -240,9 +214,8 @@ function SignInContent() {
               Sign up
             </Link>
           </div>
-        </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }
 

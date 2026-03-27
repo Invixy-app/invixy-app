@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { resetPasswordSchema } from "@/lib/validations/auth";
-import Image from "next/image";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 function ResetPasswordContent() {
   const [formData, setFormData] = useState({
@@ -217,29 +217,13 @@ function ResetPasswordContent() {
 
 export default function ResetPasswordPage() {
     return (
-     <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left Side - Branding Section */}
-      <div className="hidden lg:flex flex-col justify-between bg-primary text-primary-foreground p-10">
-        <Link href={"/"} className="flex items-center gap-2 font-bold text-xl tracking-tight">
-        <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
-          <span>Invixy</span>
-        </Link>
-        
-        <div className="space-y-6 max-w-lg">
-           <h1 className="text-4xl font-bold tracking-tight">Secure your account</h1>
-        </div>
-        
-        <div className="text-sm text-primary-foreground/60">
-          &copy; {new Date().getFullYear()} Invixy. All rights reserved.
-        </div>
-      </div>
-
-       {/* Right Side - Form Section */}
-      <div className="flex items-center justify-center p-8">
+     <AuthShell
+      heading="Protect your account with a new password."
+      subheading="Use a strong password to keep your billing data, customer details, and invoice history secure."
+    >
         <Suspense fallback={<Loader2 className="animate-spin" />}>
             <ResetPasswordContent />
         </Suspense>
-      </div>
-    </div>
+    </AuthShell>
     )
 }

@@ -75,7 +75,7 @@ export async function POST(
 
     // Calculate new totals
     const newPaidAmount = currentPaidAmount + validatedData.amount;
-    const newStatus = newPaidAmount >= totalAmount ? "PAID" : "PARTIAL_PAID";
+    const newStatus = newPaidAmount >= totalAmount ? "PAID" : "SENT";
 
     // Update invoice status and paid amount
     const updatedInvoice = await db.invoice.update({

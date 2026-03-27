@@ -222,7 +222,7 @@ export function PricingTable({ mode = "landing" }: PricingTableProps) {
           name: session.user.name,
           email: session.user.email,
         },
-        theme: { color: "#3399cc" },
+        theme: { color: "#2563eb" },
       }
 
       new (globalThis as any).Razorpay(options).open()

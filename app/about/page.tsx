@@ -10,7 +10,7 @@ export default function AboutPage() {
       <SiteHeader />
 
       <main className="flex-1">
-        <div className="container mx-auto px-4 md:px-6 py-16">
+        <div className="mx-auto px-4 md:px-6 py-16">
           <div className="mx-auto max-w-4xl space-y-16">
 
             {/* Header */}
@@ -24,7 +24,7 @@ export default function AboutPage() {
             </div>
 
             {/* Hero Image */}
-            <div className="relative overflow-hidden rounded-3xl border bg-muted">
+            {/* <div className="relative overflow-hidden rounded-3xl border bg-muted">
               <Image
                 src="/images/about/about-invixy.jpg"
                 alt="Invixy dashboard and team"
@@ -33,7 +33,7 @@ export default function AboutPage() {
                 className="h-full w-full object-cover"
                 priority
               />
-            </div>
+            </div> */}
 
             {/* Content */}
             <article

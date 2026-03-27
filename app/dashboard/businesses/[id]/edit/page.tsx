@@ -239,10 +239,10 @@ export default function EditBusinessPage() {
       <DashboardLayout>
         <div className="p-6">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-8 bg-muted rounded w-1/4"></div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="h-96 bg-gray-200 rounded"></div>
-              <div className="h-96 bg-gray-200 rounded"></div>
+              <div className="h-96 bg-muted rounded"></div>
+              <div className="h-96 bg-muted rounded"></div>
             </div>
           </div>
         </div>
@@ -255,7 +255,7 @@ export default function EditBusinessPage() {
       <DashboardLayout>
         <div className="p-6">
           <div className="text-center py-12">
-            <AlertCircle className="mx-auto h-16 w-16 text-red-500" />
+            <AlertCircle className="mx-auto h-16 w-16 text-destructive" />
             <h3 className="mt-4 text-lg font-semibold">Business Not Found</h3>
             <p className="mt-2 text-muted-foreground">
               The business you're trying to edit doesn't exist or you don't have permission to edit it.
@@ -279,7 +279,7 @@ export default function EditBusinessPage() {
       <DashboardLayout>
         <div className="p-6">
           <div className="text-center py-12">
-            <AlertCircle className="mx-auto h-16 w-16 text-orange-500" />
+            <AlertCircle className="mx-auto h-16 w-16 text-[var(--brand-cobalt)]" />
             <h3 className="mt-4 text-lg font-semibold">Insufficient Permissions</h3>
             <p className="mt-2 text-muted-foreground">
               You don't have permission to edit this business. Only owners and accountants can make changes.
@@ -299,9 +299,8 @@ export default function EditBusinessPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
+      <div className="space-y-8">
+        <div className="flex justify-between items-center rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={handleCancel}>
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -338,11 +337,35 @@ export default function EditBusinessPage() {
           </div>
         </div>
 
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Business Name</CardTitle>
+              <Building2 className="h-4 w-4 text-[var(--brand-cobalt)]" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">{formData.name ? "Set" : "Required"}</div></CardContent>
+          </Card>
+          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Contact</CardTitle>
+              <Phone className="h-4 w-4 text-[var(--brand-teal)]" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">{formData.email ? "Set" : "Pending"}</div></CardContent>
+          </Card>
+          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Role</CardTitle>
+              <Badge variant={business.role === 'OWNER' ? 'default' : 'secondary'}>{business.role.toLowerCase()}</Badge>
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">Access</div></CardContent>
+          </Card>
+        </div>
+
         {hasChanges && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="bg-[var(--brand-cobalt)]/10 border border-[var(--brand-cobalt)]/25 rounded-lg p-4">
             <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm font-medium text-yellow-800">
+              <AlertCircle className="h-4 w-4 text-[var(--brand-cobalt)]" />
+              <span className="text-sm font-medium text-[var(--brand-cobalt)]">
                 You have unsaved changes
               </span>
             </div>
@@ -351,7 +374,7 @@ export default function EditBusinessPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Basic Information */}
-          <Card>
+          <Card className="shadow-sm border-border/80">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building2 className="h-5 w-5" />
@@ -453,7 +476,7 @@ export default function EditBusinessPage() {
           </Card>
 
           {/* Contact Information */}
-          <Card>
+          <Card className="shadow-sm border-border/80">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Phone className="h-5 w-5" />

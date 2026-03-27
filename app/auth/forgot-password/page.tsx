@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
 import { z } from "zod";
 import { forgotPasswordSchema } from "@/lib/validations/auth";
-import Image from "next/image";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -67,29 +67,11 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-       {/* Left Side - Branding Section */}
-      <div className="hidden lg:flex flex-col justify-between bg-primary text-primary-foreground p-10">
-        <Link href={"/"} className="flex items-center gap-2 font-bold text-xl tracking-tight">
-        <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
-          <span>Invixy</span>
-        </Link>
-        
-        <div className="space-y-6 max-w-lg">
-           <h1 className="text-4xl font-bold tracking-tight">Recover your account</h1>
-           <p className="text-primary-foreground/80 text-lg">
-                Don't worry, it happens to the best of us. We'll help you get back in.
-           </p>
-        </div>
-        
-        <div className="text-sm text-primary-foreground/60">
-          &copy; {new Date().getFullYear()} Invixy. All rights reserved.
-        </div>
-      </div>
-
-       {/* Right Side - Form Section */}
-      <div className="flex items-center justify-center p-8">
-        <div className="w-full max-w-sm space-y-8">
+    <AuthShell
+      heading="Recover access quickly and continue your business workflow."
+      subheading="We send a secure reset link so you can safely set a new password and get back to work."
+    >
+      <div className="space-y-8">
           <div className="text-center space-y-2">
             <h1 className="text-2xl font-bold tracking-tight">Forgot password?</h1>
             <p className="text-muted-foreground">
@@ -145,8 +127,7 @@ export default function ForgotPasswordPage() {
                 </Link>
             </div>
           </form>
-        </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }
