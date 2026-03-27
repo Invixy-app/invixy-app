@@ -9,7 +9,7 @@ export default function ApiDocsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       <SiteHeader />
-      <main className="flex-1 container mx-auto px-4 md:px-6 py-12">
+      <main className="flex-1  mx-auto px-4 md:px-6 py-12">
         <div className="max-w-4xl mx-auto space-y-8">
           <div className="space-y-4">
             <h1 className="text-4xl font-bold tracking-tight">API Reference</h1>

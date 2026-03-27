@@ -450,7 +450,7 @@ export default function EditInvoicePage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -496,9 +496,8 @@ export default function EditInvoicePage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="space-y-8">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className="flex items-center space-x-4">
             <Button variant="outline" size="sm" onClick={handleCancel}>
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -519,7 +518,7 @@ export default function EditInvoicePage() {
             <Button variant="outline" onClick={handleCancel} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
               {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -539,7 +538,7 @@ export default function EditInvoicePage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Invoice Details */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle>Invoice Details</CardTitle>
                 <CardDescription>
@@ -626,7 +625,7 @@ export default function EditInvoicePage() {
             </Card>
 
             {/* Line Items */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -643,7 +642,7 @@ export default function EditInvoicePage() {
               </CardHeader>
               <CardContent>
                 {errors.items && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
+                  <div className="mb-4 p-3 bg-destructive/10 border border-destructive/25 rounded-md text-destructive text-sm">
                     {errors.items}
                   </div>
                 )}
@@ -743,7 +742,7 @@ export default function EditInvoicePage() {
             </Card>
 
             {/* Notes & Terms */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle>Additional Information</CardTitle>
                 <CardDescription>
@@ -837,7 +836,7 @@ export default function EditInvoicePage() {
 
             {/* Customer Info */}
             {formData.customerId && (
-              <Card>
+              <Card className="shadow-sm border-border/80">
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <User className="h-5 w-5 mr-2" />
@@ -899,13 +898,13 @@ export default function EditInvoicePage() {
                   </SelectContent>
                 </Select>
                 {newItem.productId && productHistories[newItem.productId]?.hasHistory && (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm">
-                    <div className="font-medium text-blue-900 mb-1">Last Purchase Price for This Customer</div>
-                    <div className="text-blue-700 font-semibold text-lg">
+                  <div className="mt-2 p-3 bg-[var(--brand-cobalt)]/10 border border-[var(--brand-cobalt)]/25 rounded-md text-sm">
+                    <div className="font-medium text-[var(--brand-cobalt)] mb-1">Last Purchase Price for This Customer</div>
+                    <div className="text-[var(--brand-cobalt)] font-semibold text-lg">
                       ${productHistories[newItem.productId].lastPrice?.toFixed(2) || '0.00'}
                     </div>
                     {productHistories[newItem.productId].lastInvoice && (
-                      <div className="text-xs text-blue-600 mt-1">
+                      <div className="text-xs text-[var(--brand-cobalt)] mt-1">
                         From Invoice #{productHistories[newItem.productId].lastInvoice?.number} 
                         {' '}({new Date(productHistories[newItem.productId].lastInvoice?.date || '').toLocaleDateString()})
                       </div>

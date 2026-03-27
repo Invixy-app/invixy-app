@@ -1,5 +1,5 @@
 import prisma from "@/lib/db";
-import { Role, Plan } from "@prisma/client";
+import { Role, Plan, InvoiceTemplate } from "@prisma/client";
 
 export interface BusinessWithRole {
   id: string;
@@ -14,6 +14,7 @@ export interface BusinessWithRole {
   logo: string | null;
   currency: string;
   timezone: string;
+  invoiceTemplate: InvoiceTemplate;
   isActive: boolean;
   role: Role;
   plan: Plan;

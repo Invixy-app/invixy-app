@@ -50,7 +50,9 @@ export async function GET(
     const totalRevenue = await prisma.invoice.aggregate({
       where: {
         businessId,
-        status: 'PAID'
+        status: {
+          in: ['SENT', 'PAID']
+        }
       },
       _sum: {
         totalAmount: true
@@ -60,9 +62,7 @@ export async function GET(
     const pendingAmount = await prisma.invoice.aggregate({
       where: {
         businessId,
-        status: {
-          in: ['SENT', 'VIEWED', 'OVERDUE']
-        }
+        status: 'SENT'
       },
       _sum: {
         totalAmount: true
@@ -80,7 +80,9 @@ export async function GET(
         createdAt: {
           gte: startOfMonth
         },
-        status: 'PAID'
+        status: {
+          in: ['SENT', 'PAID']
+        }
       },
       _sum: {
         totalAmount: true

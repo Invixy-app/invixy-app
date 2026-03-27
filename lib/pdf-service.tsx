@@ -15,12 +15,15 @@ interface InvoiceData {
   currency: string;
   notes?: string;
   terms?: string;
+  // salespersonName?: string; // Removed as requested
   business: {
     name: string;
+    description?: string;
     email?: string;
     phone?: string;
     address?: string;
     logo?: string;
+    invoiceTemplate?: string;
   };
   customer: {
     name: string;

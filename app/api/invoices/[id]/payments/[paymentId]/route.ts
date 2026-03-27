@@ -87,8 +87,7 @@ export async function PATCH(
 
     // Recalculate invoice totals
     const newPaidAmount = currentPaidAmount + validatedData.amount;
-    const newStatus = newPaidAmount >= totalAmount ? "PAID" : 
-                     newPaidAmount > 0 ? "PARTIAL_PAID" : "SENT";
+    const newStatus = newPaidAmount >= totalAmount ? "PAID" : "SENT";
 
     // Update invoice
     await db.invoice.update({
@@ -171,8 +170,7 @@ export async function DELETE(
       .reduce((sum: number, p: any) => sum + Number(p.amount), 0);
     
     const totalAmount = Number(invoice.totalAmount);
-    const newStatus = remainingPaidAmount >= totalAmount ? "PAID" : 
-                     remainingPaidAmount > 0 ? "PARTIAL_PAID" : "SENT";
+    const newStatus = remainingPaidAmount >= totalAmount ? "PAID" : "SENT";
 
     // Update invoice
     await db.invoice.update({

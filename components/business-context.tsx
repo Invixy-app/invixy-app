@@ -28,7 +28,7 @@ interface BusinessProviderProps {
 }
 
 export function BusinessProvider({ children }: BusinessProviderProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [businesses, setBusinesses] = useState<BusinessWithRole[]>([]);
   const [currentBusiness, setCurrentBusiness] = useState<BusinessWithRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -110,12 +110,13 @@ export function BusinessProvider({ children }: BusinessProviderProps) {
 
   // Load businesses when session is available
   useEffect(() => {
-    if (session?.user) {
+    if (status === "authenticated") {
       refreshBusinesses();
-    } else {
+    } else if (status === "unauthenticated") {
       setIsLoading(false);
     }
-  }, [session]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   const value: BusinessContextType = {
     businesses,

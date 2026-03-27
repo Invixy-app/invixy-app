@@ -292,9 +292,8 @@ export default function UserSettingsPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-4">
+      <div className="space-y-8">
+        <div className="flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <Button 
             variant="ghost" 
             size="sm" 
@@ -304,12 +303,36 @@ export default function UserSettingsPage() {
             <ArrowLeft className="h-4 w-4" />
             Back to Dashboard
           </Button>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Account Settings</h1>
+            <p className="text-muted-foreground">
+              Manage your account settings and preferences
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Account Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your account settings and preferences
-          </p>
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Profile</CardTitle>
+              <User className="h-4 w-4 text-[var(--brand-cobalt)]" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">Configured</div></CardContent>
+          </Card>
+          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Security</CardTitle>
+              <Lock className="h-4 w-4 text-[var(--brand-teal)]" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">Protected</div></CardContent>
+          </Card>
+          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Notifications</CardTitle>
+              <Bell className="h-4 w-4 text-[var(--brand-indigo)]" />
+            </CardHeader>
+            <CardContent><div className="text-2xl font-bold">Managed</div></CardContent>
+          </Card>
         </div>
 
         <Tabs defaultValue="profile" className="w-full">
@@ -322,7 +345,7 @@ export default function UserSettingsPage() {
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <User className="w-5 h-5 mr-2" />
@@ -409,7 +432,7 @@ export default function UserSettingsPage() {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button onClick={updateProfile} disabled={loading}>
+                  <Button onClick={updateProfile} disabled={loading} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                     <Save className="w-4 h-4 mr-2" />
                     {loading ? 'Saving...' : 'Save Changes'}
                   </Button>
@@ -420,7 +443,7 @@ export default function UserSettingsPage() {
 
           {/* Security Tab */}
           <TabsContent value="security" className="space-y-6">
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Lock className="w-5 h-5 mr-2" />
@@ -513,6 +536,7 @@ export default function UserSettingsPage() {
                   <Button 
                     onClick={changePassword} 
                     disabled={loading || !passwordForm.currentPassword || !passwordForm.newPassword}
+                    className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]"
                   >
                     <Lock className="w-4 h-4 mr-2" />
                     {loading ? 'Changing...' : 'Change Password'}
@@ -524,7 +548,7 @@ export default function UserSettingsPage() {
 
           {/* Notifications Tab */}
           <TabsContent value="notifications" className="space-y-6">
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Bell className="w-5 h-5 mr-2" />
@@ -616,7 +640,7 @@ export default function UserSettingsPage() {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button onClick={updateNotifications} disabled={loading}>
+                  <Button onClick={updateNotifications} disabled={loading} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                     <Save className="w-4 h-4 mr-2" />
                     {loading ? 'Saving...' : 'Save Preferences'}
                   </Button>
@@ -627,7 +651,7 @@ export default function UserSettingsPage() {
 
           {/* Account Tab */}
           <TabsContent value="account" className="space-y-6">
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Settings className="w-5 h-5 mr-2" />
@@ -670,7 +694,7 @@ export default function UserSettingsPage() {
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={deleteAccount}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-destructive rounded-lg text-white hover:bg-destructive/90 p-2 cursor-pointer"
                           >
                             Yes, delete my account
                           </AlertDialogAction>

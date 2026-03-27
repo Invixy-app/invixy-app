@@ -131,13 +131,14 @@ export default function InvoicesPage() {
 
     // Filter by active tab
     if (activeTab !== "all") {
-      const tabStatusMap: Record<string, string> = {
-        draft: "DRAFT",
-        sent: "SENT",
-        paid: "PAID",
-        overdue: "OVERDUE"
+      const tabStatusMap: Record<string, string[]> = {
+        draft: ["DRAFT"],
+        sent: ["SENT"],
+        paid: ["PAID"],
+        cancelled: ["CANCELLED"]
       };
-      filtered = filtered.filter(invoice => invoice.status === tabStatusMap[activeTab]);
+      const mappedStatuses = tabStatusMap[activeTab] || [];
+      filtered = filtered.filter(invoice => mappedStatuses.includes(invoice.status));
     }
 
     // Filter by search term
@@ -176,8 +177,8 @@ export default function InvoicesPage() {
             setInvoices(invoices.filter(i => i.id !== invoiceId));
             showSuccess("Success", "Invoice deleted successfully");
           } else {
-            const errorData = await response.json();
-            showError("Error", "Something went wrong. Please try again.");
+            const errorData = await response.json().catch(() => null);
+            showError("Error", errorData?.error || "Something went wrong. Please try again.");
           }
         } catch (error) {
           console.error("Error deleting invoice:", error);
@@ -306,18 +307,13 @@ export default function InvoicesPage() {
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case "paid":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-[var(--brand-teal)]" />;
       case "sent":
-      case "viewed":
-        return <Clock className="h-4 w-4 text-blue-600" />;
-      case "partial_paid":
-        return <Clock className="h-4 w-4 text-yellow-600" />;
-      case "overdue":
-        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+        return <Clock className="h-4 w-4 text-[var(--brand-cobalt)]" />;
       case "cancelled":
-        return <XCircle className="h-4 w-4 text-gray-600" />;
+        return <XCircle className="h-4 w-4 text-muted-foreground" />;
       default:
-        return <FileText className="h-4 w-4 text-gray-600" />;
+        return <FileText className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -326,26 +322,12 @@ export default function InvoicesPage() {
       case "paid":
         return "default";
       case "sent":
-      case "viewed":
         return "secondary";
-      case "partial_paid":
-        return "outline";
-      case "overdue":
-        return "destructive";
       case "cancelled":
         return "secondary";
       default:
         return "outline";
     }
-  };
-
-  const getDaysOverdue = (dueDate?: string | null) => {
-    if (!dueDate) return 0;
-    const due = new Date(dueDate);
-    const today = new Date();
-    const diffTime = today.getTime() - due.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
   };
 
   // Calculate stats
@@ -354,13 +336,17 @@ export default function InvoicesPage() {
     draft: invoices.filter(i => i.status === "DRAFT").length,
     sent: invoices.filter(i => i.status === "SENT").length,
     paid: invoices.filter(i => i.status === "PAID").length,
-    overdue: invoices.filter(i => i.status === "OVERDUE").length,
-    totalRevenue: invoices.reduce((sum, inv) => sum + inv.totalAmount, 0),
+    cancelled: invoices.filter(i => i.status === "CANCELLED").length,
+    totalRevenue: invoices
+      .filter(inv => inv.status === "SENT" || inv.status === "PAID")
+      .reduce((sum, inv) => sum + inv.totalAmount, 0),
     totalPaid: invoices.reduce((sum, inv) => sum + inv.paidAmount, 0),
-    totalOutstanding: invoices.reduce((sum, inv) => sum + (inv.totalAmount - inv.paidAmount), 0)
+    totalOutstanding: invoices
+      .filter(inv => inv.status === "SENT")
+      .reduce((sum, inv) => sum + Math.max(inv.totalAmount - inv.paidAmount, 0), 0)
   };
 
-  const statusOptions = ["DRAFT", "SENT", "VIEWED", "PAID", "OVERDUE", "CANCELLED"];
+  const statusOptions = ["DRAFT", "SENT", "PAID", "CANCELLED"];
   
   // Calculate limits
   const currentPlan = currentBusiness?.plan || "FREE";
@@ -372,7 +358,7 @@ export default function InvoicesPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -398,9 +384,8 @@ export default function InvoicesPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
+      <div className="space-y-8">
+        <div className="flex justify-between items-center rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
             <p className="text-muted-foreground">
@@ -411,7 +396,7 @@ export default function InvoicesPage() {
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <span>
-                  <Button disabled={!canCreateInvoice} asChild={canCreateInvoice}>
+                  <Button disabled={!canCreateInvoice} asChild={canCreateInvoice} className="bg-[var(--brand-cobalt)] hover:bg-[var(--brand-indigo)] text-white">
                     {canCreateInvoice ? (
                       <Link href="/dashboard/invoices/new">
                         <Plus className="h-4 w-4 mr-2" />
@@ -436,12 +421,11 @@ export default function InvoicesPage() {
           </TooltipProvider>
         </div>
 
-        {/* Stats Overview */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="h-4 w-4 text-[var(--brand-cobalt)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue, currentBusiness?.currency || 'USD')}</div>
@@ -451,36 +435,36 @@ export default function InvoicesPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Outstanding</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <Clock className="h-4 w-4 text-[var(--brand-teal)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(stats.totalOutstanding, currentBusiness?.currency || 'USD')}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.sent + stats.overdue} invoices pending
+                {stats.sent} invoices pending
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <FileText className="h-4 w-4 text-[var(--brand-indigo)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.total}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.paid} paid, {stats.overdue} overdue
+                {stats.paid} paid, {stats.cancelled} cancelled
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--brand-cyan)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">This Month</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Calendar className="h-4 w-4 text-[var(--brand-cyan)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -498,8 +482,7 @@ export default function InvoicesPage() {
           </Card>
         </div>
 
-        {/* Invoices List */}
-        <Card>
+        <Card className="shadow-sm border-border/80">
           <CardHeader>
             <CardTitle>Invoice Management</CardTitle>
             <CardDescription>
@@ -508,12 +491,12 @@ export default function InvoicesPage() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-              <TabsList>
+              <TabsList className="bg-muted/60">
                 <TabsTrigger value="all">All ({stats.total})</TabsTrigger>
                 <TabsTrigger value="draft">Draft ({stats.draft})</TabsTrigger>
                 <TabsTrigger value="sent">Sent ({stats.sent})</TabsTrigger>
                 <TabsTrigger value="paid">Paid ({stats.paid})</TabsTrigger>
-                <TabsTrigger value="overdue">Overdue ({stats.overdue})</TabsTrigger>
+                <TabsTrigger value="cancelled">Cancelled ({stats.cancelled})</TabsTrigger>
               </TabsList>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -523,13 +506,13 @@ export default function InvoicesPage() {
                     placeholder="Search invoices by number, customer, or email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
+                    className="pl-8 border-border/80"
                   />
                 </div>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-input bg-background rounded-md text-sm"
+                  className="h-10 rounded-md border border-border/80 bg-background px-3 text-sm shadow-sm outline-none ring-0 transition-colors focus:border-[var(--brand-cobalt)]"
                 >
                   <option value="">All Statuses</option>
                   {statusOptions.map(status => (
@@ -542,7 +525,7 @@ export default function InvoicesPage() {
 
               <TabsContent value="all" className="space-y-4">
                 {filteredInvoices.length > 0 ? (
-                  <div className="rounded-md border">
+                  <div className="rounded-xl border border-border/80 overflow-hidden">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -584,7 +567,7 @@ export default function InvoicesPage() {
                                 {formatCurrency(invoice.totalAmount, invoice.currency)}
                               </div>
                               {invoice.paidAmount > 0 && (
-                                <div className="text-sm text-green-600">
+                                <div className="text-sm text-[var(--brand-teal)]">
                                   {formatCurrency(invoice.paidAmount, invoice.currency)} paid
                                 </div>
                               )}
@@ -593,11 +576,6 @@ export default function InvoicesPage() {
                               <Badge variant={getStatusBadgeVariant(invoice.status)}>
                                 {invoice.status.replace('_', ' ')}
                               </Badge>
-                              {invoice.status === "OVERDUE" && invoice.dueDate && (
-                                <div className="text-xs text-red-600 mt-1">
-                                  {getDaysOverdue(invoice.dueDate)} days overdue
-                                </div>
-                              )}
                             </TableCell>
                             <TableCell>
                               {invoice.dueDate ? (
@@ -662,18 +640,10 @@ export default function InvoicesPage() {
                                       Mark as Sent
                                     </DropdownMenuItem>
                                   )}
-                                  {invoice.status !== "PAID" && invoice.totalAmount > invoice.paidAmount && (
-                                    <Link href={`/dashboard/invoices/${invoice.id}/payment`}>
-                                      <DropdownMenuItem>
-                                        <DollarSign className="h-4 w-4 mr-2" />
-                                        Record Payment
-                                      </DropdownMenuItem>
-                                    </Link>
-                                  )}
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     onClick={() => handleDeleteInvoice(invoice.id)}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Delete
@@ -730,11 +700,10 @@ export default function InvoicesPage() {
                 )}
               </TabsContent>
 
-              {/* Additional tab contents for different statuses */}
-              {["draft", "sent", "paid", "overdue"].map((status) => (
+              {["draft", "sent", "paid", "cancelled"].map((status) => (
                 <TabsContent key={status} value={status} className="space-y-4">
                   {filteredInvoices.length > 0 ? (
-                    <div className="rounded-md border">
+                    <div className="rounded-xl border border-border/80 overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -776,7 +745,7 @@ export default function InvoicesPage() {
                                   {formatCurrency(invoice.totalAmount, invoice.currency)}
                                 </div>
                                 {invoice.paidAmount > 0 && (
-                                  <div className="text-sm text-green-600">
+                                  <div className="text-sm text-[var(--brand-teal)]">
                                     {formatCurrency(invoice.paidAmount, invoice.currency)} paid
                                   </div>
                                 )}
@@ -785,11 +754,6 @@ export default function InvoicesPage() {
                                 <Badge variant={getStatusBadgeVariant(invoice.status)}>
                                   {invoice.status.replace('_', ' ')}
                                 </Badge>
-                                {invoice.status === "OVERDUE" && invoice.dueDate && (
-                                  <div className="text-xs text-red-600 mt-1">
-                                    {getDaysOverdue(invoice.dueDate)} days overdue
-                                  </div>
-                                )}
                               </TableCell>
                               <TableCell>
                                 {invoice.dueDate ? (
@@ -854,18 +818,10 @@ export default function InvoicesPage() {
                                         Mark as Sent
                                       </DropdownMenuItem>
                                     )}
-                                    {invoice.status !== "PAID" && invoice.totalAmount > invoice.paidAmount && (
-                                      <Link href={`/dashboard/invoices/${invoice.id}/payment`}>
-                                        <DropdownMenuItem>
-                                          <DollarSign className="h-4 w-4 mr-2" />
-                                          Record Payment
-                                        </DropdownMenuItem>
-                                      </Link>
-                                    )}
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem 
                                       onClick={() => handleDeleteInvoice(invoice.id)}
-                                      className="text-red-600"
+                                      className="text-destructive"
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
                                       Delete
@@ -927,7 +883,6 @@ export default function InvoicesPage() {
         </Card>
       </div>
 
-      {/* Email Dialog */}
       {selectedInvoiceForEmail && (
         <InvoiceEmailDialog
           invoiceId={selectedInvoiceForEmail.id}

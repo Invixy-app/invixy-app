@@ -52,7 +52,7 @@ export default function ProductDetailsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -78,8 +78,8 @@ export default function ProductDetailsPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-8">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className="flex items-center gap-4">
             <Link href="/dashboard/products">
               <Button variant="outline" size="icon">
@@ -98,7 +98,7 @@ export default function ProductDetailsPage() {
             </div>
           </div>
           <Link href={`/dashboard/products/${productId}/edit`}>
-            <Button>
+            <Button className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
               <Edit className="h-4 w-4 mr-2" />
               Edit Product
             </Button>
@@ -106,7 +106,7 @@ export default function ProductDetailsPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <Card>
+          <Card className="shadow-sm border-border/80">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
@@ -134,7 +134,7 @@ export default function ProductDetailsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm border-border/80">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="h-5 w-5" />
@@ -157,13 +157,13 @@ export default function ProductDetailsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-sm font-medium text-muted-foreground">Profit Margin</div>
-                    <div className={`mt-1 text-lg font-semibold ${margin < 0 ? "text-red-600" : "text-green-600"}`}>
+                    <div className={`mt-1 text-lg font-semibold ${margin < 0 ? "text-destructive" : "text-[var(--brand-teal)]"}`}>
                       {margin.toFixed(2)}%
                     </div>
                   </div>
                   <div>
                     <div className="text-sm font-medium text-muted-foreground">Profit per Unit</div>
-                    <div className={`mt-1 text-lg font-semibold ${profit < 0 ? "text-red-600" : "text-green-600"}`}>
+                    <div className={`mt-1 text-lg font-semibold ${profit < 0 ? "text-destructive" : "text-[var(--brand-teal)]"}`}>
                       {formatCurrency(profit)}
                     </div>
                   </div>
@@ -172,7 +172,7 @@ export default function ProductDetailsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-sm border-border/80">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />

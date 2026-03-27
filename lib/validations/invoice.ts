@@ -12,7 +12,7 @@ export const invoiceItemSchema = z.object({
 export const invoiceSchema = z.object({
   customerId: z.string().min(1, "Customer is required"),
   invoiceNumber: z.string().optional(),
-  status: z.enum(["DRAFT", "SENT", "VIEWED", "PARTIAL_PAID", "PAID", "OVERDUE", "CANCELLED", "REFUNDED"]).default("DRAFT"),
+  status: z.enum(["DRAFT", "SENT", "PAID", "CANCELLED"]).default("DRAFT"),
   issueDate: z.preprocess((val) => (val ? new Date(val as string | number | Date) : undefined), z.date({ message: "Issue date is required" })),
   dueDate: z.coerce.date().optional(),
   items: z.array(invoiceItemSchema).min(1, "At least one item is required"),

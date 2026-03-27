@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
 import Link from "next/link";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 function VerifyContent() {
   const searchParams = useSearchParams();
@@ -47,8 +48,11 @@ function VerifyContent() {
   }, [token]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <Card className="w-[400px]">
+    <AuthShell
+      heading="Verify your email to activate all account features."
+      subheading="Email verification helps protect your account and ensures reliable delivery of important notifications."
+    >
+      <Card className="w-full shadow-sm border-border/80">
         <CardHeader>
           <CardTitle className="text-center">Email Verification</CardTitle>
           <CardDescription className="text-center">
@@ -84,7 +88,7 @@ function VerifyContent() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   );
 }
 

@@ -93,12 +93,8 @@ interface Invoice {
 const statusConfig = {
   DRAFT: { color: "bg-gray-500", icon: FileText, label: "Draft" },
   SENT: { color: "bg-blue-500", icon: Send, label: "Sent" },
-  VIEWED: { color: "bg-purple-500", icon: Clock, label: "Viewed" },
   PAID: { color: "bg-green-500", icon: CheckCircle, label: "Paid" },
-  PARTIAL_PAID: { color: "bg-yellow-500", icon: AlertCircle, label: "Partially Paid" },
-  OVERDUE: { color: "bg-red-500", icon: XCircle, label: "Overdue" },
-  CANCELLED: { color: "bg-gray-400", icon: XCircle, label: "Cancelled" },
-  REFUNDED: { color: "bg-orange-500", icon: XCircle, label: "Refunded" }
+  CANCELLED: { color: "bg-gray-400", icon: XCircle, label: "Cancelled" }
 };
 
 export default function PublicInvoicePage() {
@@ -120,13 +116,6 @@ export default function PublicInvoicePage() {
       if (response.ok) {
         const data = await response.json();
         setInvoice(data);
-        
-        // Mark as viewed if not already
-        if (data.status === 'SENT') {
-          await fetch(`/api/invoices/${params?.id}/view`, {
-            method: 'POST'
-          });
-        }
       } else {
         setError("Invoice not found or access denied");
       }

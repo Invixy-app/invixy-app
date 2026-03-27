@@ -84,21 +84,27 @@ export async function GET(req: Request) {
             return NextResponse.json({error:"User not found!"},{status:404});
         }
 
-        const businesses=user.BusinessUserRole.map((bur)=>({
-            id:bur.business.id,
-            name:bur.business.name,
-            description:bur.business.description,
-            billingAddress:bur.business.billingAddress,
-            shippingAddress:bur.business.shippingAddress,
-            taxRegistrationNumber:bur.business.taxRegistrationNumber,
-            phone:bur.business.phone,
-            email:bur.business.email,
-            website:bur.business.website,
-            currency:bur.business.currency,
-            role:bur.role,
+        const businesses = user.BusinessUserRole
+        .filter((bur) => bur.business.isActive)
+        .map((bur) => ({
+            id: bur.business.id,
+            name: bur.business.name,
+            description: bur.business.description,
+            billingAddress: bur.business.billingAddress,
+            shippingAddress: bur.business.shippingAddress,
+            taxRegistrationNumber: bur.business.taxRegistrationNumber,
+            phone: bur.business.phone,
+            email: bur.business.email,
+            website: bur.business.website,
+            logo: bur.business.logo,
+            currency: bur.business.currency,
+            timezone: bur.business.timezone,
+            invoiceTemplate: bur.business.invoiceTemplate,
+            isActive: bur.business.isActive,
+            role: bur.role,
             plan: bur.business.subscriptions[0]?.plan || "FREE",
-            createdAt:bur.business.createdAt,
-            updatedAt:bur.business.updatedAt
+            createdAt: bur.business.createdAt,
+            updatedAt: bur.business.updatedAt
         }));
 
         return NextResponse.json({businesses},{status:200});

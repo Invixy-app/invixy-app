@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
@@ -160,7 +159,7 @@ export default function TaxSystemsPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -186,9 +185,9 @@ export default function TaxSystemsPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Tax Systems</h1>
             <p className="text-muted-foreground">
@@ -196,7 +195,7 @@ export default function TaxSystemsPage() {
             </p>
           </div>
           <Link href="/dashboard/tax-systems/new">
-            <Button>
+            <Button className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
               <Plus className="h-4 w-4 mr-2" />
               Add Tax System
             </Button>
@@ -205,10 +204,10 @@ export default function TaxSystemsPage() {
 
         {/* Overview Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          <Card>
+          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center">
-                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                <CheckCircle className="h-4 w-4 mr-2 text-[var(--brand-teal)]" />
                 Active Systems
               </CardTitle>
             </CardHeader>
@@ -217,10 +216,10 @@ export default function TaxSystemsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center">
-                <Clock className="h-4 w-4 mr-2 text-gray-600" />
+                <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
                 Inactive/Expired
               </CardTitle>
             </CardHeader>
@@ -229,10 +228,10 @@ export default function TaxSystemsPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center">
-                <Calculator className="h-4 w-4 mr-2 text-blue-600" />
+                <Calculator className="h-4 w-4 mr-2 text-[var(--brand-cobalt)]" />
                 Total Systems
               </CardTitle>
             </CardHeader>
@@ -243,7 +242,7 @@ export default function TaxSystemsPage() {
         </div>
 
         {/* Tax Systems List */}
-        <Card>
+        <Card className="shadow-sm border-border/80">
           <CardHeader>
             <CardTitle>Tax Configuration</CardTitle>
             <CardDescription>
@@ -252,7 +251,7 @@ export default function TaxSystemsPage() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="active" className="space-y-4">
-              <TabsList>
+              <TabsList className="bg-muted/60">
                 <TabsTrigger value="active">Active Systems ({activeTaxSystems.length})</TabsTrigger>
                 <TabsTrigger value="inactive">Inactive ({inactiveTaxSystems.length})</TabsTrigger>
                 <TabsTrigger value="all">All Systems ({taxSystems.length})</TabsTrigger>
@@ -260,7 +259,7 @@ export default function TaxSystemsPage() {
 
               <TabsContent value="active" className="space-y-4">
                 {activeTaxSystems.length > 0 ? (
-                  <div className="rounded-md border">
+                  <div className="rounded-xl border border-border/80 overflow-hidden">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -323,7 +322,7 @@ export default function TaxSystemsPage() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Badge variant="default" className="bg-green-600">
+                              <Badge variant="default" className="bg-[var(--brand-teal)] text-white hover:bg-[var(--brand-teal)]/90">
                                 Active
                               </Badge>
                             </TableCell>
@@ -352,7 +351,7 @@ export default function TaxSystemsPage() {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     onClick={() => handleDeleteTaxSystem(tax.id)}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Delete
@@ -373,7 +372,7 @@ export default function TaxSystemsPage() {
                       Create your first tax system to start applying taxes to products
                     </p>
                     <Link href="/dashboard/tax-systems/new">
-                      <Button>
+                      <Button className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                         <Plus className="h-4 w-4 mr-2" />
                         Create Tax System
                       </Button>
@@ -384,7 +383,7 @@ export default function TaxSystemsPage() {
 
               <TabsContent value="inactive" className="space-y-4">
                 {inactiveTaxSystems.length > 0 ? (
-                  <div className="rounded-md border">
+                  <div className="rounded-xl border border-border/80 overflow-hidden">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -454,7 +453,7 @@ export default function TaxSystemsPage() {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     onClick={() => handleDeleteTaxSystem(tax.id)}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Delete
@@ -480,7 +479,7 @@ export default function TaxSystemsPage() {
 
               <TabsContent value="all" className="space-y-4">
                 {taxSystems.length > 0 ? (
-                  <div className="rounded-md border">
+                  <div className="rounded-xl border border-border/80 overflow-hidden">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -563,7 +562,7 @@ export default function TaxSystemsPage() {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     onClick={() => handleDeleteTaxSystem(tax.id)}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Delete
@@ -584,7 +583,7 @@ export default function TaxSystemsPage() {
                       Set up your first tax system to start calculating taxes on products and invoices
                     </p>
                     <Link href="/dashboard/tax-systems/new">
-                      <Button>
+                      <Button className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
                         <Plus className="h-4 w-4 mr-2" />
                         Create Tax System
                       </Button>
@@ -598,7 +597,7 @@ export default function TaxSystemsPage() {
 
         {/* Quick Setup */}
         {taxSystems.length === 0 && (
-          <Card>
+          <Card className="shadow-sm border-border/80">
             <CardHeader>
               <CardTitle>Quick Setup</CardTitle>
               <CardDescription>
@@ -607,7 +606,7 @@ export default function TaxSystemsPage() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-3">
-                <div className="p-4 border rounded-lg">
+                <div className="rounded-xl border border-border/80 bg-card p-4">
                   <div className="flex items-center mb-2">
                     <Percent className="h-5 w-5 mr-2" />
                     <h4 className="font-medium">GST (India)</h4>
@@ -622,7 +621,7 @@ export default function TaxSystemsPage() {
                   </Link>
                 </div>
 
-                <div className="p-4 border rounded-lg">
+                <div className="rounded-xl border border-border/80 bg-card p-4">
                   <div className="flex items-center mb-2">
                     <Percent className="h-5 w-5 mr-2" />
                     <h4 className="font-medium">VAT (EU)</h4>
@@ -637,7 +636,7 @@ export default function TaxSystemsPage() {
                   </Link>
                 </div>
 
-                <div className="p-4 border rounded-lg">
+                <div className="rounded-xl border border-border/80 bg-card p-4">
                   <div className="flex items-center mb-2">
                     <Percent className="h-5 w-5 mr-2" />
                     <h4 className="font-medium">Sales Tax (US)</h4>
