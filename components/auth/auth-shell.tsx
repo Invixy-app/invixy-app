@@ -38,8 +38,8 @@ export function AuthShell({ children, heading, subheading }: AuthShellProps) {
         </div>
 
         <div className="relative z-10 flex w-full flex-col justify-between p-10">
-          <Link href="/" className="inline-flex w-fit items-center gap-3 rounded-md border border-white/15 bg-white/10 px-4 py-2 text-lg font-semibold tracking-tight backdrop-blur">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-white/20 text-sm font-bold">I</span>
+          <Link href="/" className="inline-flex w-fit items-center gap-3 rounded-md border border-white/15 bg-white/10 px-4  text-lg font-semibold tracking-tight backdrop-blur">
+            <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
             <span>Invixy</span>
           </Link>
 
