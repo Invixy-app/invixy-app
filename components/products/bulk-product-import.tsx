@@ -45,7 +45,7 @@ export function BulkProductImport() {
       "Unit",
       "Stock Quantity",
       "Alert Level",
-      "Tax System"
+      "Tax Name"
     ];
 
     const sampleData = [
@@ -59,7 +59,7 @@ export function BulkProductImport() {
         "Unit": "pcs",
         "Stock Quantity": 100,
         "Alert Level": 10,
-        "Tax System": "GST 18%"
+        "Tax Name": "GST 18%"
       }
     ];
 

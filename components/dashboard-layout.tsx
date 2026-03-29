@@ -312,6 +312,10 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
               )}
             </div>
           </div>
+
+          <div className="hidden md:flex items-center gap-2">
+            <ThemeToggle className="text-muted-foreground hover:text-foreground" />
+          </div>
         </header>
 
         {/* Page Content */}
