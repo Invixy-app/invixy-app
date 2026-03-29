@@ -91,7 +91,7 @@ export async function GET(
         email: invoice.business.email,
         phone: invoice.business.phone,
         address: invoice.business.billingAddress,
-        invoiceTemplate: invoice.business.invoiceTemplate
+        taxRegistrationNumber: invoice.business.taxRegistrationNumber || undefined
       },
       customer: {
         name: invoice.customer.name,
@@ -241,11 +241,13 @@ export async function POST(
         email: invoice.business.email,
         phone: invoice.business.phone,
         address: invoice.business.billingAddress,
-        invoiceTemplate: invoice.business.invoiceTemplate
+        taxRegistrationNumber: invoice.business.taxRegistrationNumber || undefined
       },
       customer: {
         name: invoice.customer.name,
-        email: emailRecipient
+        email: emailRecipient,
+        phone: invoice.customer.phone || undefined,
+        address: invoice.customer.billingAddress || undefined
       },
       items: invoice.items.map(item => ({
         description: item.description,

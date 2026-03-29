@@ -22,6 +22,7 @@ interface InvoiceData {
     email?: string;
     phone?: string;
     address?: string;
+    taxRegistrationNumber?: string;
     logo?: string;
     invoiceTemplate?: string;
   };
