@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import db from "@/lib/db";
-import { productSchema } from "@/lib/validations/product";
 import * as XLSX from "xlsx";
 import { z } from "zod";
+
+const bulkRequiredProductSchema = z.object({
+  name: z.string().trim().min(1, "Name is required"),
+  price: z.number().min(0, "Price must be a valid non-negative number"),
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -77,7 +81,20 @@ export async function POST(req: NextRequest) {
     
     const taxMap = new Map(taxSystems.map((t: any) => [t.name.toLowerCase(), t.id]));
 
-    const productsToCreate: Array<z.infer<typeof productSchema> & { businessId: string }> = [];
+    const productsToCreate: Array<{
+      businessId: string;
+      name: string;
+      description?: string;
+      sku?: string;
+      price: number;
+      cost?: number;
+      category?: string;
+      unit: string;
+      stockQuantity: number;
+      minStockLevel: number;
+      taxSystemId?: string;
+      isActive: boolean;
+    }> = [];
     const errors: string[] = [];
     let successCount = 0;
 
@@ -91,16 +108,18 @@ export async function POST(req: NextRequest) {
         // Let's normalize keys or just expect standard keys.
         // We will assume the template we give them has specific headers.
         
-        const taxSystemName = row["Tax System"] || row["tax system"] || row["TaxSystem"];
-        let taxSystemId = null;
-        if (taxSystemName && typeof taxSystemName === 'string') {
-            const normalizedTaxName = taxSystemName.toLowerCase().trim();
+        const taxCell = row["Tax Name"] ?? row["tax name"] ?? row["Tax System"] ?? row["tax system"] ?? row["TaxSystem"] ?? row["Tax ID"] ?? row["tax id"];
+        let taxSystemId: string | undefined;
+        if (typeof taxCell === "string") {
+          const normalizedTaxName = taxCell.trim().toLowerCase();
+          if (normalizedTaxName.length > 0) {
             if (taxMap.has(normalizedTaxName)) {
-                taxSystemId = taxMap.get(normalizedTaxName);
+              taxSystemId = taxMap.get(normalizedTaxName);
             } else {
-                errors.push(`Row ${rowNumber}: Tax system '${taxSystemName}' not found for this business.`);
-                continue;
+              errors.push(`Row ${rowNumber}: Tax name '${taxCell}' not found for this business.`);
+              continue;
             }
+          }
         }
 
         const toNumber = (value: unknown): number | null => {
@@ -133,25 +152,29 @@ export async function POST(req: NextRequest) {
         }
 
         const productData = {
-            name: row["Name"]?.toString() || "",
-            description: row["Description"]?.toString() || "",
-            sku: row["SKU"]?.toString() || "",
-            price: parsedPrice,
-            cost: parsedCost ?? undefined,
-            category: row["Category"]?.toString() || "",
-            unit: row["Unit"]?.toString() || "pcs",
-            stockQuantity: parsedStock ?? 0,
-            minStockLevel: parsedAlert ?? 0,
-            taxSystemId: taxSystemId,
-            isActive: true, // Default to true
+          name: row["Name"]?.toString() || "",
+          description: row["Description"]?.toString() || "",
+          sku: row["SKU"]?.toString() || "",
+          price: parsedPrice,
+          cost: parsedCost ?? undefined,
+          category: row["Category"]?.toString() || "",
+          unit: row["Unit"]?.toString() || "pcs",
+          stockQuantity: parsedStock ?? 0,
+          minStockLevel: parsedAlert ?? 0,
+          taxSystemId,
+          isActive: true,
         };
 
-        // Validate using Zod
-        const validated = productSchema.parse(productData);
+        const validatedRequired = bulkRequiredProductSchema.parse({
+          name: productData.name,
+          price: productData.price,
+        });
 
         productsToCreate.push({
-            ...validated,
-            businessId: businessId,
+          businessId,
+          ...productData,
+          name: validatedRequired.name,
+          price: validatedRequired.price,
         });
 
       } catch (err: unknown) {
