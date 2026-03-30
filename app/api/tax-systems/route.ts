@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import { getTaxSystemsByBusiness, createTaxSystem } from "@/lib/taxSystem";
 import { z } from "zod";
+import db from "@/lib/db";
 
 import { taxSystemSchema } from "@/lib/validations/tax";
 
@@ -19,13 +20,72 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const businessId = searchParams.get("businessId");
+    const paginated = searchParams.get("paginated") === "true";
 
     if (!businessId) {
       return NextResponse.json({ error: "Business ID is required" }, { status: 400 });
     }
 
-    const taxSystems = await getTaxSystemsByBusiness(businessId, session.user.id);
-    return NextResponse.json(taxSystems);
+    if (!paginated) {
+      const taxSystems = await getTaxSystemsByBusiness(businessId, session.user.id);
+      return NextResponse.json(taxSystems);
+    }
+
+    const access = await db.businessUserRole.findUnique({
+      where: {
+        userId_businessId: {
+          userId: session.user.id,
+          businessId,
+        },
+      },
+    });
+
+    if (!access) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    const page = Math.max(1, Number(searchParams.get("page") || "1"));
+    const pageSize = Math.min(100, Math.max(1, Number(searchParams.get("pageSize") || "10")));
+    const tab = (searchParams.get("tab") || "active").toLowerCase();
+
+    const allRows = await db.taxSystem.findMany({
+      where: { businessId },
+      orderBy: { name: "asc" },
+    });
+
+    const now = new Date();
+    const isActiveTax = (tax: { isActive: boolean; validTo: Date | null }) =>
+      tax.isActive && (!tax.validTo || tax.validTo >= now);
+
+    const activeCount = allRows.filter((tax) => isActiveTax(tax)).length;
+    const inactiveCount = allRows.length - activeCount;
+
+    let filtered = allRows;
+    if (tab === "active") {
+      filtered = allRows.filter((tax) => isActiveTax(tax));
+    } else if (tab === "inactive") {
+      filtered = allRows.filter((tax) => !isActiveTax(tax));
+    }
+
+    const total = filtered.length;
+    const start = (page - 1) * pageSize;
+    const items = filtered.slice(start, start + pageSize).map((tax) => ({
+      ...tax,
+      rate: Number(tax.rate),
+    }));
+
+    return NextResponse.json({
+      items,
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      stats: {
+        activeCount,
+        inactiveCount,
+        totalCount: allRows.length,
+      },
+    });
   } catch (error: any) {
     console.error("Error fetching tax systems:", error);
     return NextResponse.json(

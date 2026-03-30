@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
@@ -69,64 +69,95 @@ interface Product {
 }
 
 export default function ProductsPage() {
+  const ITEMS_PER_PAGE = 10;
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [activeProductsCount, setActiveProductsCount] = useState(0);
+  const [lowStockProductsCount, setLowStockProductsCount] = useState(0);
+  const [categoryCount, setCategoryCount] = useState(0);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const hasLoadedOnceRef = useRef(false);
 
   // Calculate limits
   const currentPlan = currentBusiness?.plan || "FREE";
   const productLimit = LIMITS[currentPlan].PRODUCTS;
-  const canCreateProduct = products.length < productLimit;
+  const canCreateProduct = totalProducts < productLimit;
 
   useEffect(() => {
-    if (currentBusiness?.id) {
-      fetchProducts(currentBusiness.id);
-    } else if (!businessLoading) {
-      setLoading(false);
+    if (!currentBusiness?.id && !businessLoading) {
+      setInitialLoading(false);
     }
   }, [currentBusiness?.id, businessLoading]);
 
   useEffect(() => {
-    filterProducts();
-  }, [products, searchTerm, selectedCategory]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-  const fetchProducts = async (businessId: string) => {
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, selectedCategory, currentBusiness?.id]);
+
+  useEffect(() => {
+    if (currentBusiness?.id) {
+      fetchProducts(currentBusiness.id, currentPage, debouncedSearchTerm, selectedCategory);
+    }
+  }, [currentBusiness?.id, currentPage, debouncedSearchTerm, selectedCategory]);
+
+  const fetchProducts = async (businessId: string, page = 1, search = "", category = "") => {
+    const isInitialFetch = !hasLoadedOnceRef.current;
     try {
-      setLoading(true);
-      const response = await fetch(`/api/products?businessId=${businessId}`);
+      if (isInitialFetch) {
+        setInitialLoading(true);
+      } else {
+        setTableLoading(true);
+      }
+      const params = new URLSearchParams({
+        businessId,
+        paginated: "true",
+        page: String(page),
+        pageSize: String(ITEMS_PER_PAGE),
+      });
+      if (search.trim()) {
+        params.set("search", search.trim());
+      }
+      if (category.trim()) {
+        params.set("category", category.trim());
+      }
+
+      const response = await fetch(`/api/products?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setProducts(data);
+        setProducts(data.items || []);
+        setTotalProducts(data.total || 0);
+        setTotalPages(data.totalPages || 1);
+        setActiveProductsCount(data.stats?.activeCount || 0);
+        setLowStockProductsCount(data.stats?.lowStockCount || 0);
+        setCategoryCount(data.stats?.categoryCount || 0);
+        setCategoryOptions(data.categoryOptions || []);
       } else {
         console.error("Failed to fetch products");
       }
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
-      setLoading(false);
+      if (isInitialFetch) {
+        hasLoadedOnceRef.current = true;
+        setInitialLoading(false);
+      }
+      setTableLoading(false);
     }
-  };
-
-  const filterProducts = () => {
-    let filtered = products;
-
-    if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (selectedCategory) {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
-
-    setFilteredProducts(filtered);
   };
 
   const handleDeleteProduct = (productId: string) => {
@@ -145,7 +176,7 @@ export default function ProductsPage() {
           });
 
           if (response.ok) {
-            setProducts(products.filter(p => p.id !== productId));
+            await fetchProducts(currentBusiness.id, currentPage, debouncedSearchTerm, selectedCategory);
             showSuccess("Success", "Product deleted successfully");
           } else {
             const errorData = await response.json();
@@ -186,9 +217,11 @@ export default function ProductsPage() {
     return { status: "In stock", variant: "default" as const };
   };
 
-  const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const rangeStart = totalProducts === 0 ? 0 : startIndex + 1;
+  const rangeEnd = Math.min(startIndex + ITEMS_PER_PAGE, totalProducts);
 
-  if (loading) {
+  if (initialLoading || businessLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
@@ -216,16 +249,6 @@ export default function ProductsPage() {
     );
   }
 
-  const activeProducts = products.filter((p) => p.isActive).length;
-  const lowStockProducts = products.filter(
-    (p) =>
-      p.stockQuantity !== null &&
-      p.minStockLevel !== null &&
-      typeof p.stockQuantity === "number" &&
-      typeof p.minStockLevel === "number" &&
-      p.stockQuantity <= p.minStockLevel
-  ).length;
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -235,7 +258,13 @@ export default function ProductsPage() {
             <p className="text-muted-foreground">Manage your enterprise inventory and pricing structures.</p>
           </div>
           <div className="flex items-center gap-2">
-            <BulkProductImport />
+            <BulkProductImport
+              onImportSuccess={async () => {
+                if (currentBusiness?.id) {
+                  await fetchProducts(currentBusiness.id, currentPage, debouncedSearchTerm, selectedCategory);
+                }
+              }}
+            />
             <TooltipProvider>
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
@@ -272,7 +301,7 @@ export default function ProductsPage() {
               <Package className="h-4 w-4 text-[var(--brand-cobalt)]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{products.length.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{totalProducts.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">Catalog volume</p>
             </CardContent>
           </Card>
@@ -282,7 +311,7 @@ export default function ProductsPage() {
               <Eye className="h-4 w-4 text-[var(--brand-teal)]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeProducts.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{activeProductsCount.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">Published and available</p>
             </CardContent>
           </Card>
@@ -292,7 +321,7 @@ export default function ProductsPage() {
               <AlertTriangle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{lowStockProducts.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{lowStockProductsCount.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">Needs restocking attention</p>
             </CardContent>
           </Card>
@@ -302,7 +331,7 @@ export default function ProductsPage() {
               <Hash className="h-4 w-4 text-[var(--brand-indigo)]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{categories.length.toLocaleString()}</div>
+              <div className="text-2xl font-bold">{categoryCount.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">Active taxonomy groups</p>
             </CardContent>
           </Card>
@@ -321,14 +350,14 @@ export default function ProductsPage() {
                     className="h-10 pl-9"
                   />
                 </div>
-                {categories.length > 0 && (
+                {categoryOptions.length > 0 && (
                   <select
                     value={selectedCategory}
                     onChange={(e) => setSelectedCategory(e.target.value)}
                     className="h-10 rounded-md border border-border/80 bg-background px-4 text-sm shadow-sm"
                   >
                     <option value="">All Categories</option>
-                    {categories.map((category) => (
+                    {categoryOptions.map((category) => (
                       <option key={category} value={category || ""}>
                         {category}
                       </option>
@@ -337,92 +366,125 @@ export default function ProductsPage() {
                 )}
               </div>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Showing {filteredProducts.length} of {products.length.toLocaleString()} products
+                Showing {rangeStart}-{rangeEnd} of {totalProducts.toLocaleString()} products
               </p>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {filteredProducts.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader className="bg-muted/30">
-                    <TableRow>
-                      <TableHead className="px-5 text-[10px] uppercase tracking-[0.14em]">Product Name</TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-[0.14em]">Item Code</TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-[0.14em]">Category</TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-[0.14em]">Price</TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-[0.14em]">Stock</TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-[0.14em]">Tax System</TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-[0.14em]">Status</TableHead>
-                      <TableHead className="text-right text-[10px] uppercase tracking-[0.14em]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProducts.map((product) => {
-                      const stockStatus = getStockStatus(product);
-                      return (
-                        <TableRow key={product.id} className="hover:bg-muted/20">
-                          <TableCell className="px-5 py-3">
-                            <div className="font-medium">{product.name}</div>
-                            <div className="text-xs text-muted-foreground line-clamp-1">{product.description || "-"}</div>
-                          </TableCell>
-                          <TableCell className="py-3 text-sm text-muted-foreground">{product.sku || "-"}</TableCell>
-                          <TableCell className="py-3">
-                            {product.category ? <Badge variant="outline">{product.category}</Badge> : "-"}
-                          </TableCell>
-                          <TableCell className="py-3 font-semibold">{formatCurrency(product.price)}</TableCell>
-                          <TableCell className="py-3">
-                            <div className="text-sm font-medium">{product.stockQuantity ?? "-"}</div>
-                            <Badge variant={stockStatus.variant} className="mt-1 text-[10px]">
-                              {stockStatus.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="py-3 text-xs text-muted-foreground">
-                            {product.taxSystem ? `${product.taxSystem.name} ${(product.taxSystem.rate * 100).toFixed(0)}%` : "-"}
-                          </TableCell>
-                          <TableCell className="py-3">
-                            <Badge variant={product.isActive ? "default" : "secondary"} className="text-[10px]">
-                              {product.isActive ? "Active" : "Inactive"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="py-3 text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-muted">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <Link href={`/dashboard/products/${product.id}`}>
-                                  <DropdownMenuItem>
-                                    <Eye className="mr-2 h-4 w-4" />
-                                    View Details
+            {tableLoading ? (
+              <div className="flex items-center justify-center gap-2 px-5 py-8 text-sm text-muted-foreground">
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand-cobalt)] border-b-transparent" />
+                Loading products...
+              </div>
+            ) : products.length > 0 ? (
+              <div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-muted/30">
+                      <TableRow>
+                        <TableHead className="px-5 text-[10px] uppercase tracking-[0.14em]">Product Name</TableHead>
+                        <TableHead className="text-[10px] uppercase tracking-[0.14em]">Item Code</TableHead>
+                        <TableHead className="text-[10px] uppercase tracking-[0.14em]">Category</TableHead>
+                        <TableHead className="text-[10px] uppercase tracking-[0.14em]">Price</TableHead>
+                        <TableHead className="text-[10px] uppercase tracking-[0.14em]">Stock</TableHead>
+                        <TableHead className="text-[10px] uppercase tracking-[0.14em]">Tax System</TableHead>
+                        <TableHead className="text-[10px] uppercase tracking-[0.14em]">Status</TableHead>
+                        <TableHead className="text-right text-[10px] uppercase tracking-[0.14em]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {products.map((product) => {
+                        const stockStatus = getStockStatus(product);
+                        return (
+                          <TableRow key={product.id} className="hover:bg-muted/20">
+                            <TableCell className="px-5 py-3">
+                              <div className="font-medium">{product.name}</div>
+                              <div className="text-xs text-muted-foreground line-clamp-1">{product.description || "-"}</div>
+                            </TableCell>
+                            <TableCell className="py-3 text-sm text-muted-foreground">{product.sku || "-"}</TableCell>
+                            <TableCell className="py-3">
+                              {product.category ? <Badge variant="outline">{product.category}</Badge> : "-"}
+                            </TableCell>
+                            <TableCell className="py-3 font-semibold">{formatCurrency(product.price)}</TableCell>
+                            <TableCell className="py-3">
+                              <div className="text-sm font-medium">{product.stockQuantity ?? "-"}</div>
+                              <Badge variant={stockStatus.variant} className="mt-1 text-[10px]">
+                                {stockStatus.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-3 text-xs text-muted-foreground">
+                              {product.taxSystem ? `${product.taxSystem.name} (${(product.taxSystem.rate * 100).toFixed(0)}%)` : "-"}
+                            </TableCell>
+                            <TableCell className="py-3">
+                              <Badge variant={product.isActive ? "default" : "secondary"} className="text-[10px]">
+                                {product.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-3 text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-muted">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <Link href={`/dashboard/products/${product.id}`}>
+                                    <DropdownMenuItem>
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                  </Link>
+                                  <Link href={`/dashboard/products/${product.id}/edit`}>
+                                    <DropdownMenuItem>
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Edit Product
+                                    </DropdownMenuItem>
+                                  </Link>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteProduct(product.id)}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
                                   </DropdownMenuItem>
-                                </Link>
-                                <Link href={`/dashboard/products/${product.id}/edit`}>
-                                  <DropdownMenuItem>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit Product
-                                  </DropdownMenuItem>
-                                </Link>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  onClick={() => handleDeleteProduct(product.id)}
-                                  className="text-destructive"
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="flex items-center justify-between border-t border-border/80 px-5 py-3">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {rangeStart}-{rangeEnd} of {totalProducts} products
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="py-14 text-center">

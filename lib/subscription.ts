@@ -116,3 +116,16 @@ export async function canSendEmail(businessId: string): Promise<{ allowed: boole
     message: `Email sending is not available on the ${plan} plan. Upgrade to Pro to send emails.`
   };
 }
+
+export async function canAccessProFeature(businessId: string): Promise<{ allowed: boolean; message?: string }> {
+  const plan = await getBusinessSubscription(businessId);
+
+  if (plan !== "FREE") {
+    return { allowed: true };
+  }
+
+  return {
+    allowed: false,
+    message: "This feature is available on Pro and Enterprise plans. Upgrade to continue.",
+  };
+}

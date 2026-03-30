@@ -3,6 +3,7 @@ import { getAuthSession } from "@/lib/auth";
 import db from "@/lib/db";
 import * as XLSX from "xlsx";
 import { z } from "zod";
+import { canAccessProFeature } from "@/lib/subscription";
 
 const customerRowSchema = z.object({
   Name: z.string().min(1, "Name is required"),
@@ -56,6 +57,17 @@ export async function POST(req: NextRequest) {
     });
     if (!access || access.role === "VIEWER") {
       return NextResponse.json({ error: "Insufficient permissions", errors: ["You do not have permission to import customers for this business."] }, { status: 403 });
+    }
+
+    const proAccess = await canAccessProFeature(businessId);
+    if (!proAccess.allowed) {
+      return NextResponse.json(
+        {
+          error: "Upgrade required",
+          errors: [proAccess.message || "Bulk import is available on Pro and Enterprise plans."],
+        },
+        { status: 403 }
+      );
     }
 
     const buffer = await file.arrayBuffer();
