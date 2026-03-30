@@ -41,6 +41,9 @@ interface InvoiceData {
     itemTaxes?: Array<{
       taxRate: number;
       taxAmount: number;
+      taxSystem?: {
+        name: string;
+      };
     }>;
     product?: {
       name: string;
@@ -81,6 +84,52 @@ const formatDateShort = (date: string) => {
   const parsed = new Date(date);
   if (Number.isNaN(parsed.getTime())) return '-';
   return parsed.toISOString().slice(0, 10);
+};
+
+const getTaxSummaryLines = (invoice: InvoiceData) => {
+  const itemTaxMap = new Map<string, { name: string; rate: number; amount: number }>();
+
+  invoice.items.forEach((item) => {
+    item.itemTaxes?.forEach((tax) => {
+      const name = tax.taxSystem?.name?.trim() || '';
+      const rate = Number(tax.taxRate);
+      const amount = Number(tax.taxAmount);
+      if (!name || !(rate > 0) || !(amount > 0)) return;
+
+      const key = `${name}__${rate.toFixed(6)}`;
+      const existing = itemTaxMap.get(key);
+      if (existing) {
+        existing.amount += amount;
+      } else {
+        itemTaxMap.set(key, { name, rate, amount });
+      }
+    });
+  });
+
+  if (itemTaxMap.size > 0) {
+    return Array.from(itemTaxMap.values()).map((line) => ({
+      name: line.name,
+      rate: line.rate,
+      amount: line.amount,
+      taxableBase: line.rate > 0 ? line.amount / line.rate : 0,
+    }));
+  }
+
+  const invoicePositiveRateTaxes = invoice.taxes.filter((tax) => Number(tax.rate) > 0);
+  const positiveRateBaseTotal = invoicePositiveRateTaxes.reduce(
+    (sum, tax) => sum + (Number(tax.rate) > 0 ? Number(tax.amount) / Number(tax.rate) : 0),
+    0
+  );
+
+  return invoice.taxes.map((tax) => ({
+    name: tax.taxSystem.name,
+    rate: Number(tax.rate),
+    amount: Number(tax.amount),
+    taxableBase:
+      Number(tax.rate) > 0
+        ? Number(tax.amount) / Number(tax.rate)
+        : Math.max(Number(invoice.subtotal) - positiveRateBaseTotal, 0),
+  }));
 };
 
 // --- Template 1 Styles (Classic) ---
@@ -142,74 +191,94 @@ const styles1 = StyleSheet.create({
     marginBottom: 3,
   },
   itemsTable: {
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderTopWidth: 1,
+    borderTopColor: '#C9CDD3',
     marginTop: 6,
   },
   itemsHeader: {
     flexDirection: 'row',
-    backgroundColor: '#F3F4F6',
     borderBottomWidth: 1,
-    borderBottomColor: '#D1D5DB',
-    paddingVertical: 6,
-    paddingHorizontal: 4,
+    borderBottomColor: '#C9CDD3',
+    paddingVertical: 7,
+    paddingHorizontal: 0,
   },
   headerCell: {
-    fontSize: 9,
-    fontFamily: 'Helvetica-Bold',
-    paddingHorizontal: 2,
+    fontSize: 9.5,
+    fontFamily: 'Helvetica',
+    paddingHorizontal: 3,
   },
   itemRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    paddingVertical: 6,
-    paddingHorizontal: 4,
+    borderBottomColor: '#C9CDD3',
+    paddingVertical: 10,
+    paddingHorizontal: 0,
   },
   cellText: {
     fontSize: 9,
-    paddingHorizontal: 2,
+    paddingHorizontal: 3,
+    color: '#1F2937',
   },
-  colNum: { width: '4%', textAlign: 'center' },
+  productText: {
+    fontFamily: 'Helvetica-Bold',
+  },
+  colNum: { width: '4%', textAlign: 'left' },
   colProduct: { width: '24%' },
-  colDescription: { width: '32%' },
-  colQty: { width: '8%', textAlign: 'right' },
+  colDescription: { width: '33%' },
+  colQty: { width: '8%', textAlign: 'center' },
   colRate: { width: '11%', textAlign: 'right' },
   colAmount: { width: '11%', textAlign: 'right' },
-  colTax: { width: '10%', textAlign: 'right' },
+  colTax: { width: '9%', textAlign: 'right' },
   totalsWrap: {
-    marginTop: 10,
+    marginTop: 12,
     alignItems: 'flex-end',
   },
   totalsBox: {
-    width: '42%',
+    width: '40%',
+    borderTopWidth: 0,
+    borderTopColor: '#C9CDD3',
+    borderBottomWidth: 1,
+    borderBottomColor: '#C9CDD3',
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   totalLine: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    paddingVertical: 5,
+    paddingVertical: 4,
   },
   totalLineStrong: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 6,
-    marginTop: 1,
+    borderTopWidth: 1,
+    borderTopColor: '#C9CDD3',
+    marginTop: 6,
+    paddingTop: 7,
+    paddingBottom: 4,
   },
   totalLabel: {
-    fontSize: 9,
+    fontSize: 10,
   },
   totalValue: {
-    fontSize: 9,
+    fontSize: 10,
+  },
+  totalValueLarge: {
+    fontSize: 15,
+    fontFamily: 'Helvetica-Bold',
+    color: '#1F2937',
   },
   strongText: {
     fontFamily: 'Helvetica-Bold',
   },
   overdueRow: {
-    marginTop: 6,
+    marginTop: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  overdueText: {
+    fontSize: 16,
+    fontFamily: 'Helvetica-Bold',
+    color: '#EA580C',
   },
   footer: {
     marginTop: 12,
@@ -223,10 +292,28 @@ const styles1 = StyleSheet.create({
 
 export const Template1: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
   const getItemTaxLabel = (item: InvoiceData['items'][number]) => {
-    if (!item.itemTaxes || item.itemTaxes.length === 0 || item.taxAmount <= 0) return 'Exempt';
-    const totalRate = item.itemTaxes.reduce((sum, tax) => sum + (Number(tax.taxRate) || 0), 0);
-    return totalRate > 0 ? `${(totalRate * 100).toFixed(0)}%` : formatCurrency(item.taxAmount, invoice.currency);
+    if (!item.itemTaxes || item.itemTaxes.length === 0 || item.taxAmount <= 0) return '';
+
+    const names = item.itemTaxes
+      .map((tax) => tax.taxSystem?.name)
+      .filter((name): name is string => Boolean(name && name.trim()));
+
+    if (names.length > 0) {
+      return Array.from(new Set(names)).join(', ');
+    }
+
+    const rateMatch = item.itemTaxes.find((tax) => Number(tax.taxRate) > 0);
+    if (rateMatch) {
+      const matchByRate = invoice.taxes.find(
+        (tax) => Math.abs(Number(tax.rate) - Number(rateMatch.taxRate)) < 0.0001
+      );
+      if (matchByRate?.taxSystem?.name) return matchByRate.taxSystem.name;
+    }
+
+    return '';
   };
+
+  const taxSummaryLines = getTaxSummaryLines(invoice);
 
   return (
     <Page size="A4" style={styles1.page}>
@@ -285,7 +372,7 @@ export const Template1: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
         {invoice.items.map((item, index) => (
           <View key={index} style={styles1.itemRow} wrap={false}>
             <Text style={[styles1.cellText, styles1.colNum]}>{index + 1}.</Text>
-            <Text style={[styles1.cellText, styles1.colProduct]}>{item.product?.name || item.description}</Text>
+            <Text style={[styles1.cellText, styles1.colProduct, styles1.productText]}>{item.product?.name || item.description}</Text>
             <Text style={[styles1.cellText, styles1.colDescription]}>{item.description}</Text>
             <Text style={[styles1.cellText, styles1.colQty]}>{item.quantity}</Text>
             <Text style={[styles1.cellText, styles1.colRate]}>{formatCurrency(item.unitPrice, invoice.currency)}</Text>
@@ -302,10 +389,10 @@ export const Template1: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
             <Text style={styles1.totalValue}>{formatCurrency(invoice.subtotal, invoice.currency)}</Text>
           </View>
 
-          {invoice.taxes.map((tax, i) => (
+          {taxSummaryLines.map((tax, i) => (
             <View key={i} style={styles1.totalLine}>
               <Text style={styles1.totalLabel}>
-                {`${tax.taxSystem.name} @ ${(tax.rate * 100).toFixed(0)}%`}
+                {`${tax.name} @ ${(tax.rate * 100).toFixed(0)}% on ${formatCurrency(tax.taxableBase, invoice.currency)}`}
               </Text>
               <Text style={styles1.totalValue}>{formatCurrency(tax.amount, invoice.currency)}</Text>
             </View>
@@ -313,18 +400,17 @@ export const Template1: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
 
           <View style={styles1.totalLineStrong}>
             <Text style={[styles1.totalLabel, styles1.strongText]}>Total</Text>
-            <Text style={[styles1.totalValue, styles1.strongText]}>{formatCurrency(invoice.totalAmount, invoice.currency)}</Text>
+            <Text style={styles1.totalValueLarge}>{formatCurrency(invoice.totalAmount, invoice.currency)}</Text>
           </View>
 
           <View style={styles1.overdueRow}>
-            <Text style={styles1.totalLabel}>Overdue</Text>
+            <Text style={styles1.overdueText}>Overdue</Text>
             <Text style={styles1.totalValue}>{formatDateShort(invoice.dueDate)}</Text>
           </View>
         </View>
       </View>
 
       <View style={styles1.footer}>
-        <Text style={styles1.thanks}>Thank you for your business!</Text>
         {invoice.notes && <Text style={styles1.smallText}>{invoice.notes}</Text>}
       </View>
     </Page>
@@ -494,6 +580,7 @@ const styles2 = StyleSheet.create({
 export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
   // Generate empty rows
   const emptyRows = Math.max(0, 8 - invoice.items.length);
+  const taxSummaryLines = getTaxSummaryLines(invoice);
 
   return (
     <Page size="A4" style={styles2.page}>
@@ -576,9 +663,9 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
              <Text>Subtotal</Text>
              <Text>{formatCurrency(invoice.subtotal, invoice.currency)}</Text>
           </View>
-          {invoice.taxes.map((tax, i) => (
+          {taxSummaryLines.map((tax, i) => (
             <View key={i} style={styles2.summaryRow}>
-               <Text>Tax ({tax.taxSystem.name})</Text>
+               <Text>Tax ({tax.name})</Text>
                <Text>{formatCurrency(tax.amount, invoice.currency)}</Text>
             </View>
           ))}

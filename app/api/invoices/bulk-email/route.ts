@@ -124,7 +124,11 @@ export async function POST(request: NextRequest) {
             total: Number(item.lineTotal),
             itemTaxes: item.itemTaxes?.map(tax => ({
               taxRate: Number(tax.taxRate),
-              taxAmount: Number(tax.taxAmount)
+              taxAmount: Number(tax.taxAmount),
+              taxSystem: {
+                name: tax.taxSystem.name,
+                taxType: tax.taxSystem.taxType,
+              },
             })),
             product: item.product ? {
               name: item.product.name,
