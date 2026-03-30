@@ -21,7 +21,9 @@ export async function GET(
             email: true,
             phone: true,
             billingAddress: true,
-            logo: true
+            logo: true,
+            invoiceTemplate: true,
+            taxRegistrationNumber: true,
           }
         },
         customer: {
@@ -42,13 +44,31 @@ export async function GET(
                 unit: true
               }
             },
-            itemTaxes: true
+            itemTaxes: {
+              include: {
+                taxSystem: {
+                  select: {
+                    name: true,
+                    taxId: true,
+                  },
+                },
+              },
+            }
           },
           orderBy: {
             sortOrder: 'asc'
           }
         },
-        taxes: true,
+        taxes: {
+          include: {
+            taxSystem: {
+              select: {
+                name: true,
+                taxId: true,
+              },
+            },
+          },
+        },
         payments: {
           select: {
             id: true,
@@ -97,14 +117,26 @@ export async function GET(
           taxSystemId: tax.taxSystemId,
           taxableAmount: Number(tax.taxableAmount),
           taxRate: Number(tax.taxRate),
-          taxAmount: Number(tax.taxAmount)
+          taxAmount: Number(tax.taxAmount),
+          taxSystem: tax.taxSystem
+            ? {
+                name: tax.taxSystem.name,
+                taxId: tax.taxSystem.taxId,
+              }
+            : undefined,
         }))
       })),
       taxes: invoice.taxes.map(tax => ({
         taxSystemId: tax.taxSystemId,
         taxableAmount: Number(tax.taxableAmount),
         taxRate: Number(tax.taxRate),
-        taxAmount: Number(tax.taxAmount)
+        taxAmount: Number(tax.taxAmount),
+        taxSystem: tax.taxSystem
+          ? {
+              name: tax.taxSystem.name,
+              taxId: tax.taxSystem.taxId,
+            }
+          : undefined,
       })),
       payments: invoice.payments.map(payment => ({
         id: payment.id,

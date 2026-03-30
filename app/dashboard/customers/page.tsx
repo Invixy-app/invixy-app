@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
@@ -49,56 +49,86 @@ interface Customer {
 }
 
 export default function CustomersPage() {
+  const ITEMS_PER_PAGE = 10;
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [totalCustomers, setTotalCustomers] = useState(0);
+  const [activeCustomers, setActiveCustomers] = useState(0);
+  const [customersWithEmail, setCustomersWithEmail] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const hasLoadedOnceRef = useRef(false);
 
   // Calculate limits
   const currentPlan = currentBusiness?.plan || "FREE";
   const customerLimit = LIMITS[currentPlan].CUSTOMERS;
-  const canCreateCustomer = customers.length < customerLimit;
+  const canCreateCustomer = totalCustomers < customerLimit;
 
   useEffect(() => {
-    if (currentBusiness?.id) {
-      fetchCustomers(currentBusiness.id);
-    } else if (!businessLoading) {
-      setLoading(false);
+    if (!currentBusiness?.id && !businessLoading) {
+      setInitialLoading(false);
     }
   }, [currentBusiness?.id, businessLoading]);
 
   useEffect(() => {
-    filterCustomers();
-  }, [customers, searchTerm]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-  const fetchCustomers = async (businessId: string) => {
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, currentBusiness?.id]);
+
+  useEffect(() => {
+    if (currentBusiness?.id) {
+      fetchCustomers(currentBusiness.id, currentPage, debouncedSearchTerm);
+    }
+  }, [currentBusiness?.id, currentPage, debouncedSearchTerm]);
+
+  const fetchCustomers = async (businessId: string, page = 1, search = "") => {
+    const isInitialFetch = !hasLoadedOnceRef.current;
     try {
-      setLoading(true);
-      const response = await fetch(`/api/customers?businessId=${businessId}`);
+      if (isInitialFetch) {
+        setInitialLoading(true);
+      } else {
+        setTableLoading(true);
+      }
+      const params = new URLSearchParams({
+        businessId,
+        paginated: "true",
+        page: String(page),
+        pageSize: String(ITEMS_PER_PAGE),
+      });
+      if (search.trim()) {
+        params.set("search", search.trim());
+      }
+
+      const response = await fetch(`/api/customers?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setCustomers(data);
+        setCustomers(data.items || []);
+        setTotalCustomers(data.total || 0);
+        setTotalPages(data.totalPages || 1);
+        setActiveCustomers(data.stats?.activeCount || 0);
+        setCustomersWithEmail(data.stats?.withEmailCount || 0);
       } else {
         console.error("Failed to fetch customers");
       }
     } catch (error) {
       console.error("Error fetching customers:", error);
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterCustomers = () => {
-    if (!searchTerm) {
-      setFilteredCustomers(customers);
-    } else {
-      const filtered = customers.filter(customer =>
-        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.phone?.includes(searchTerm)
-      );
-      setFilteredCustomers(filtered);
+      if (isInitialFetch) {
+        hasLoadedOnceRef.current = true;
+        setInitialLoading(false);
+      }
+      setTableLoading(false);
     }
   };
 
@@ -113,7 +143,9 @@ export default function CustomersPage() {
           });
 
           if (response.ok) {
-            setCustomers(customers.filter(c => c.id !== customerId));
+            if (currentBusiness?.id) {
+                await fetchCustomers(currentBusiness.id, currentPage, debouncedSearchTerm);
+            }
             showSuccess("Success", "Customer deleted successfully");
           } else {
             const errorData = await response.json();
@@ -135,7 +167,11 @@ export default function CustomersPage() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  if (loading) {
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const rangeStart = totalCustomers === 0 ? 0 : startIndex + 1;
+  const rangeEnd = Math.min(startIndex + ITEMS_PER_PAGE, totalCustomers);
+
+  if (initialLoading || businessLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
@@ -175,7 +211,13 @@ export default function CustomersPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <BulkCustomerImport />
+            <BulkCustomerImport
+              onImportSuccess={async () => {
+                if (currentBusiness?.id) {
+                  await fetchCustomers(currentBusiness.id, currentPage, debouncedSearchTerm);
+                }
+              }}
+            />
             <TooltipProvider>
               <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
@@ -206,7 +248,7 @@ export default function CustomersPage() {
         </div>
 
         {/* Summary Stats */}
-        {customers.length > 0 && (
+        {totalCustomers > 0 && (
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -214,7 +256,7 @@ export default function CustomersPage() {
                 <Users className="h-4 w-4 text-[var(--brand-cobalt)]" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{customers.length}</div>
+                <div className="text-2xl font-bold">{totalCustomers}</div>
                 <p className="text-xs text-muted-foreground">Customer records</p>
               </CardContent>
             </Card>
@@ -225,7 +267,7 @@ export default function CustomersPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {customers.filter(c => c.isActive).length}
+                  {activeCustomers}
                 </div>
                 <p className="text-xs text-muted-foreground">Currently active profiles</p>
               </CardContent>
@@ -237,7 +279,7 @@ export default function CustomersPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {customers.filter(c => c.email).length}
+                  {customersWithEmail}
                 </div>
                 <p className="text-xs text-muted-foreground">Reachable by email</p>
               </CardContent>
@@ -267,23 +309,29 @@ export default function CustomersPage() {
             </div>
 
             {/* Customers Table */}
-            {filteredCustomers.length > 0 ? (
-              <div className="rounded-xl border border-border/80 overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="max-w-[200px]">Customer</TableHead>
-                      <TableHead className="max-w-[200px]">Contact</TableHead>
-                      <TableHead className="max-w-[250px]">Address</TableHead>
-                      <TableHead className="w-[120px]">Tax ID</TableHead>
-                      <TableHead className="w-[100px]">Status</TableHead>
-                      <TableHead className="w-[120px]">Added</TableHead>
-                      <TableHead className="text-right w-[50px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCustomers.map((customer) => (
-                      <TableRow key={customer.id}>
+            {tableLoading ? (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-border/80 bg-muted/40 px-4 py-8 text-sm text-muted-foreground">
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand-cobalt)] border-b-transparent" />
+                Loading customers...
+              </div>
+            ) : customers.length > 0 ? (
+              <div>
+                <div className="rounded-xl border border-border/80 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="max-w-[200px]">Customer</TableHead>
+                        <TableHead className="max-w-[200px]">Contact</TableHead>
+                        <TableHead className="max-w-[250px]">Address</TableHead>
+                        <TableHead className="w-[120px]">Tax ID</TableHead>
+                        <TableHead className="w-[100px]">Status</TableHead>
+                        <TableHead className="w-[120px]">Added</TableHead>
+                        <TableHead className="text-right w-[50px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {customers.map((customer) => (
+                        <TableRow key={customer.id}>
                         <TableCell className="max-w-[200px]">
                           <div>
                             <div className="font-medium line-clamp-2" title={customer.name}>{customer.name}</div>
@@ -365,10 +413,37 @@ export default function CustomersPage() {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="flex items-center justify-between border-t border-border/80 px-4 py-3">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {rangeStart}-{rangeEnd} of {totalCustomers} customers
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="text-center py-12">

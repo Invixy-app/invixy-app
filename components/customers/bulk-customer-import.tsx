@@ -20,9 +20,15 @@ import * as XLSX from "xlsx";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useRouter } from "next/navigation";
+import { ProFeatureTooltip } from "@/components/pro-feature-tooltip";
 
-export function BulkCustomerImport() {
+interface BulkCustomerImportProps {
+  onImportSuccess?: () => void | Promise<void>;
+}
+
+export function BulkCustomerImport({ onImportSuccess }: BulkCustomerImportProps) {
   const { currentBusiness } = useBusinessContext();
+  const hasProAccess = (currentBusiness?.plan || "FREE") !== "FREE";
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -82,6 +88,11 @@ export function BulkCustomerImport() {
   };
 
   const handleUpload = async () => {
+    if (!hasProAccess) {
+      showError("Upgrade Required", "Bulk import is available on Pro and Enterprise plans.");
+      return;
+    }
+
     if (!currentBusiness?.id) {
       showError("Missing Business", "Please select a business before importing customers.");
       return;
@@ -107,8 +118,15 @@ export function BulkCustomerImport() {
       if (response.ok && data) {
         setResult(data);
         if (data.count > 0) {
-           showSuccess("Import Completed", `Successfully imported ${data.count} customers.`);
-           router.refresh();
+          setOpen(false);
+          setFile(null);
+          setResult(null);
+          if (onImportSuccess) {
+            await onImportSuccess();
+          } else {
+            router.refresh();
+          }
+          showSuccess("Import Completed", `Successfully imported ${data.count} customers.`);
         } else if (data.errors?.length) {
            showError("Import Validation Failed", data.errors[0]);
         }
@@ -138,13 +156,33 @@ export function BulkCustomerImport() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline">
-          <Upload className="mr-2 h-4 w-4" />
-          Bulk Import
-        </Button>
-      </DialogTrigger>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!hasProAccess && nextOpen) return;
+        setOpen(nextOpen);
+      }}
+    >
+      {hasProAccess ? (
+        <DialogTrigger asChild>
+          <Button variant="outline">
+            <Upload className="mr-2 h-4 w-4" />
+            Bulk Import
+          </Button>
+        </DialogTrigger>
+      ) : (
+        <ProFeatureTooltip
+          isEnabled={hasProAccess}
+          message="Bulk import is available on Pro and Enterprise plans."
+        >
+          <span>
+            <Button variant="outline" disabled>
+              <Upload className="mr-2 h-4 w-4" />
+              Bulk Import
+            </Button>
+          </span>
+        </ProFeatureTooltip>
+      )}
       <DialogContent className="sm:max-w-[560px]">
         <DialogHeader>
           <DialogTitle>Import Customers</DialogTitle>

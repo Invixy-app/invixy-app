@@ -42,6 +42,10 @@ interface InvoiceData {
     itemTaxes?: Array<{
       taxRate: number;
       taxAmount: number;
+      taxSystem?: {
+        name: string;
+        taxType?: string;
+      };
     }>;
     product?: {
       name: string;
@@ -53,7 +57,7 @@ interface InvoiceData {
     rate: number;
     taxSystem: {
       name: string;
-      type: string;
+      taxType?: string;
     };
   }>;
   payments: Array<{

@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth-config";
 import { getProductsByBusiness, createProduct } from "@/lib/product";
 import { z } from "zod";
 import { checkProductLimit } from "@/lib/subscription";
+import db from "@/lib/db";
 
 import { productSchema } from "@/lib/validations/product";
 
@@ -21,13 +22,130 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const businessId = searchParams.get("businessId");
     const taxSystemId = searchParams.get("taxSystemId") || undefined;
+    const paginated = searchParams.get("paginated") === "true";
 
     if (!businessId) {
       return NextResponse.json({ error: "Business ID is required" }, { status: 400 });
     }
 
-    const products = await getProductsByBusiness(businessId, session.user.id, taxSystemId);
-    return NextResponse.json(products);
+    if (!paginated) {
+      const products = await getProductsByBusiness(businessId, session.user.id, taxSystemId);
+      return NextResponse.json(products);
+    }
+
+    const access = await db.businessUserRole.findUnique({
+      where: {
+        userId_businessId: {
+          userId: session.user.id,
+          businessId,
+        },
+      },
+    });
+
+    if (!access) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    const page = Math.max(1, Number(searchParams.get("page") || "1"));
+    const pageSize = Math.min(100, Math.max(1, Number(searchParams.get("pageSize") || "10")));
+    const search = (searchParams.get("search") || "").trim();
+    const category = (searchParams.get("category") || "").trim();
+
+    const whereClause: any = {
+      businessId,
+      isActive: true,
+    };
+
+    if (taxSystemId) {
+      whereClause.taxSystemId = taxSystemId;
+    }
+
+    if (category) {
+      whereClause.category = category;
+    }
+
+    if (search) {
+      whereClause.OR = [
+        { name: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { sku: { contains: search, mode: "insensitive" } },
+        { category: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    const [itemsRaw, total, activeCount, lowStockRows, categoryRows] = await Promise.all([
+      db.product.findMany({
+        where: whereClause,
+        include: {
+          taxSystem: {
+            select: {
+              id: true,
+              name: true,
+              taxId: true,
+              rate: true,
+              taxType: true,
+            },
+          },
+        },
+        orderBy: { name: "asc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      db.product.count({ where: whereClause }),
+      db.product.count({ where: { businessId, isActive: true } }),
+      db.product.findMany({
+        where: {
+          businessId,
+          isActive: true,
+          stockQuantity: { not: null },
+          minStockLevel: { not: null },
+        },
+        select: {
+          stockQuantity: true,
+          minStockLevel: true,
+        },
+      }),
+      db.product.findMany({
+        where: { businessId, isActive: true, category: { not: null } },
+        select: { category: true },
+        distinct: ["category"],
+      }),
+    ]);
+
+    const items = itemsRaw.map((product) => ({
+      ...product,
+      price: Number(product.price),
+      cost: product.cost ? Number(product.cost) : null,
+      taxSystem: product.taxSystem
+        ? {
+            ...product.taxSystem,
+            rate: Number(product.taxSystem.rate),
+          }
+        : null,
+    }));
+
+    const lowStockCount = lowStockRows.filter(
+      (row) =>
+        typeof row.stockQuantity === "number" &&
+        typeof row.minStockLevel === "number" &&
+        row.stockQuantity <= row.minStockLevel
+    ).length;
+
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    return NextResponse.json({
+      items,
+      page,
+      pageSize,
+      total,
+      totalPages,
+      categoryOptions: categoryRows.map((row) => row.category).filter(Boolean),
+      stats: {
+        activeCount,
+        lowStockCount,
+        categoryCount: categoryRows.length,
+      },
+    });
   } catch (error: any) {
     console.error("Error fetching products:", error);
     return NextResponse.json(

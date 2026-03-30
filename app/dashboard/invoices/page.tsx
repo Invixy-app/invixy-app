@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/tooltip";
 import { LIMITS } from "@/lib/constants-limits";
 import { InvoiceEmailDialog } from "@/components/invoices/invoice-email-dialog";
+import { ProFeatureTooltip } from "@/components/pro-feature-tooltip";
 import { 
   Search, 
   Plus, 
@@ -87,75 +88,122 @@ interface Invoice {
 }
 
 export default function InvoicesPage() {
+  const ITEMS_PER_PAGE = 10;
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
+  const [totalInvoices, setTotalInvoices] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("all");
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedInvoiceForEmail, setSelectedInvoiceForEmail] = useState<Invoice | null>(null);
+  const hasLoadedOnceRef = useRef(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    draft: 0,
+    sent: 0,
+    paid: 0,
+    cancelled: 0,
+    totalRevenue: 0,
+    totalPaid: 0,
+    totalOutstanding: 0,
+  });
 
   useEffect(() => {
-    if (currentBusiness?.id) {
-      fetchInvoices(currentBusiness.id);
-    } else if (!businessLoading) {
-      setLoading(false);
+    if (!currentBusiness?.id && !businessLoading) {
+      setInitialLoading(false);
     }
   }, [currentBusiness?.id, businessLoading]);
 
   useEffect(() => {
-    filterInvoices();
-  }, [invoices, searchTerm, statusFilter, activeTab]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-  const fetchInvoices = async (businessId: string) => {
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, statusFilter, activeTab, currentBusiness?.id]);
+
+  useEffect(() => {
+    if (currentBusiness?.id) {
+      fetchInvoices(currentBusiness.id, currentPage, debouncedSearchTerm, statusFilter, activeTab);
+    }
+  }, [currentBusiness?.id, currentPage, debouncedSearchTerm, statusFilter, activeTab]);
+
+  const fetchInvoices = async (
+    businessId: string,
+    page = 1,
+    search = "",
+    status = "",
+    tab = "all"
+  ) => {
+    const isInitialFetch = !hasLoadedOnceRef.current;
     try {
-      setLoading(true);
-      const response = await fetch(`/api/invoices?businessId=${businessId}`);
+      if (isInitialFetch) {
+        setInitialLoading(true);
+      } else {
+        setTableLoading(true);
+      }
+      const tabStatusMap: Record<string, string> = {
+        draft: "DRAFT",
+        sent: "SENT",
+        paid: "PAID",
+        cancelled: "CANCELLED",
+      };
+
+      const params = new URLSearchParams({
+        businessId,
+        paginated: "true",
+        page: String(page),
+        pageSize: String(ITEMS_PER_PAGE),
+      });
+
+      const effectiveStatus = status || (tab !== "all" ? tabStatusMap[tab] : "");
+      if (effectiveStatus) {
+        params.set("status", effectiveStatus);
+      }
+      if (search.trim()) {
+        params.set("search", search.trim());
+      }
+
+      const response = await fetch(`/api/invoices?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setInvoices(data);
+        setInvoices(data.items || []);
+        setTotalInvoices(data.total || 0);
+        setTotalPages(data.totalPages || 1);
+        setStats(
+          data.stats || {
+            total: 0,
+            draft: 0,
+            sent: 0,
+            paid: 0,
+            cancelled: 0,
+            totalRevenue: 0,
+            totalPaid: 0,
+            totalOutstanding: 0,
+          }
+        );
       } else {
         console.error("Failed to fetch invoices");
       }
     } catch (error) {
       console.error("Error fetching invoices:", error);
     } finally {
-      setLoading(false);
+      if (isInitialFetch) {
+        hasLoadedOnceRef.current = true;
+        setInitialLoading(false);
+      }
+      setTableLoading(false);
     }
-  };
-
-  const filterInvoices = () => {
-    let filtered = invoices;
-
-    // Filter by active tab
-    if (activeTab !== "all") {
-      const tabStatusMap: Record<string, string[]> = {
-        draft: ["DRAFT"],
-        sent: ["SENT"],
-        paid: ["PAID"],
-        cancelled: ["CANCELLED"]
-      };
-      const mappedStatuses = tabStatusMap[activeTab] || [];
-      filtered = filtered.filter(invoice => mappedStatuses.includes(invoice.status));
-    }
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(invoice =>
-        invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        invoice.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        invoice.customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filter by status dropdown (additional filter)
-    if (statusFilter) {
-      filtered = filtered.filter(invoice => invoice.status === statusFilter);
-    }
-
-    setFilteredInvoices(filtered);
   };
 
   const handleDeleteInvoice = (invoiceId: string) => {
@@ -174,7 +222,7 @@ export default function InvoicesPage() {
           });
 
           if (response.ok) {
-            setInvoices(invoices.filter(i => i.id !== invoiceId));
+            await fetchInvoices(currentBusiness.id, currentPage, debouncedSearchTerm, statusFilter, activeTab);
             showSuccess("Success", "Invoice deleted successfully");
           } else {
             const errorData = await response.json().catch(() => null);
@@ -208,10 +256,7 @@ export default function InvoicesPage() {
       });
 
       if (response.ok) {
-        const updatedInvoice = await response.json();
-        setInvoices(invoices.map(inv => 
-          inv.id === invoiceId ? { ...inv, status: updatedInvoice.status } : inv
-        ));
+        await fetchInvoices(currentBusiness.id, currentPage, debouncedSearchTerm, statusFilter, activeTab);
         showSuccess("Success", "Invoice status updated successfully");
       } else {
         const errorData = await response.json();
@@ -330,31 +375,18 @@ export default function InvoicesPage() {
     }
   };
 
-  // Calculate stats
-  const stats = {
-    total: invoices.length,
-    draft: invoices.filter(i => i.status === "DRAFT").length,
-    sent: invoices.filter(i => i.status === "SENT").length,
-    paid: invoices.filter(i => i.status === "PAID").length,
-    cancelled: invoices.filter(i => i.status === "CANCELLED").length,
-    totalRevenue: invoices
-      .filter(inv => inv.status === "SENT" || inv.status === "PAID")
-      .reduce((sum, inv) => sum + inv.totalAmount, 0),
-    totalPaid: invoices.reduce((sum, inv) => sum + inv.paidAmount, 0),
-    totalOutstanding: invoices
-      .filter(inv => inv.status === "SENT")
-      .reduce((sum, inv) => sum + Math.max(inv.totalAmount - inv.paidAmount, 0), 0)
-  };
-
   const statusOptions = ["DRAFT", "SENT", "PAID", "CANCELLED"];
   
   // Calculate limits
   const currentPlan = currentBusiness?.plan || "FREE";
   const invoiceLimit = LIMITS[currentPlan].INVOICES;
-  const canCreateInvoice = invoices.length < invoiceLimit;
+  const canCreateInvoice = stats.total < invoiceLimit;
   const canSendEmail = LIMITS[currentPlan].CAN_SEND_EMAIL;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const rangeStart = totalInvoices === 0 ? 0 : startIndex + 1;
+  const rangeEnd = Math.min(startIndex + ITEMS_PER_PAGE, totalInvoices);
 
-  if (loading) {
+  if (initialLoading || businessLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
@@ -524,7 +556,12 @@ export default function InvoicesPage() {
               </div>
 
               <TabsContent value="all" className="space-y-4">
-                {filteredInvoices.length > 0 ? (
+                {tableLoading ? (
+                  <div className="flex items-center justify-center gap-2 rounded-xl border border-border/80 bg-muted/40 px-4 py-8 text-sm text-muted-foreground">
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand-cobalt)] border-b-transparent" />
+                    Loading invoices...
+                  </div>
+                ) : invoices.length > 0 ? (
                   <div className="rounded-xl border border-border/80 overflow-hidden">
                     <Table>
                       <TableHeader>
@@ -539,7 +576,7 @@ export default function InvoicesPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredInvoices.map((invoice) => (
+                        {invoices.map((invoice) => (
                           <TableRow key={invoice.id}>
                             <TableCell>
                               <div className="flex items-center space-x-2">
@@ -626,10 +663,17 @@ export default function InvoicesPage() {
                                       Send to Customer
                                     </DropdownMenuItem>
                                   ) : (
-                                    <DropdownMenuItem disabled>
-                                      <Send className="h-4 w-4 mr-2" />
-                                      Send to Customer (Pro)
-                                    </DropdownMenuItem>
+                                    <ProFeatureTooltip
+                                      isEnabled={canSendEmail}
+                                      message="Email sending is available on Pro and Enterprise plans."
+                                    >
+                                      <span>
+                                        <DropdownMenuItem disabled>
+                                          <Send className="h-4 w-4 mr-2" />
+                                          Send to Customer (Pro)
+                                        </DropdownMenuItem>
+                                      </span>
+                                    </ProFeatureTooltip>
                                   )}
                                   <DropdownMenuSeparator />
                                   {invoice.status === "DRAFT" && (
@@ -702,7 +746,12 @@ export default function InvoicesPage() {
 
               {["draft", "sent", "paid", "cancelled"].map((status) => (
                 <TabsContent key={status} value={status} className="space-y-4">
-                  {filteredInvoices.length > 0 ? (
+                  {tableLoading ? (
+                    <div className="flex items-center justify-center gap-2 rounded-xl border border-border/80 bg-muted/40 px-4 py-8 text-sm text-muted-foreground">
+                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand-cobalt)] border-b-transparent" />
+                      Loading invoices...
+                    </div>
+                  ) : invoices.length > 0 ? (
                     <div className="rounded-xl border border-border/80 overflow-hidden">
                       <Table>
                         <TableHeader>
@@ -717,7 +766,7 @@ export default function InvoicesPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredInvoices.map((invoice) => (
+                          {invoices.map((invoice) => (
                             <TableRow key={invoice.id}>
                               <TableCell>
                                 <div className="flex items-center space-x-2">
@@ -804,10 +853,17 @@ export default function InvoicesPage() {
                                         Send to Customer
                                       </DropdownMenuItem>
                                     ) : (
-                                      <DropdownMenuItem disabled>
-                                        <Send className="h-4 w-4 mr-2" />
-                                        Send to Customer (Pro)
-                                      </DropdownMenuItem>
+                                      <ProFeatureTooltip
+                                        isEnabled={canSendEmail}
+                                        message="Email sending is available on Pro and Enterprise plans."
+                                      >
+                                        <span>
+                                          <DropdownMenuItem disabled>
+                                            <Send className="h-4 w-4 mr-2" />
+                                            Send to Customer (Pro)
+                                          </DropdownMenuItem>
+                                        </span>
+                                      </ProFeatureTooltip>
                                     )}
                                     <DropdownMenuSeparator />
                                     {invoice.status === "DRAFT" && (
@@ -878,6 +934,35 @@ export default function InvoicesPage() {
                   )}
                 </TabsContent>
               ))}
+
+              {totalInvoices > 0 && (
+                <div className="flex items-center justify-between border-t border-border/80 pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {rangeStart}-{rangeEnd} of {totalInvoices} invoices
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Tabs>
           </CardContent>
         </Card>
@@ -894,7 +979,7 @@ export default function InvoicesPage() {
           onSuccess={() => {
             // Refresh invoices after successful email
             if (currentBusiness?.id) {
-              fetchInvoices(currentBusiness.id);
+              fetchInvoices(currentBusiness.id, currentPage, debouncedSearchTerm, statusFilter, activeTab);
             }
             showSuccess("Success", "Invoice emailed successfully");
           }}

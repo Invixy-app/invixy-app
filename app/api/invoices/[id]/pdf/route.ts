@@ -108,7 +108,11 @@ export async function GET(
         total: Number(item.lineTotal),
         itemTaxes: item.itemTaxes?.map(tax => ({
           taxRate: Number(tax.taxRate),
-          taxAmount: Number(tax.taxAmount)
+          taxAmount: Number(tax.taxAmount),
+          taxSystem: {
+            name: tax.taxSystem.name,
+            taxType: tax.taxSystem.taxType
+          },
         })),
         product: item.product ? {
           name: item.product.name,
@@ -120,7 +124,7 @@ export async function GET(
         rate: Number(tax.taxRate),
         taxSystem: {
           name: tax.taxSystem.name,
-          type: tax.taxSystem.taxType
+          taxType: tax.taxSystem.taxType
         }
       })),
       payments: invoice.payments.map(payment => ({
@@ -258,7 +262,11 @@ export async function POST(
         total: Number(item.lineTotal),
         itemTaxes: item.itemTaxes?.map(tax => ({
           taxRate: Number(tax.taxRate),
-          taxAmount: Number(tax.taxAmount)
+          taxAmount: Number(tax.taxAmount),
+          taxSystem: {
+            name: tax.taxSystem.name,
+            taxType: tax.taxSystem.taxType,
+          },
         })),
         product: item.product ? {
           name: item.product.name,
@@ -270,7 +278,7 @@ export async function POST(
         rate: Number(tax.taxRate),
         taxSystem: {
           name: tax.taxSystem.name,
-          type: tax.taxSystem.taxType
+          taxType: tax.taxSystem.taxType
         }
       })),
       payments: invoice.payments.map(payment => ({
