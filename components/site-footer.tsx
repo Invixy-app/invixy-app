@@ -68,14 +68,14 @@ export function SiteFooter() {
                   About
                 </Link>
               </li>
-              <li>
+              {/* <li>
                 <Link
                   href="/blog"
                   className="hover:text-[var(--brand-cobalt)] transition-colors"
                 >
                   Blog
                 </Link>
-              </li>
+              </li> */}
               <li>
                 <Link
                   href="/careers"

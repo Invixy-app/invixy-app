@@ -15,6 +15,9 @@ const bulkEmailSchema = z.object({
   delayBetweenEmails: z.number().min(0).max(30000).optional() // Max 30 seconds delay
 });
 
+const normalizeCurrency = (currency?: string | null) =>
+  String(currency || "USD").trim().toUpperCase();
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -104,16 +107,23 @@ export async function POST(request: NextRequest) {
           taxAmount: Number(invoice.totalTax),
           totalAmount: Number(invoice.totalAmount),
           paidAmount: Number(invoice.paidAmount),
-          currency: invoice.currency,
+          currency: normalizeCurrency(invoice.currency),
+          notes: invoice.notes || undefined,
+          terms: invoice.terms || undefined,
           business: {
             name: invoice.business.name,
+            description: invoice.business.description || undefined,
             email: invoice.business.email,
             phone: invoice.business.phone,
-            address: invoice.business.billingAddress
+            address: invoice.business.billingAddress,
+            taxRegistrationNumber: invoice.business.taxRegistrationNumber || undefined,
+            invoiceTemplate: invoice.business.invoiceTemplate || undefined
           },
           customer: {
             name: invoice.customer.name,
-            email: invoice.customer.email!
+            email: invoice.customer.email!,
+            phone: invoice.customer.phone || undefined,
+            address: invoice.customer.billingAddress || undefined
           },
           items: invoice.items.map(item => ({
             description: item.description,
@@ -140,7 +150,7 @@ export async function POST(request: NextRequest) {
             rate: Number(tax.taxRate),
             taxSystem: {
               name: tax.taxSystem.name,
-              type: tax.taxSystem.taxType
+              taxType: tax.taxSystem.taxType
             }
           })),
           payments: invoice.payments.map(payment => ({

@@ -43,6 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { showError, showSuccess } from "@/lib/alert-store";
+import { downloadInvoicePdf } from "@/lib/invoice-client-actions";
 import { 
   ArrowLeft, 
   Edit, 
@@ -251,24 +252,10 @@ export default function InvoiceDetailPage() {
     if (!invoice?.id) return;
     
     try {
-      const response = await fetch(`/api/invoices/${invoice.id}/pdf`);
-      
-      if (!response.ok) {
-        throw new Error("Failed to download PDF");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Invoice-${invoice.invoiceNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      await downloadInvoicePdf(invoice.id, invoice.invoiceNumber);
     } catch (error) {
       console.error("Error downloading PDF:", error);
-      showError("Error", "Something went wrong. Please try again.");
+      showError("Error", error instanceof Error ? error.message : "Something went wrong. Please try again.");
     }
   };
 
