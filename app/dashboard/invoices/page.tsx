@@ -32,6 +32,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { LIMITS } from "@/lib/constants-limits";
+import { downloadInvoicePdf } from "@/lib/invoice-client-actions";
 import { InvoiceEmailDialog } from "@/components/invoices/invoice-email-dialog";
 import { ProFeatureTooltip } from "@/components/pro-feature-tooltip";
 import { 
@@ -269,32 +270,13 @@ export default function InvoicesPage() {
   };
 
   const handleDownloadPDF = async (invoiceId: string) => {
-    if (!currentBusiness?.id) {
-      showError("Error", "No business selected");
-      return;
-    }
-
     try {
-      const response = await fetch(`/api/invoices/${invoiceId}/pdf?businessId=${currentBusiness.id}`);
-      
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = globalThis.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `invoice-${invoiceId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        globalThis.URL.revokeObjectURL(url);
-        a.remove();
-        showSuccess("Success", "Invoice PDF downloaded successfully");
-      } else {
-        const errorData = await response.json();
-        showError("Error", "Something went wrong. Please try again.");
-      }
+      const selectedInvoice = invoices.find((inv) => inv.id === invoiceId);
+      await downloadInvoicePdf(invoiceId, selectedInvoice?.invoiceNumber);
+      showSuccess("Success", "Invoice PDF downloaded successfully");
     } catch (error) {
       console.error("Error downloading PDF:", error);
-      showError("Error", "Something went wrong. Please try again.");
+      showError("Error", error instanceof Error ? error.message : "Something went wrong. Please try again.");
     }
   };
 

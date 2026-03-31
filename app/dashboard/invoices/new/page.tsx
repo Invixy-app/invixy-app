@@ -45,6 +45,7 @@ import Link from "next/link";
 import { z } from "zod";
 import { invoiceSchema, type InvoiceFormValues } from "@/lib/validations/invoice";
 import { InvoiceEmailDialog } from "@/components/invoices/invoice-email-dialog";
+import { downloadInvoicePdf } from "@/lib/invoice-client-actions";
 
 type InvoiceFormData = Omit<InvoiceFormValues, "issueDate" | "dueDate" | "items"> & {
   issueDate: string;
@@ -554,8 +555,7 @@ function NewInvoiceContent() {
         const invoice = await response.json();
         
         if (action === 'download') {
-          // Open PDF download in new tab
-          window.open(`/api/invoices/${invoice.id}/pdf`, '_blank');
+          await downloadInvoicePdf(invoice.id, invoice.invoiceNumber);
           showSuccess("Success", "Invoice created successfully. Downloading PDF...");
           router.push(`/dashboard/invoices/${invoice.id}`);
         } else if (action === 'send') {

@@ -15,6 +15,9 @@ const emailSchema = z.object({
   bcc: z.array(z.string().email()).optional()
 });
 
+const normalizeCurrency = (currency?: string | null) =>
+  String(currency || "USD").trim().toUpperCase();
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -81,7 +84,7 @@ export async function GET(
       taxAmount: Number(invoice.totalTax),
       totalAmount: Number(invoice.totalAmount),
       paidAmount: Number(invoice.paidAmount),
-      currency: invoice.currency,
+      currency: normalizeCurrency(invoice.currency),
       notes: invoice.notes || undefined,
       terms: invoice.terms || undefined,
       // salespersonName: invoice.creator?.name || undefined, // Removed as requested
@@ -91,7 +94,8 @@ export async function GET(
         email: invoice.business.email,
         phone: invoice.business.phone,
         address: invoice.business.billingAddress,
-        taxRegistrationNumber: invoice.business.taxRegistrationNumber || undefined
+        taxRegistrationNumber: invoice.business.taxRegistrationNumber || undefined,
+        invoiceTemplate: invoice.business.invoiceTemplate || undefined
       },
       customer: {
         name: invoice.customer.name,
@@ -235,7 +239,7 @@ export async function POST(
       taxAmount: Number(invoice.totalTax),
       totalAmount: Number(invoice.totalAmount),
       paidAmount: Number(invoice.paidAmount),
-      currency: invoice.currency,
+      currency: normalizeCurrency(invoice.currency),
       notes: invoice.notes || undefined,
       terms: invoice.terms || undefined,
       // salespersonName: invoice.creator?.name || undefined, // Removed as requested
@@ -245,7 +249,8 @@ export async function POST(
         email: invoice.business.email,
         phone: invoice.business.phone,
         address: invoice.business.billingAddress,
-        taxRegistrationNumber: invoice.business.taxRegistrationNumber || undefined
+        taxRegistrationNumber: invoice.business.taxRegistrationNumber || undefined,
+        invoiceTemplate: invoice.business.invoiceTemplate || undefined
       },
       customer: {
         name: invoice.customer.name,
