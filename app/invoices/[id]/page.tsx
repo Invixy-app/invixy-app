@@ -134,8 +134,12 @@ const getTaxSummaryLines = (invoice: Invoice) => {
   }));
 };
 
+const getTotalDiscount = (invoice: Invoice) =>
+  invoice.items.reduce((sum, item) => sum + Number(item.discount || 0), 0);
+
 function Template1Html({ invoice }: { invoice: Invoice }) {
   const taxSummaryLines = getTaxSummaryLines(invoice);
+  const totalDiscount = getTotalDiscount(invoice);
 
   return (
     <div className="rounded-lg bg-white p-7 text-[#1f2937] shadow-sm">
@@ -181,6 +185,7 @@ function Template1Html({ invoice }: { invoice: Invoice }) {
               <th className="py-2 text-left font-medium">Description</th>
               <th className="py-2 text-center font-medium">Qty</th>
               <th className="py-2 text-right font-medium">Rate</th>
+              <th className="py-2 text-right font-medium">Discount</th>
               <th className="py-2 text-right font-medium">Amount</th>
               <th className="py-2 text-right font-medium">Tax</th>
             </tr>
@@ -193,8 +198,11 @@ function Template1Html({ invoice }: { invoice: Invoice }) {
                 <td className="py-3">{item.description}</td>
                 <td className="py-3 text-center">{item.quantity}</td>
                 <td className="py-3 text-right">{formatCurrency(item.unitPrice, invoice.currency)}</td>
+                <td className="py-3 text-right">{item.discount ? formatCurrency(item.discount, invoice.currency) : "-"}</td>
                 <td className="py-3 text-right">{formatCurrency(item.lineTotal, invoice.currency)}</td>
-                <td className="py-3 text-right">{getItemTaxLabel(item)}</td>
+                <td className="py-3 text-right">
+                  {item.taxAmount > 0 ? formatCurrency(item.taxAmount, invoice.currency) : getItemTaxLabel(item) || "-"}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -203,6 +211,12 @@ function Template1Html({ invoice }: { invoice: Invoice }) {
 
       <div className="mt-4 flex justify-end">
         <div className="w-full max-w-md border-y border-gray-300 py-3">
+          {totalDiscount > 0 && (
+            <div className="flex justify-between py-1 text-sm">
+              <span>Discount</span>
+              <span>-{formatCurrency(totalDiscount, invoice.currency)}</span>
+            </div>
+          )}
           <div className="flex justify-between py-1 text-sm">
             <span>Subtotal</span>
             <span>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
@@ -227,6 +241,7 @@ function Template1Html({ invoice }: { invoice: Invoice }) {
 
 function Template2Html({ invoice }: { invoice: Invoice }) {
   const taxSummaryLines = getTaxSummaryLines(invoice);
+  const totalDiscount = getTotalDiscount(invoice);
   const emptyRows = Math.max(0, 8 - invoice.items.length);
 
   return (
@@ -270,6 +285,7 @@ function Template2Html({ invoice }: { invoice: Invoice }) {
               <th className="px-2 py-2 text-left">Description</th>
               <th className="px-2 py-2 text-right">Unit price</th>
               <th className="px-2 py-2 text-center">Discount</th>
+              <th className="px-2 py-2 text-right">Tax</th>
               <th className="px-2 py-2 text-right">Line total</th>
             </tr>
           </thead>
@@ -280,13 +296,14 @@ function Template2Html({ invoice }: { invoice: Invoice }) {
                 <td className="px-2 py-2 text-center">{item.product?.id?.slice(0, 8) || "-"}</td>
                 <td className="px-2 py-2">{item.description}</td>
                 <td className="px-2 py-2 text-right">{formatCurrency(item.unitPrice, invoice.currency)}</td>
-                <td className="px-2 py-2 text-center">{item.discount ? formatCurrency(item.discount, invoice.currency) : ""}</td>
+                <td className="px-2 py-2 text-center">{item.discount ? formatCurrency(item.discount, invoice.currency) : "-"}</td>
+                <td className="px-2 py-2 text-right">{item.taxAmount > 0 ? formatCurrency(item.taxAmount, invoice.currency) : "-"}</td>
                 <td className="px-2 py-2 text-right">{formatCurrency(item.lineTotal, invoice.currency)}</td>
               </tr>
             ))}
             {Array.from({ length: emptyRows }).map((_, i) => (
               <tr key={`empty-${i}`} className="border-t border-[#93C5FD]">
-                <td className="h-8 px-2 py-2" colSpan={6}></td>
+                <td className="h-8 px-2 py-2" colSpan={7}></td>
               </tr>
             ))}
           </tbody>
@@ -297,7 +314,7 @@ function Template2Html({ invoice }: { invoice: Invoice }) {
         <div className="w-full max-w-sm border-x border-b border-[#93C5FD]">
           <div className="flex justify-between border-b border-[#93C5FD] px-3 py-2 text-sm">
             <span>Total Discount</span>
-            <span>0</span>
+            <span>{formatCurrency(totalDiscount, invoice.currency)}</span>
           </div>
           <div className="flex justify-between border-b border-[#93C5FD] px-3 py-2 text-sm">
             <span>Subtotal</span>
@@ -340,6 +357,7 @@ export default function PublicInvoicePage() {
           setError("Invoice not found or access denied");
           return;
         }
+
         const data = await response.json();
         setInvoice(data);
       } catch {

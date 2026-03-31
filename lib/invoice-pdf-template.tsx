@@ -74,10 +74,21 @@ const formatDate = (date: string) => {
 };
 
 const formatCurrency = (amount: number, currency: string) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency || 'USD'
-  }).format(amount);
+  const normalizedCurrency = String(currency || 'USD').trim().toUpperCase();
+
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: normalizedCurrency,
+      currencyDisplay: 'code',
+    }).format(amount);
+  } catch {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      currencyDisplay: 'code',
+    }).format(amount);
+  }
 };
 
 const formatDateShort = (date: string) => {
@@ -131,6 +142,9 @@ const getTaxSummaryLines = (invoice: InvoiceData) => {
         : Math.max(Number(invoice.subtotal) - positiveRateBaseTotal, 0),
   }));
 };
+
+const getTotalDiscount = (invoice: InvoiceData) =>
+  invoice.items.reduce((sum, item) => sum + Number(item.discount || 0), 0);
 
 // --- Template 1 Styles (Classic) ---
 const styles1 = StyleSheet.create({
@@ -224,10 +238,11 @@ const styles1 = StyleSheet.create({
   },
   colNum: { width: '4%', textAlign: 'left' },
   colProduct: { width: '24%' },
-  colDescription: { width: '33%' },
+  colDescription: { width: '27%' },
   colQty: { width: '8%', textAlign: 'center' },
   colRate: { width: '11%', textAlign: 'right' },
-  colAmount: { width: '11%', textAlign: 'right' },
+  colDiscount: { width: '8%', textAlign: 'right' },
+  colAmount: { width: '10%', textAlign: 'right' },
   colTax: { width: '9%', textAlign: 'right' },
   totalsWrap: {
     marginTop: 12,
@@ -291,6 +306,7 @@ const styles1 = StyleSheet.create({
 });
 
 export const Template1: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
+  const totalDiscount = getTotalDiscount(invoice);
   const getItemTaxLabel = (item: InvoiceData['items'][number]) => {
     if (!item.itemTaxes || item.itemTaxes.length === 0 || item.taxAmount <= 0) return '';
 
@@ -354,6 +370,7 @@ export const Template1: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
         <Text style={styles1.detailsHeading}>Invoice details</Text>
         <Text style={styles1.detailsLine}>Invoice no.: {invoice.invoiceNumber}</Text>
         <Text style={styles1.detailsLine}>Terms: {invoice.terms || '-'}</Text>
+        <Text style={styles1.detailsLine}>Currency: {String(invoice.currency || 'USD').trim().toUpperCase()}</Text>
         <Text style={styles1.detailsLine}>Invoice date: {formatDateShort(invoice.issueDate)}</Text>
         <Text style={styles1.detailsLine}>Due date: {formatDateShort(invoice.dueDate)}</Text>
       </View>
@@ -365,6 +382,7 @@ export const Template1: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
           <Text style={[styles1.headerCell, styles1.colDescription]}>Description</Text>
           <Text style={[styles1.headerCell, styles1.colQty]}>Qty</Text>
           <Text style={[styles1.headerCell, styles1.colRate]}>Rate</Text>
+          <Text style={[styles1.headerCell, styles1.colDiscount]}>Discount</Text>
           <Text style={[styles1.headerCell, styles1.colAmount]}>Amount</Text>
           <Text style={[styles1.headerCell, styles1.colTax]}>Tax</Text>
         </View>
@@ -376,14 +394,24 @@ export const Template1: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
             <Text style={[styles1.cellText, styles1.colDescription]}>{item.description}</Text>
             <Text style={[styles1.cellText, styles1.colQty]}>{item.quantity}</Text>
             <Text style={[styles1.cellText, styles1.colRate]}>{formatCurrency(item.unitPrice, invoice.currency)}</Text>
+            <Text style={[styles1.cellText, styles1.colDiscount]}>{item.discount ? formatCurrency(item.discount, invoice.currency) : '-'}</Text>
             <Text style={[styles1.cellText, styles1.colAmount]}>{formatCurrency(item.total, invoice.currency)}</Text>
-            <Text style={[styles1.cellText, styles1.colTax]}>{getItemTaxLabel(item)}</Text>
+            <Text style={[styles1.cellText, styles1.colTax]}>
+              {item.taxAmount > 0 ? formatCurrency(item.taxAmount, invoice.currency) : getItemTaxLabel(item) || '-'}
+            </Text>
           </View>
         ))}
       </View>
 
       <View style={styles1.totalsWrap}>
         <View style={styles1.totalsBox}>
+          {totalDiscount > 0 && (
+            <View style={styles1.totalLine}>
+              <Text style={styles1.totalLabel}>Discount</Text>
+              <Text style={styles1.totalValue}>-{formatCurrency(totalDiscount, invoice.currency)}</Text>
+            </View>
+          )}
+
           <View style={styles1.totalLine}>
             <Text style={styles1.totalLabel}>Subtotal</Text>
             <Text style={styles1.totalValue}>{formatCurrency(invoice.subtotal, invoice.currency)}</Text>
@@ -526,14 +554,15 @@ const styles2 = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#93C5FD',
     padding: 6,
-    height: 20,
+    minHeight: 24,
   },
   colQty: { width: '8%', textAlign: 'center' },
   colItem: { width: '12%', textAlign: 'center' },
-  colDesc: { width: '40%' },
-  colPrice: { width: '15%', textAlign: 'right' },
+  colDesc: { width: '32%' },
+  colPrice: { width: '14%', textAlign: 'right' },
   colDiscount: { width: '10%', textAlign: 'center' },
-  colTotal: { width: '15%', textAlign: 'right' },
+  colTax: { width: '10%', textAlign: 'right' },
+  colTotal: { width: '14%', textAlign: 'right' },
 
   summarySection: {
     marginTop: 0, 
@@ -581,6 +610,7 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
   // Generate empty rows
   const emptyRows = Math.max(0, 8 - invoice.items.length);
   const taxSummaryLines = getTaxSummaryLines(invoice);
+  const totalDiscount = getTotalDiscount(invoice);
 
   return (
     <Page size="A4" style={styles2.page}>
@@ -599,6 +629,7 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
              <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Customer</Text><Text style={styles2.addressValue}>{invoice.customer.name}</Text></View>
              <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Customer ID#</Text><Text style={styles2.addressValue}>{invoice.customer.id ? invoice.customer.id.substring(0, 8) : '-'}</Text></View>
              <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Address</Text><Text style={styles2.addressValue}>{invoice.customer.address || '-'}</Text></View>
+             <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Email</Text><Text style={styles2.addressValue}>{invoice.customer.email || '-'}</Text></View>
              <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Phone</Text><Text style={styles2.addressValue}>{invoice.customer.phone || '-'}</Text></View>
           </View>
         </View>
@@ -618,6 +649,10 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
           <View style={styles2.detailsCell}><Text style={styles2.detailsLabel}>Payment Due</Text><Text style={styles2.detailsValue}>{formatDate(invoice.dueDate)}</Text></View>
           <View style={{ ...styles2.detailsCell, borderLeftWidth: 1, borderLeftColor: '#93C5FD' }}><Text style={styles2.detailsLabel}>Payment Terms</Text><Text style={styles2.detailsValue}>{invoice.terms || '-'}</Text></View>
         </View>
+        <View style={styles2.detailsRow}>
+          <View style={styles2.detailsCell}><Text style={styles2.detailsLabel}>Currency</Text><Text style={styles2.detailsValue}>{String(invoice.currency || 'USD').trim().toUpperCase()}</Text></View>
+          <View style={{ ...styles2.detailsCell, borderLeftWidth: 1, borderLeftColor: '#93C5FD' }}><Text style={styles2.detailsLabel}>Invoice Date</Text><Text style={styles2.detailsValue}>{formatDate(invoice.issueDate)}</Text></View>
+        </View>
       </View>
 
       {/* Items Table */}
@@ -628,6 +663,7 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
           <Text style={styles2.colDesc}>Description</Text>
           <Text style={styles2.colPrice}>Unit price</Text>
           <Text style={styles2.colDiscount}>Discount</Text>
+          <Text style={styles2.colTax}>Tax</Text>
           <Text style={styles2.colTotal}>Line total</Text>
         </View>
         {invoice.items.map((item, index) => (
@@ -636,10 +672,22 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
              <Text style={styles2.colItem}>{item.product?.sku || '-'}</Text>
              <Text style={styles2.colDesc}>{item.description}</Text>
              <Text style={styles2.colPrice}>{formatCurrency(item.unitPrice, invoice.currency)}</Text>
-             <Text style={styles2.colDiscount}>{item.discount ? formatCurrency(item.discount, invoice.currency) : ''}</Text>
+             <Text style={styles2.colDiscount}>{item.discount ? formatCurrency(item.discount, invoice.currency) : '-'}</Text>
+             <Text style={styles2.colTax}>{item.taxAmount > 0 ? formatCurrency(item.taxAmount, invoice.currency) : '-'}</Text>
              <Text style={styles2.colTotal}>{formatCurrency(item.total, invoice.currency)}</Text>
           </View>
         ))}
+        {invoice.items.length === 0 && (
+          <View style={styles2.tableRow}>
+            <Text style={styles2.colQty}>-</Text>
+            <Text style={styles2.colItem}>-</Text>
+            <Text style={styles2.colDesc}>No line items</Text>
+            <Text style={styles2.colPrice}>-</Text>
+            <Text style={styles2.colDiscount}>-</Text>
+            <Text style={styles2.colTax}>-</Text>
+            <Text style={styles2.colTotal}>-</Text>
+          </View>
+        )}
          {Array.from({ length: emptyRows }).map((_, index) => (
            <View key={`empty-${index}`} style={styles2.tableRow}>
              <Text style={styles2.colQty}></Text>
@@ -647,6 +695,7 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
              <Text style={styles2.colDesc}></Text>
              <Text style={styles2.colPrice}></Text>
              <Text style={styles2.colDiscount}></Text>
+             <Text style={styles2.colTax}></Text>
              <Text style={styles2.colTotal}></Text>
            </View>
         ))}
@@ -657,7 +706,7 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
         <View style={styles2.summaryTable}>
           <View style={styles2.summaryRow}>
              <Text>Total Discount</Text>
-             <Text>0</Text>
+             <Text>{formatCurrency(totalDiscount, invoice.currency)}</Text>
           </View>
           <View style={styles2.summaryRow}>
              <Text>Subtotal</Text>
@@ -683,6 +732,10 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
            <Text style={{ ...styles2.companyFooter, fontFamily: 'Helvetica-Bold' }}>{invoice.business.name}</Text>
            <Text style={styles2.companyFooter}>{invoice.business.address}</Text>
            <Text style={styles2.companyFooter}>{invoice.business.phone} | {invoice.business.email}</Text>
+           {invoice.business.taxRegistrationNumber && (
+             <Text style={styles2.companyFooter}>Tax Registration No. {invoice.business.taxRegistrationNumber}</Text>
+           )}
+           {invoice.notes && <Text style={styles2.companyFooter}>{invoice.notes}</Text>}
         </View>
       </View>
 
