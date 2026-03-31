@@ -1,5 +1,15 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+
+Font.register({
+  family: 'NotoSans',
+  src: 'https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf',
+});
+
+Font.register({
+  family: 'NotoSans-Bold',
+  src: 'https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoSans/NotoSans-Bold.ttf',
+});
 
 interface InvoiceData {
   id: string;
@@ -80,13 +90,13 @@ const formatCurrency = (amount: number, currency: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: normalizedCurrency,
-      currencyDisplay: 'code',
+      currencyDisplay: 'symbol',
     }).format(amount);
   } catch {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      currencyDisplay: 'code',
+      currencyDisplay: 'symbol',
     }).format(amount);
   }
 };
@@ -151,7 +161,7 @@ const styles1 = StyleSheet.create({
   page: {
     padding: 28,
     fontSize: 10,
-    fontFamily: 'Helvetica',
+    fontFamily: 'NotoSans',
   },
   title: {
     fontSize: 20,
@@ -279,7 +289,7 @@ const styles1 = StyleSheet.create({
   },
   totalValueLarge: {
     fontSize: 15,
-    fontFamily: 'Helvetica-Bold',
+    fontFamily: 'NotoSans-Bold',
     color: '#1F2937',
   },
   strongText: {
@@ -450,7 +460,7 @@ const styles2 = StyleSheet.create({
   page: {
     padding: 40,
     fontSize: 10,
-    fontFamily: 'Helvetica',
+    fontFamily: 'NotoSans',
     color: '#333',
   },
   header: {
@@ -719,8 +729,8 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
             </View>
           ))}
           <View style={styles2.totalRow}>
-             <Text style={{ fontFamily: 'Helvetica-Bold' }}>Total</Text>
-             <Text style={{ fontFamily: 'Helvetica-Bold' }}>{formatCurrency(invoice.totalAmount, invoice.currency)}</Text>
+             <Text style={{ fontFamily: 'NotoSans-Bold' }}>Total</Text>
+             <Text style={{ fontFamily: 'NotoSans-Bold' }}>{formatCurrency(invoice.totalAmount, invoice.currency)}</Text>
           </View>
         </View>
       </View>

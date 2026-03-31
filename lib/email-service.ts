@@ -328,7 +328,7 @@ export class EmailService {
               
               <div class="amount-section">
                 <div class="amount-label">${invoice.status === 'PAID' ? 'Amount Paid' : 'Amount Due'}</div>
-                <div class="amount-value">${formatCurrency(balanceAmount > 0 ? balanceAmount : invoice.totalAmount)}</div>
+                <div class="amount-value">${formatCurrency(balanceAmount > 0 ? balanceAmount : invoice.totalAmount, invoice.currency)}</div>
                 
                 ${isOverdue ? `
                 <div style="margin-top: 12px;">
@@ -403,7 +403,7 @@ export class EmailService {
       const defaultSubject = invoice.status === 'PAID' 
         ? `Invoice ${invoice.invoiceNumber} - Payment Received`
         : balanceAmount > 0 
-        ? `Invoice ${invoice.invoiceNumber} - ${formatCurrency(balanceAmount)} Due`
+        ? `Invoice ${invoice.invoiceNumber} - ${formatCurrency(balanceAmount, invoice.currency)} Due`
         : `Invoice ${invoice.invoiceNumber} from ${invoice.business.name}`;
 
       const { data, error } = await this.resend.emails.send({
