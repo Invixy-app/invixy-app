@@ -104,7 +104,12 @@ function NewInvoiceContent() {
   const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [productHistories, setProductHistories] = useState<Record<string, ProductHistory>>({});
+  const [productSearchQueries, setProductSearchQueries] = useState<Record<number, string>>({});
   
+  const [lastInvoice, setLastInvoice] = useState<any | null>(null);
+  const [isLoadingLastInvoice, setIsLoadingLastInvoice] = useState(false);
+  const [hasAppliedLastInvoice, setHasAppliedLastInvoice] = useState(false);
+
   // Quick add dialogs
   const [showAddCustomerDialog, setShowAddCustomerDialog] = useState(false);
   const [showAddProductDialog, setShowAddProductDialog] = useState(false);
@@ -143,6 +148,7 @@ function NewInvoiceContent() {
     terms: "",
     currency: "USD",
     items: [{
+      productId: "",
       description: "",
       quantity: 1,
       unitPrice: 0,
@@ -167,37 +173,64 @@ function NewInvoiceContent() {
     }
   }, [currentBusiness?.currency]);
 
-  useEffect(() => {
-    const checkPendingInvoices = async () => {
-      if (!formData.customerId || !currentBusiness?.id) return;
 
+
+  useEffect(() => {
+    async function fetchLastInvoice() {
+      if (!currentBusiness?.id || !formData.customerId) {
+        setLastInvoice(null);
+        setHasAppliedLastInvoice(false);
+        return;
+      }
+      setIsLoadingLastInvoice(true);
       try {
-        // Fetch pending invoices (SENT, OVERDUE, PARTIAL_PAID)
-        const response = await fetch(
-          `/api/invoices?businessId=${currentBusiness.id}&customerId=${formData.customerId}&status=SENT`
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          const invoices = Array.isArray(data) ? data : (data.invoices || []);
-          
-          if (invoices.length > 0) {
-             const count = invoices.length;
-             const totalDue = invoices.reduce((sum: number, inv: any) => sum + (inv.balanceAmount || 0), 0);
-             
-             showInfo(
-               "Pending Invoices",
-               `This customer has ${count} pending invoice(s).`
-             );
+        const res = await fetch(`/api/invoices?businessId=${currentBusiness.id}&customerId=${formData.customerId}&status=SENT&paginated=true&pageSize=1`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.items && data.items.length > 0) {
+            setLastInvoice(data.items[0]);
+          } else {
+             const resPaid = await fetch(`/api/invoices?businessId=${currentBusiness.id}&customerId=${formData.customerId}&status=PAID&paginated=true&pageSize=1`);
+             if (resPaid.ok) {
+                const dataPaid = await resPaid.json();
+                if (dataPaid.items && dataPaid.items.length > 0) {
+                   setLastInvoice(dataPaid.items[0]);
+                } else {
+                   setLastInvoice(null);
+                }
+             }
           }
         }
-      } catch (error) {
-        console.error("Error checking pending invoices:", error);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsLoadingLastInvoice(false);
       }
-    };
-
-    checkPendingInvoices();
+    }
+    fetchLastInvoice();
   }, [formData.customerId, currentBusiness?.id]);
+
+  const applyLastInvoice = () => {
+    if (!lastInvoice) return;
+    setFormData(prev => ({
+      ...prev,
+      currency: lastInvoice.currency || prev.currency,
+      notes: lastInvoice.notes || "",
+      terms: lastInvoice.terms || "",
+      items: lastInvoice.items.map((item: any) => ({
+        productId: item.productId || "",
+        description: item.description,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        discount: item.discount,
+        lineTotal: item.lineTotal,
+        taxAmount: Number(item.taxAmount || 0),
+        taxSystemIds: item.itemTaxes?.map((t: any) => t.taxSystemId) || []
+      }))
+    }));
+    setHasAppliedLastInvoice(true);
+    showSuccess("Success", "Previous invoice autofilled!");
+  };
 
   const fetchData = async () => {
     if (!currentBusiness?.id) return;
@@ -234,6 +267,7 @@ function NewInvoiceContent() {
       items: [
         ...prev.items,
         {
+          productId: "",
           description: "",
           quantity: 1,
           unitPrice: 0,
@@ -721,6 +755,17 @@ function NewInvoiceContent() {
                         <p className="text-sm text-red-500">{errors.customerId}</p>
                       )}
                     </div>
+                    {lastInvoice && !hasAppliedLastInvoice && (
+                      <div className="mt-2 bg-blue-50/50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in duration-300">
+                        <div className="flex items-center gap-2 text-sm text-blue-800 dark:text-blue-300">
+                          <FileText className="h-4 w-4 shrink-0" />
+                          <span>Last invoice for this customer is <strong>{lastInvoice.invoiceNumber}</strong>.</span>
+                        </div>
+                        <Button type="button" size="sm" variant="outline" className="text-blue-700 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-200 bg-white dark:bg-transparent" onClick={applyLastInvoice}>
+                          Autofill Details
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -796,7 +841,7 @@ function NewInvoiceContent() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <Label>Product (Optional)</Label>
+                              <Label>Product <span className="text-red-500">*</span></Label>
                               <Button
                                 type="button"
                                 variant="ghost"
@@ -811,22 +856,36 @@ function NewInvoiceContent() {
                             <Select
                               value={item.productId || ""}
                               onValueChange={(value) => value && value !== "custom" ? selectProduct(index, value) : updateItem(index, "productId", "")}
+                              onOpenChange={(open) => {
+                                if (!open) setProductSearchQueries(prev => ({ ...prev, [index]: "" }));
+                              }}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Select a product" />
                               </SelectTrigger>
                               <SelectContent>
-                                {/* <SelectItem value="custom">Custom item</SelectItem> */}
-                                {products.map((product) => (
+                                <div className="p-2 sticky top-0 bg-popover z-10 border-b">
+                                  <Input 
+                                    placeholder="Search products..." 
+                                    value={productSearchQueries[index] || ""}
+                                    onChange={(e) => setProductSearchQueries(prev => ({ ...prev, [index]: e.target.value }))}
+                                    onKeyDown={(e) => e.stopPropagation()}
+                                  />
+                                </div>
+                                {products
+                                  .filter(p => p.name.toLowerCase().includes((productSearchQueries[index] || "").toLowerCase()))
+                                  .map((product) => (
                                   <SelectItem key={product.id} value={product.id}>
-                                    <div className="flex flex-col align-start">
+                                    <div className="flex flex-col items-start">
                                       <div className="font-medium">{product.name}</div>
-                                      {/* <div className="text-xsm text-muted-foreground">
-                                        {formatCurrency(product.price)} per {product.unit}
-                                      </div> */}
                                     </div>
                                   </SelectItem>
                                 ))}
+                                {products.filter(p => p.name.toLowerCase().includes((productSearchQueries[index] || "").toLowerCase())).length === 0 && (
+                                  <div className="p-4 text-center text-sm text-muted-foreground">
+                                    No products found.
+                                  </div>
+                                )}
                               </SelectContent>
                             </Select>
                             {item.productId && productHistories[item.productId]?.hasHistory && (
@@ -846,7 +905,7 @@ function NewInvoiceContent() {
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Description <span className="text-red-500">*</span></Label>
+                            <Label>Description (Optional)</Label>
                             <Input
                               placeholder="Item description"
                               value={item.description}
