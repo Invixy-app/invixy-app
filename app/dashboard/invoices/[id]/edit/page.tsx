@@ -125,6 +125,7 @@ export default function EditInvoicePage() {
   const [showCustomItemDialog, setShowCustomItemDialog] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
+  const [productSearchQuery, setProductSearchQuery] = useState("");
   const [newItem, setNewItem] = useState<Partial<InvoiceItem>>({
     description: "",
     quantity: 1,
@@ -879,15 +880,31 @@ export default function EditInvoicePage() {
             <div className="space-y-4">
               {/* Product Selection */}
               <div className="space-y-2">
-                <Label>Select Product (Optional)</Label>
-                <Select value={newItem.productId || ""} onValueChange={selectProduct}>
+                <Label>Select Product <span className="text-red-500">*</span></Label>
+                <Select 
+                  value={newItem.productId || ""} 
+                  onValueChange={selectProduct}
+                  onOpenChange={(open) => {
+                    if (!open) setProductSearchQuery("");
+                  }}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a product or enter manually" />
                   </SelectTrigger>
                   <SelectContent>
-                    {products.map((product) => (
+                    <div className="p-2 sticky top-0 bg-popover z-10 border-b">
+                      <Input 
+                        placeholder="Search products..." 
+                        value={productSearchQuery}
+                        onChange={(e) => setProductSearchQuery(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                    {products
+                      .filter(p => p.name.toLowerCase().includes(productSearchQuery.toLowerCase()))
+                      .map((product) => (
                       <SelectItem key={product.id} value={product.id}>
-                        <div>
+                        <div className="flex flex-col items-start">
                           <div className="font-medium">{product.name}</div>
                           <div className="text-xs text-muted-foreground">
                             ${product.price.toFixed(2)} per {product.unit}
@@ -895,6 +912,11 @@ export default function EditInvoicePage() {
                         </div>
                       </SelectItem>
                     ))}
+                    {products.filter(p => p.name.toLowerCase().includes(productSearchQuery.toLowerCase())).length === 0 && (
+                      <div className="p-4 text-center text-sm text-muted-foreground">
+                        No products found.
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
                 {newItem.productId && productHistories[newItem.productId]?.hasHistory && (
@@ -932,13 +954,12 @@ export default function EditInvoicePage() {
               {/* Manual Item Entry */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2 col-span-2">
-                  <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="description">Description (Optional)</Label>
                   <Input
                     id="description"
                     value={newItem.description}
                     onChange={(e) => setNewItem(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Item description"
-                    required
                   />
                 </div>
 

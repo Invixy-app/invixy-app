@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -51,10 +51,10 @@ export default function LandingPage() {
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </button>
                 </Link>
-                <button className="group inline-flex cursor-pointer items-center justify-center gap-3 rounded-2xl border border-border bg-card px-10 py-5 font-mono text-xs font-light uppercase tracking-[0.18em] text-foreground transition-all duration-300 hover:border-[var(--brand-cobalt)]/40 hover:bg-muted">
+                {/* <button className="group inline-flex cursor-pointer items-center justify-center gap-3 rounded-2xl border border-border bg-card px-10 py-5 font-mono text-xs font-light uppercase tracking-[0.18em] text-foreground transition-all duration-300 hover:border-[var(--brand-cobalt)]/40 hover:bg-muted">
                   <PlayCircle className="h-5 w-5 transition-transform group-hover:scale-110" />
                   Watch Demo
-                </button>
+                </button> */}
               </div>
 
               <div className="mt-12 flex items-center gap-4 text-sm text-muted-foreground">

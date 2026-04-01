@@ -12,8 +12,13 @@ import {
   TrendingDown,
   TrendingUp,
   Users,
+  Filter,
+  X,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useBusinessContext } from "@/components/business-context";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +42,7 @@ interface BusinessDashboardStats {
   lastMonthRevenue: number;
   thisMonthInvoices: number;
   subscriptionPlan?: string;
+  hasDateFilter?: boolean;
 }
 
 interface RecentInvoice {
@@ -79,23 +85,34 @@ export default function DashboardPage() {
     lastMonthRevenue: 0,
     thisMonthInvoices: 0,
     subscriptionPlan: "FREE",
+    hasDateFilter: false,
   });
   const [recentInvoices, setRecentInvoices] = useState<RecentInvoice[]>([]);
   const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dateFilter, setDateFilter] = useState<{from: string, to: string} | null>(null);
+  const [pendingFilter, setPendingFilter] = useState<{from: string, to: string}>({ from: "", to: "" });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     if (currentBusiness) {
       fetchDashboardData();
     }
-  }, [currentBusiness]);
+  }, [currentBusiness, dateFilter]);
 
   const fetchDashboardData = async () => {
     if (!currentBusiness) return;
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/business/${currentBusiness.id}/dashboard`);
+      let url = `/api/business/${currentBusiness.id}/dashboard`;
+      if (dateFilter && (dateFilter.from || dateFilter.to)) {
+        const params = new URLSearchParams();
+        if (dateFilter.from) params.append("from", dateFilter.from);
+        if (dateFilter.to) params.append("to", dateFilter.to);
+        url += `?${params.toString()}`;
+      }
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setStats(data.stats || stats);
@@ -271,32 +288,39 @@ export default function DashboardPage() {
     downloadCsv(`${businessName}-dashboard-report-${today}.csv`, csv);
   };
 
-  const kpiCards = [
+  const kpiCards: Array<{
+    label: string;
+    value: string;
+    meta: string;
+    pill: string;
+    icon: any;
+    tone: "positive" | "warning" | "neutral";
+  }> = [
     {
-      label: "Total Revenue",
+      label: stats.hasDateFilter ? "Period Revenue" : "Total Revenue",
       value: formatCurrency(stats.totalRevenue),
-      meta: "Revenue booked across invoices",
-      pill: growthLabel,
+      meta: stats.hasDateFilter ? "Revenue in selected period" : "Revenue booked across invoices",
+      pill: stats.hasDateFilter ? "Filtered" : growthLabel,
       icon: DollarSign,
-      tone: "positive",
+      tone: stats.hasDateFilter ? "neutral" : "positive",
     },
     {
       label: "Outstanding",
       value: formatCurrency(atRiskRevenue),
-      meta: `${openInvoicesCount} open invoices (sent)`,
+      meta: stats.hasDateFilter ? `${openInvoicesCount} open invoices in period` : `${openInvoicesCount} open invoices (sent)`,
       pill: `${openInvoicesCount} Open`,
       icon: TrendingDown,
       tone: "warning",
     },
     {
-      label: "Total Invoices",
+      label: stats.hasDateFilter ? "Period Invoices" : "Total Invoices",
       value: totalInvoicesCount.toLocaleString(),
-      meta: `${stats.thisMonthInvoices} created this month`,
-      pill: `${totalInvoicesCount} Total`,
+      meta: stats.hasDateFilter ? `${stats.thisMonthInvoices} in period` : `${stats.thisMonthInvoices} created this month`,
+      pill: stats.hasDateFilter ? "Filtered" : `${totalInvoicesCount} Total`,
       icon: FileText,
       tone: "neutral",
     },
-  ] as const;
+  ];
 
   const elevatedCardShadow =
     "shadow-[0_12px_28px_-18px_rgba(15,23,42,0.35)] dark:shadow-[0_20px_40px_-24px_rgba(0,0,0,0.85)]";
@@ -315,8 +339,68 @@ export default function DashboardPage() {
               </span>
               {" "}this month.
             </p>
+            {dateFilter && (dateFilter.from || dateFilter.to) && (
+              <div className="mt-2 flex items-center">
+                <Badge variant="secondary" className="flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-normal">
+                  <span className="text-muted-foreground">Filtered:</span> 
+                  {dateFilter.from ? formatDate(dateFilter.from) : "Any"} - {dateFilter.to ? formatDate(dateFilter.to) : "Any"}
+                  <button 
+                    onClick={() => { setDateFilter(null); setPendingFilter({ from: "", to: "" }); }}
+                    className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              </div>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
+            <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className={`h-10 rounded-md border-border/70 px-4 ${dateFilter ? "bg-[var(--brand-cobalt)]/10 text-[var(--brand-cobalt)] border-[var(--brand-cobalt)]/30" : "bg-background"}`}>
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filter
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="flex w-full flex-col p-6 sm:max-w-md">
+                <SheetHeader className="mb-2">
+                  <SheetTitle className="text-xl font-semibold">Filter Overview</SheetTitle>
+                </SheetHeader>
+                <div className="flex-1 space-y-6 py-4">
+                  <div className="space-y-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="date-from" className="text-sm font-medium">From Date</Label>
+                      <Input 
+                        id="date-from" 
+                        type="date" 
+                        className="h-11"
+                        value={pendingFilter.from} 
+                        onChange={(e) => setPendingFilter(prev => ({ ...prev, from: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="date-to" className="text-sm font-medium">To Date</Label>
+                      <Input 
+                        id="date-to" 
+                        type="date" 
+                        className="h-11"
+                        value={pendingFilter.to} 
+                        onChange={(e) => setPendingFilter(prev => ({ ...prev, to: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <SheetFooter className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end sm:gap-3">
+                  <Button variant="outline" className="h-11 w-full sm:w-auto" onClick={() => { setPendingFilter({from: "", to: ""}); setDateFilter(null); setIsFilterOpen(false); }}>
+                    Clear
+                  </Button>
+                  <Button className="h-11 w-full bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)] sm:w-auto" onClick={() => { setDateFilter(pendingFilter); setIsFilterOpen(false); }}>
+                    Apply Filter
+                  </Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+
             <Button variant="outline" size="sm" className="h-10 rounded-md border-border/70 bg-background px-4" onClick={handleExportReport}>
               <Download className="mr-2 h-4 w-4" />
               Export Report

@@ -34,7 +34,7 @@ const tiers = {
     {
       name: "Pro",
       id: "pro",
-      price: { MONTHLY: 15, QUARTERLY: 40, YEARLY: 150 },
+      price: { MONTHLY: 10, QUARTERLY: 27, YEARLY: 99 },
       description: "Everything you need to scale your business operations.",
       features: [
         "Unlimited clients",
