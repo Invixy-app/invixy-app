@@ -107,19 +107,19 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className="hidden md:flex flex-col border-r bg-sidebar text-sidebar-foreground h-full z-30 shadow-xl"
       >
-        <div className="p-4 flex items-center justify-between h-16 shrink-0">
+        <div className="p-4 flex items-center justify-between h-16 shrink-0 relative">
           <AnimatePresence mode="wait">
             {isSidebarOpen ? (
-              <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl tracking-tight">
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center gap-2 font-bold text-xl tracking-tight"
-              >
-                <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
-                <span>Invixy</span>
-              </motion.div>
+              <Link href="/dashboard" className="flex items-center gap-2 font-bold text-xl tracking-tight overflow-hidden">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="flex items-center gap-2 font-bold text-xl tracking-tight"
+                >
+                  <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} className="shrink-0" />
+                  <span>Invixy</span>
+                </motion.div>
               </Link>
             ) : (
               <motion.div
@@ -128,10 +128,22 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
                 exit={{ opacity: 0 }}
                 className="mx-auto"
               >
-               <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
+                <Link href="/dashboard">
+                  <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} className="shrink-0" />
+                </Link>
               </motion.div>
             )}
           </AnimatePresence>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={toggleSidebar}
+            className="absolute -right-3 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-background shadow-sm hidden md:flex z-50 p-0 text-muted-foreground hover:text-foreground hover:bg-background"
+          >
+             <ChevronRight className={`h-4 w-4 transition-transform duration-300 ${isSidebarOpen ? "rotate-180" : ""}`} />
+             <span className="sr-only">Toggle Sidebar</span>
+          </Button>
         </div>
 
         <div className="px-3 py-2">

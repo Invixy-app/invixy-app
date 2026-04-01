@@ -47,19 +47,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid file type", errors: ["The uploaded file is not a valid Excel document."] }, { status: 400 });
     }
 
-    const access = await db.businessUserRole.findUnique({
-      where: {
-        userId_businessId: {
-          userId: session.user.id,
-          businessId,
+    const [access, proAccess] = await Promise.all([
+      db.businessUserRole.findUnique({
+        where: {
+          userId_businessId: {
+            userId: session.user.id,
+            businessId,
+          },
         },
-      },
-    });
+      }),
+      canAccessProFeature(businessId)
+    ]);
+
     if (!access || access.role === "VIEWER") {
       return NextResponse.json({ error: "Insufficient permissions", errors: ["You do not have permission to import customers for this business."] }, { status: 403 });
     }
 
-    const proAccess = await canAccessProFeature(businessId);
     if (!proAccess.allowed) {
       return NextResponse.json(
         {
@@ -127,16 +130,22 @@ export async function POST(req: NextRequest) {
     }
 
     let successCount = 0;
-    for (let i = 0; i < validCustomers.length; i++) {
-      const customer = validCustomers[i];
-      const sheetRow = i + 2;
-      try {
-        await db.customer.create({ data: customer });
-        successCount++;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Database error";
-        errors.push(`Row ${sheetRow}: Failed to save customer (${message}).`);
-      }
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < validCustomers.length; i += BATCH_SIZE) {
+      const batch = validCustomers.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map((customer) => db.customer.create({ data: customer }))
+      );
+      
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          successCount++;
+        } else {
+          const sheetRow = i + index + 2;
+          const message = result.reason instanceof Error ? result.reason.message : "Database error";
+          errors.push(`Row ${sheetRow}: Failed to save customer (${message}).`);
+        }
+      });
     }
 
     return NextResponse.json({

@@ -355,12 +355,20 @@ export const Template1: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
           )}
         </View>
         <View style={styles1.contactBlock}>
-          {invoice.business.email && <Text style={styles1.smallText}>{invoice.business.email}</Text>}
-          {invoice.business.phone && <Text style={styles1.smallText}>{invoice.business.phone}</Text>}
+          {invoice.business.email && <Text style={styles1.smallText}>Email: {invoice.business.email}</Text>}
+          {invoice.business.phone && <Text style={styles1.smallText}>Mobile Number: {invoice.business.phone}</Text>}
         </View>
       </View>
 
       <View style={styles1.sectionRow}>
+        <View style={styles1.sectionCol}>
+          <Text style={styles1.detailsHeading}>Invoice details</Text>
+          <Text style={styles1.detailsLine}>Invoice no.: {invoice.invoiceNumber}</Text>
+          <Text style={styles1.detailsLine}>Currency: {String(invoice.currency || 'USD').trim().toUpperCase()}</Text>
+          <Text style={styles1.detailsLine}>Invoice date: {formatDateShort(invoice.issueDate)}</Text>
+          <Text style={styles1.detailsLine}>Due date: {formatDateShort(invoice.dueDate)}</Text>
+        </View>
+
         <View style={styles1.sectionCol}>
           <Text style={styles1.sectionLabel}>Bill to</Text>
           <Text style={styles1.sectionTitle}>{invoice.customer.name}</Text>
@@ -368,21 +376,6 @@ export const Template1: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
           {invoice.customer.email && <Text style={styles1.smallText}>{invoice.customer.email}</Text>}
           {invoice.customer.phone && <Text style={styles1.smallText}>{invoice.customer.phone}</Text>}
         </View>
-        <View style={styles1.sectionCol}>
-          <Text style={styles1.sectionLabel}>Ship to</Text>
-          <Text style={styles1.sectionTitle}>{invoice.customer.name}</Text>
-          {invoice.customer.address && <Text style={styles1.metaText}>{invoice.customer.address}</Text>}
-          {invoice.customer.phone && <Text style={styles1.smallText}>{invoice.customer.phone}</Text>}
-        </View>
-      </View>
-
-      <View style={styles1.detailsBox}>
-        <Text style={styles1.detailsHeading}>Invoice details</Text>
-        <Text style={styles1.detailsLine}>Invoice no.: {invoice.invoiceNumber}</Text>
-        <Text style={styles1.detailsLine}>Terms: {invoice.terms || '-'}</Text>
-        <Text style={styles1.detailsLine}>Currency: {String(invoice.currency || 'USD').trim().toUpperCase()}</Text>
-        <Text style={styles1.detailsLine}>Invoice date: {formatDateShort(invoice.issueDate)}</Text>
-        <Text style={styles1.detailsLine}>Due date: {formatDateShort(invoice.dueDate)}</Text>
       </View>
 
       <View style={styles1.itemsTable}>

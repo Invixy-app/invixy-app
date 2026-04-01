@@ -5,62 +5,43 @@ import { SiteFooter } from "@/components/site-footer"
 
 export default function TermsPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
+    <div className="relative flex min-h-screen flex-col overflow-x-clip bg-background text-foreground selection:bg-[var(--brand-cobalt)]/30 selection:text-foreground">
+      {/* Background Blurs */}
+      <div className="pointer-events-none absolute left-[8%] top-24 h-72 w-72 rounded-full bg-[var(--brand-cobalt)]/18 blur-[110px]" />
+      <div className="pointer-events-none absolute bottom-0 right-[5%] h-80 w-80 rounded-full bg-[var(--brand-teal)]/10 blur-[130px]" />
+
       <SiteHeader />
 
-      <main className="flex-1">
-        <div className=" mx-auto px-4 md:px-6 py-16">
-          <div className="mx-auto max-w-3xl">
-
-            {/* Title */}
-            <div className="mb-12 space-y-4">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                INVIXY — Terms & Conditions
-              </h1>
-
-              <div className="text-sm text-muted-foreground space-y-1">
-                <p>Effective date: [DD/MM/YYYY]</p>
-                <p>Last updated: [DD/MM/YYYY]</p>
-                <p>
-                  Contact:{" "}
-                  <a
-                    href="mailto:support@invixy.com"
-                    className="text-primary hover:underline"
-                  >
-                    support@invixy.com
-                  </a>
-                </p>
-              </div>
+      <main className="flex-1 overflow-hidden">
+        {/* Header Section */}
+        <section className="relative pb-10 pt-16 md:pt-24">
+          <div className="mx-auto max-w-4xl px-8 text-center">
+            <span className="mb-6 inline-block rounded-full border border-border bg-muted/40 px-4 py-2 font-mono text-[10px] font-light uppercase tracking-[0.26em] text-muted-foreground">
+              Legal
+            </span>
+            <h1 className="text-4xl font-black leading-[1.1] tracking-tight text-foreground sm:text-5xl md:text-6xl">
+              Terms & Conditions
+            </h1>
+            <div className="mt-8 text-sm font-mono text-muted-foreground space-y-2 flex flex-col items-center">
+              <p>Effective date: [DD/MM/YYYY]</p>
+              <p>Last updated: [DD/MM/YYYY]</p>
+              <p>
+                Contact:{" "}
+                <a
+                  href="mailto:support@invixy.com"
+                  className="text-[var(--brand-cobalt)] hover:underline"
+                >
+                  support@invixy.com
+                </a>
+              </p>
             </div>
+          </div>
+        </section>
 
-            {/* Content */}
-            <article
-              className="
-                max-w-none
-                prose prose-neutral dark:prose-invert
-
-                prose-h2:text-2xl
-                prose-h2:font-bold
-                prose-h2:tracking-tight
-                prose-h2:mt-12
-                prose-h2:mb-4
-
-                prose-h3:text-lg
-                prose-h3:font-semibold
-                prose-h3:mt-8
-                prose-h3:mb-2
-
-                prose-p:text-base
-                prose-p:leading-relaxed
-                prose-p:text-muted-foreground
-
-                prose-ul:mt-3
-                prose-ul:mb-4
-                prose-li:my-1
-
-                prose-strong:text-foreground
-              "
-            >
+        {/* Content Section */}
+        <section className="relative pb-24 md:pb-32 px-4 md:px-8">
+          <div className="mx-auto max-w-4xl rounded-[2.5rem] border border-border bg-card p-8 md:p-14 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] relative z-10">
+            <article className="prose dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-h2:mt-12 prose-h2:mb-4 prose-h2:text-2xl prose-h3:text-lg prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-2 prose-a:text-[var(--brand-cobalt)] prose-a:no-underline hover:prose-a:underline prose-p:leading-relaxed prose-p:text-muted-foreground prose-li:text-muted-foreground prose-strong:text-foreground">
 
               <section>
                 <h2>1. Acceptance</h2>
@@ -262,7 +243,7 @@ export default function TermsPage() {
 
             </article>
           </div>
-        </div>
+        </section>
       </main>
 
       <SiteFooter />

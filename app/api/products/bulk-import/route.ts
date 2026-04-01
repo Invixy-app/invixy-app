@@ -43,19 +43,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid file type", errors: ["The uploaded file is not a valid Excel document."] }, { status: 400 });
     }
 
-    const access = await db.businessUserRole.findUnique({
-      where: {
-        userId_businessId: {
-          userId: session.user.id,
-          businessId,
+    const [access, proAccess] = await Promise.all([
+      db.businessUserRole.findUnique({
+        where: {
+          userId_businessId: {
+            userId: session.user.id,
+            businessId,
+          },
         },
-      },
-    });
+      }),
+      canAccessProFeature(businessId)
+    ]);
+
     if (!access || access.role === "VIEWER") {
       return NextResponse.json({ error: "Insufficient permissions", errors: ["You do not have permission to import products for this business."] }, { status: 403 });
     }
 
-    const proAccess = await canAccessProFeature(businessId);
     if (!proAccess.allowed) {
       return NextResponse.json(
         {
@@ -200,15 +203,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    for (let i = 0; i < productsToCreate.length; i++) {
-      const rowNumber = i + 2;
-      try {
-        await db.product.create({ data: productsToCreate[i] });
-        successCount++;
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Database error";
-        errors.push(`Row ${rowNumber}: Failed to save product (${message}).`);
-      }
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < productsToCreate.length; i += BATCH_SIZE) {
+      const batch = productsToCreate.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map((product) => db.product.create({ data: product }))
+      );
+      
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          successCount++;
+        } else {
+          const rowNumber = i + index + 2;
+          const message = result.reason instanceof Error ? result.reason.message : "Database error";
+          errors.push(`Row ${rowNumber}: Failed to save product (${message}).`);
+        }
+      });
     }
 
     return NextResponse.json({

@@ -15,6 +15,20 @@ export async function GET(
 
     const { id: businessId } = await params;
 
+    // Date filter
+    const fromParam = request.nextUrl.searchParams.get("from");
+    const toParam = request.nextUrl.searchParams.get("to");
+    const hasDateFilter = !!(fromParam || toParam);
+    let dateFilter = {};
+    if (hasDateFilter) {
+      dateFilter = {
+        issueDate: {
+          ...(fromParam ? { gte: new Date(fromParam) } : {}),
+          ...(toParam ? { lte: new Date(`${toParam}T23:59:59.999Z`) } : {}),
+        }
+      };
+    }
+
     // Verify user has access to this business
     const userBusiness = await prisma.businessUserRole.findUnique({
       where: {
@@ -56,7 +70,7 @@ export async function GET(
 
       // All invoices with totals
       prisma.invoice.findMany({
-        where: { businessId },
+        where: { businessId, ...dateFilter },
         select: {
           id: true,
           status: true,
@@ -70,9 +84,7 @@ export async function GET(
       prisma.invoice.count({
         where: {
           businessId,
-          issueDate: {
-            gte: firstDayOfMonth,
-          },
+          ...(hasDateFilter ? dateFilter : { issueDate: { gte: firstDayOfMonth } })
         },
       }),
 
@@ -80,7 +92,7 @@ export async function GET(
 
       // Recent invoices (last 5)
       prisma.invoice.findMany({
-        where: { businessId },
+        where: { businessId, ...dateFilter },
         include: {
           customer: {
             select: {
@@ -104,6 +116,7 @@ export async function GET(
           invoices: {
             where: {
               status: { in: ["SENT", "PAID"] },
+              ...dateFilter
             },
             select: {
               totalAmount: true,
@@ -240,7 +253,8 @@ export async function GET(
       thisMonthRevenue,
       lastMonthRevenue,
       thisMonthInvoices,
-      subscriptionPlan: activeSubscription?.plan || "FREE"
+      subscriptionPlan: activeSubscription?.plan || "FREE",
+      hasDateFilter
     };
 
     return NextResponse.json({

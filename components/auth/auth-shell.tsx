@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { BarChart3, FileText, ShieldCheck } from "lucide-react";
+import { BarChart3, FileText, ShieldCheck, ArrowLeft } from "lucide-react";
 import { ReactNode } from "react";
 
 type AuthShellProps = Readonly<{
@@ -37,13 +37,15 @@ export function AuthShell({ children, heading, subheading }: AuthShellProps) {
           <p className="text-sm text-primary-foreground/85">GST-ready workflows enabled</p>
         </div>
 
-        <div className="relative z-10 flex w-full flex-col justify-between p-10">
-          <Link href="/" className="inline-flex w-fit items-center gap-3 rounded-md border border-white/15 bg-white/10 px-4  text-lg font-semibold tracking-tight backdrop-blur">
-            <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} />
-            <span>Invixy</span>
-          </Link>
+        <div className="relative z-10 flex w-full flex-col justify-between p-10 h-full">
+          <div>
+            <Link href="/" className="inline-flex w-fit items-center gap-2 rounded-md border border-white/15 bg-white/10 px-4 py-2 text-sm font-medium tracking-tight backdrop-blur hover:bg-white/20 transition-colors">
+              <ArrowLeft className="h-4 w-4" />
+              <span>Back</span>
+            </Link>
+          </div>
 
-          <div className="max-w-xl space-y-4">
+          <div className="max-w-xl space-y-4 mt-auto">
             <h2 className="text-3xl font-semibold leading-tight text-balance">{heading}</h2>
             <p className="text-base leading-relaxed text-primary-foreground/80">{subheading}</p>
           </div>
