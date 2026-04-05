@@ -135,7 +135,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
             )}
           </AnimatePresence>
 
-          <Button
+          {/* <Button
             variant="outline"
             size="icon"
             onClick={toggleSidebar}
@@ -143,7 +143,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
           >
              <ChevronRight className={`h-4 w-4 transition-transform duration-300 ${isSidebarOpen ? "rotate-180" : ""}`} />
              <span className="sr-only">Toggle Sidebar</span>
-          </Button>
+          </Button> */}
         </div>
 
         <div className="px-3 py-2">
