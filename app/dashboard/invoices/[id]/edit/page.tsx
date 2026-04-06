@@ -550,10 +550,10 @@ export default function EditInvoicePage() {
                       <SelectContent>
                         {customers.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
-                            <div>
-                              <div className="font-medium">{customer.name}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{customer.name}</span>
                               {customer.email && (
-                                <div className="text-xs text-muted-foreground">{customer.email}</div>
+                                <span className="text-xs text-muted-foreground">- {customer.email}</span>
                               )}
                             </div>
                           </SelectItem>
@@ -676,8 +676,8 @@ export default function EditInvoicePage() {
                                           .filter(p => p.name.toLowerCase().includes((productSearchQueries[index] || "").toLowerCase()))
                                           .map((product) => (
                                           <SelectItem key={product.id} value={product.id}>
-                                            <div className="flex flex-col items-start">
-                                              <div className="font-medium">{product.name}</div>
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-medium">{product.name}</span>
                                             </div>
                                           </SelectItem>
                                         ))}
