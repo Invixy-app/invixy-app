@@ -332,7 +332,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
 
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto p-3 md:p-6 scroll-smooth bg-muted/30 dark:bg-zinc-950/40">
-          <div className="max-w-7xl mx-auto space-y-6">
+          <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
             {children}
           </div>
         </div>
