@@ -15,7 +15,7 @@ export default function TermsPage() {
       <main className="flex-1 overflow-hidden">
         {/* Header Section */}
         <section className="relative pb-10 pt-16 md:pt-24">
-          <div className="mx-auto max-w-4xl px-8 text-center">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
             <span className="mb-6 inline-block rounded-full border border-border bg-muted/40 px-4 py-2 font-mono text-[10px] font-light uppercase tracking-[0.26em] text-muted-foreground">
               Legal
             </span>
@@ -23,8 +23,8 @@ export default function TermsPage() {
               Terms & Conditions
             </h1>
             <div className="mt-8 text-sm font-mono text-muted-foreground space-y-2 flex flex-col items-center">
-              <p>Effective date: [DD/MM/YYYY]</p>
-              <p>Last updated: [DD/MM/YYYY]</p>
+              <p>Effective date: 01/04/2026</p>
+              <p>Last updated: 06/04/2026</p>
               <p>
                 Contact:{" "}
                 <a
@@ -39,7 +39,7 @@ export default function TermsPage() {
         </section>
 
         {/* Content Section */}
-        <section className="relative pb-24 md:pb-32 px-4 md:px-8">
+        <section className="relative pb-24 md:pb-32 px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl rounded-[2.5rem] border border-border bg-card p-8 md:p-14 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] relative z-10">
             <article className="prose dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-h2:mt-12 prose-h2:mb-4 prose-h2:text-2xl prose-h3:text-lg prose-h3:font-semibold prose-h3:mt-8 prose-h3:mb-2 prose-a:text-[var(--brand-cobalt)] prose-a:no-underline hover:prose-a:underline prose-p:leading-relaxed prose-p:text-muted-foreground prose-li:text-muted-foreground prose-strong:text-foreground">
 
@@ -228,7 +228,7 @@ export default function TermsPage() {
                 </p>
               </section>
 
-              <section>
+              {/* <section>
                 <h2>17. Contact</h2>
                 <p>
                   For support or legal inquiries, contact{" "}
@@ -239,7 +239,7 @@ export default function TermsPage() {
                     support@invixy.com
                   </a>.
                 </p>
-              </section>
+              </section> */}
 
             </article>
           </div>
