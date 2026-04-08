@@ -17,7 +17,8 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
-  Loader2
+  Loader2,
+  BarChart2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useSession, signOut } from "next-auth/react"
@@ -76,6 +77,11 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
       icon: Calculator,
     },
     {
+      title: "Financial Reporting and Analytics",
+      href: "/dashboard/analytics",
+      icon: BarChart2,
+    },
+    {
       title: "Settings",
       href: "/dashboard/business-settings",
       icon: Settings,
@@ -87,6 +93,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
     { key: "customers", label: "Customers", icon: Users },
     { key: "products", label: "Products", icon: Package },
     { key: "tax-systems", label: "Tax Systems", icon: Calculator },
+    { key: "analytics", label: "Financial Reporting and Analytics", icon: BarChart2 },
     { key: "business-settings", label: "Business Settings", icon: Settings },
     { key: "settings", label: "Settings", icon: Settings },
     { key: "businesses", label: "Businesses", icon: LayoutDashboard },
