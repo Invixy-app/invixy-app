@@ -780,13 +780,14 @@ export default function AnalyticsPage() {
                             tickLine={false}
                           />
                           <YAxis
-                            tickFormatter={(v) => `${getCurrencySymbol(currency)}${(v / 1000).toFixed(0)}k`}
+                            tickFormatter={(v) => v === 0 ? "0" : `${getCurrencySymbol(currency)}${Intl.NumberFormat("en-US", { notation: "compact", minimumFractionDigits: 1, maximumFractionDigits: 2 }).format(v).toLowerCase()}`}
                             tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
                             axisLine={false}
                             tickLine={false}
                             width={56}
                           />
                           <Tooltip
+                            cursor={{ fill: "transparent" }}
                             content={({ active, payload, label }) => {
                               if (!active || !payload?.length) return null;
                               const d = payload[0]?.payload;
@@ -950,7 +951,7 @@ export default function AnalyticsPage() {
                         />
                         <YAxis
                           tickFormatter={(v) =>
-                            `${getCurrencySymbol(currency)}${(v / 1000).toFixed(0)}k`
+                            v === 0 ? "0" : `${getCurrencySymbol(currency)}${Intl.NumberFormat("en-US", { notation: "compact", minimumFractionDigits: 1, maximumFractionDigits: 2 }).format(v).toLowerCase()}`
                           }
                           tick={{
                             fontSize: 11,
@@ -1024,28 +1025,15 @@ export default function AnalyticsPage() {
                                 color: "var(--foreground)",
                                 fontSize: "12px",
                               }}
-                            />
-                            <Legend
-                              iconType="circle"
-                              iconSize={8}
-                              formatter={(value) => (
-                                <span
-                                  style={{
-                                    fontSize: "11px",
-                                    color: "var(--muted-foreground)",
-                                  }}
-                                >
-                                  {value}
-                                </span>
-                              )}
+                              itemStyle={{ color: "var(--foreground)" }}
                             />
                           </PieChart>
                         </ResponsiveContainer>
 
                         <div className="w-full space-y-2">
-                          {(data?.topProducts ?? []).slice(0, 6).map((p) => (
+                          {(data?.topProducts ?? []).slice(0, 6).map((p, i) => (
                             <div
-                              key={p.name}
+                              key={`${p.name}-${i}`}
                               className="flex items-center gap-3 text-sm"
                             >
                               <div
@@ -1101,7 +1089,7 @@ export default function AnalyticsPage() {
                             <XAxis
                               type="number"
                               tickFormatter={(v) =>
-                                `${(v / 1000).toFixed(0)}k`
+                                v === 0 ? "0" : Intl.NumberFormat("en-US", { notation: "compact", minimumFractionDigits: 1, maximumFractionDigits: 2 }).format(v).toLowerCase()
                               }
                               tick={{
                                 fontSize: 10,
@@ -1122,6 +1110,7 @@ export default function AnalyticsPage() {
                               width={80}
                             />
                             <Tooltip
+                              cursor={{ fill: "transparent" }}
                               formatter={(v: any) =>
                                 formatCurrency(v, currency)
                               }
@@ -1132,6 +1121,7 @@ export default function AnalyticsPage() {
                                 color: "var(--foreground)",
                                 fontSize: "12px",
                               }}
+                              itemStyle={{ color: "var(--foreground)" }}
                             />
                             <Bar
                               dataKey="total"
@@ -1141,7 +1131,7 @@ export default function AnalyticsPage() {
                                 dataKey="total"
                                 position="right"
                                 formatter={(v: any) =>
-                                  `${(v / 1000).toFixed(0)}k`
+                                  v > 0 ? Intl.NumberFormat("en-US", { notation: "compact", minimumFractionDigits: 1, maximumFractionDigits: 2 }).format(v).toLowerCase() : ""
                                 }
                                 style={{
                                   fontSize: "10px",
@@ -1328,7 +1318,7 @@ export default function AnalyticsPage() {
                         />
                         <YAxis
                           tickFormatter={(v) =>
-                            `${(v / 1000).toFixed(0)}k`
+                            v === 0 ? "0" : Intl.NumberFormat("en-US", { notation: "compact", minimumFractionDigits: 1, maximumFractionDigits: 2 }).format(v).toLowerCase()
                           }
                           tick={{
                             fontSize: 11,
@@ -1338,13 +1328,13 @@ export default function AnalyticsPage() {
                           tickLine={false}
                           width={52}
                         />
-                        <Tooltip content={<CashFlowTooltip currency={currency} />} />
+                        <Tooltip cursor={{ fill: "transparent" }} content={<CashFlowTooltip currency={currency} />} />
                         <Bar dataKey="amount" radius={[8, 8, 0, 0]}>
                           <LabelList
                             dataKey="amount"
                             position="top"
                             formatter={(v: any) =>
-                              v > 0 ? `${(v / 1000).toFixed(0)}k` : ""
+                              v > 0 ? Intl.NumberFormat("en-US", { notation: "compact", minimumFractionDigits: 1, maximumFractionDigits: 2 }).format(v).toLowerCase() : ""
                             }
                             style={{
                               fontSize: "11px",
@@ -1465,7 +1455,7 @@ export default function AnalyticsPage() {
                         />
                         <YAxis
                           tickFormatter={(v) =>
-                            v === 0 ? "0" : Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(v)
+                            v === 0 ? "0" : Intl.NumberFormat("en-US", { notation: "compact", minimumFractionDigits: 1, maximumFractionDigits: 2 }).format(v).toLowerCase()
                           }
                           tick={{
                             fontSize: 11,
@@ -1476,6 +1466,7 @@ export default function AnalyticsPage() {
                           width={52}
                         />
                         <Tooltip
+                          cursor={{ fill: "transparent" }}
                           formatter={(v: any) => [formatCurrency(v, currency), "Tax Collected"]}
                           contentStyle={{
                             borderRadius: "12px",
@@ -1484,13 +1475,14 @@ export default function AnalyticsPage() {
                             color: "var(--foreground)",
                             fontSize: "12px",
                           }}
+                          itemStyle={{ color: "var(--foreground)" }}
                         />
                         <Bar name="Tax Collected" dataKey="taxCollectedUSD" radius={[6, 6, 0, 0]}>
                           <LabelList
                             dataKey="taxCollectedUSD"
                             position="top"
                             formatter={(v: any) =>
-                              v > 0 ? Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(v) : ""
+                              v > 0 ? Intl.NumberFormat("en-US", { notation: "compact", minimumFractionDigits: 1, maximumFractionDigits: 2 }).format(v).toLowerCase() : ""
                             }
                             style={{
                               fontSize: "10px",
