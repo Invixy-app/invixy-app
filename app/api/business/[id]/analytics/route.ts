@@ -471,8 +471,7 @@ export async function GET(
     });
 
     // ── 6. Tax Liability ───────────────────────────────────────────────────────
-    console.log("taxLineItems:", JSON.stringify(taxLineItems, null, 2));
-    require('fs').writeFileSync('debug_tax_output.json', JSON.stringify({ taxLineItems, invoicesInRange, businessId }, null, 2));
+    // console.log("taxLineItems:", JSON.stringify(taxLineItems, null, 2));
     const TAX_CLR = ["#4338ca","#0d9488","#2563eb","#f59e0b","#8b5cf6","#0891b2","#10b981","#ef4444","#f97316"];
     const taxMap = new Map<string, { jurisdiction: string; taxType: string; rate: number; taxableAmountUSD: number; taxCollectedUSD: number; invoiceIds: Set<string> }>();
     for (const row of taxLineItems) {
