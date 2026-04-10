@@ -378,3 +378,7 @@ enum TransactionStatus{
   FAILED
   REFUNDED
 }
+  COMPLETED
+  FAILED
+  REFUNDED
+}

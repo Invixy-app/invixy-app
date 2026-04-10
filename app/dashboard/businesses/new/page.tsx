@@ -62,7 +62,7 @@ export default function NewBusinessPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -117,7 +117,7 @@ export default function NewBusinessPage() {
   };
 
   return (
-  <DashboardLayout>
+    <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}

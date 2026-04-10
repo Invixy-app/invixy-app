@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-config";
 import prisma from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared helpers
 // ─────────────────────────────────────────────────────────────────────────────
@@ -375,12 +377,12 @@ export async function GET(
         where: { businessId, status: "SENT" },
         select: { totalAmount: true, paidAmount: true, dueDate: true, currency: true, exchangeRate: true },
       }),
-      prisma.invoiceTax.findMany({
-        where: { invoice: { businessId, status: { in: ["SENT", "PAID"] }, issueDate: { gte, lte } } },
+      prisma.invoiceItemTax.findMany({
+        where: { invoiceItem: { invoice: { businessId, status: { in: ["SENT", "PAID"] }, issueDate: { gte, lte } } } },
         select: {
           taxableAmount: true, taxRate: true, taxAmount: true,
           taxSystem: { select: { name: true, taxType: true, rate: true } },
-          invoice: { select: { currency: true, exchangeRate: true } },
+          invoiceItem: { select: { invoice: { select: { id: true, currency: true, exchangeRate: true } } } },
         },
       }),
     ]);
@@ -469,15 +471,18 @@ export async function GET(
     });
 
     // ── 6. Tax Liability ───────────────────────────────────────────────────────
+    console.log("taxLineItems:", JSON.stringify(taxLineItems, null, 2));
+    require('fs').writeFileSync('debug_tax_output.json', JSON.stringify({ taxLineItems, invoicesInRange, businessId }, null, 2));
     const TAX_CLR = ["#4338ca","#0d9488","#2563eb","#f59e0b","#8b5cf6","#0891b2","#10b981","#ef4444","#f97316"];
-    const taxMap = new Map<string, { jurisdiction: string; taxType: string; rate: number; taxableAmountUSD: number; taxCollectedUSD: number; invoiceCount: number }>();
+    const taxMap = new Map<string, { jurisdiction: string; taxType: string; rate: number; taxableAmountUSD: number; taxCollectedUSD: number; invoiceIds: Set<string> }>();
     for (const row of taxLineItems) {
       const key = `${row.taxSystem.name}__${toNum(row.taxSystem.rate)}`;
-      const fx = toNum(row.invoice.exchangeRate) || 1;
-      const e = taxMap.get(key) ?? { jurisdiction: row.taxSystem.name, taxType: row.taxSystem.taxType, rate: toNum(row.taxSystem.rate), taxableAmountUSD: 0, taxCollectedUSD: 0, invoiceCount: 0 };
+      const fx = toNum(row.invoiceItem.invoice.exchangeRate) || 1;
+      const refInvoiceId = row.invoiceItem.invoice.id;
+      const e = taxMap.get(key) ?? { jurisdiction: row.taxSystem.name, taxType: row.taxSystem.taxType, rate: toNum(row.taxSystem.rate), taxableAmountUSD: 0, taxCollectedUSD: 0, invoiceIds: new Set<string>() };
       e.taxableAmountUSD += toNum(row.taxableAmount) * fx;
       e.taxCollectedUSD += toNum(row.taxAmount) * fx;
-      e.invoiceCount += 1;
+      e.invoiceIds.add(refInvoiceId);
       taxMap.set(key, e);
     }
     const taxJurisdictions = Array.from(taxMap.values())
@@ -489,7 +494,7 @@ export async function GET(
         rateNum: t.rate * 100,
         taxableAmountUSD: Math.round(t.taxableAmountUSD * 100) / 100,
         taxCollectedUSD: Math.round(t.taxCollectedUSD * 100) / 100,
-        invoiceCount: t.invoiceCount,
+        invoiceCount: t.invoiceIds.size,
         color: TAX_CLR[i % TAX_CLR.length],
       }));
 
