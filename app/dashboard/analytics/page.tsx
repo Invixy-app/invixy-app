@@ -44,6 +44,7 @@ import {
   Target,
   ShieldCheck,
   Minus,
+  Download,
 } from "lucide-react";
 import {
   Card,
@@ -387,8 +388,31 @@ export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloadingFormat, setDownloadingFormat] = useState<"xlsx" | null>(null);
 
   const currency = currentBusiness?.currency ?? "USD";
+
+  const handleDownload = async () => {
+    if (!currentBusiness?.id) return;
+    setDownloadingFormat("xlsx");
+    try {
+      const res = await fetch(`/api/business/${currentBusiness.id}/reports/financial-statement?timeframe=${timeframe}&format=xlsx`);
+      if (!res.ok) throw new Error("Export failed");
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Financial_Statement_${timeframe}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to download report");
+    } finally {
+      setDownloadingFormat(null);
+    }
+  };
 
   const fetchAnalytics = useCallback(async () => {
     if (!currentBusiness?.id) return;
@@ -513,6 +537,21 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-10 px-4 rounded-xl border-border/70 bg-background gap-2"
+              disabled={!!downloadingFormat}
+              onClick={handleDownload}
+            >
+              {downloadingFormat ? (
+                <Loader2 className="h-4 w-4 flex-shrink-0 animate-spin text-muted-foreground text-[var(--brand-cobalt)]" />
+              ) : (
+                <Download className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+              )}
+              Export (.xlsx)
+            </Button>
+
             <Button
               variant="ghost"
               size="icon"
@@ -1426,7 +1465,7 @@ export default function AnalyticsPage() {
                         />
                         <YAxis
                           tickFormatter={(v) =>
-                            `${(v / 1000).toFixed(0)}k`
+                            v === 0 ? "0" : Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(v)
                           }
                           tick={{
                             fontSize: 11,
@@ -1437,9 +1476,7 @@ export default function AnalyticsPage() {
                           width={52}
                         />
                         <Tooltip
-                          formatter={(v: any) =>
-                            formatCurrency(v, currency)
-                          }
+                          formatter={(v: any) => [formatCurrency(v, currency), "Tax Collected"]}
                           contentStyle={{
                             borderRadius: "12px",
                             border: "1px solid var(--border)",
@@ -1448,12 +1485,12 @@ export default function AnalyticsPage() {
                             fontSize: "12px",
                           }}
                         />
-                        <Bar dataKey="taxCollectedUSD" radius={[6, 6, 0, 0]}>
+                        <Bar name="Tax Collected" dataKey="taxCollectedUSD" radius={[6, 6, 0, 0]}>
                           <LabelList
                             dataKey="taxCollectedUSD"
                             position="top"
                             formatter={(v: any) =>
-                              v > 0 ? `${(v / 1000).toFixed(0)}k` : ""
+                              v > 0 ? Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(v) : ""
                             }
                             style={{
                               fontSize: "10px",

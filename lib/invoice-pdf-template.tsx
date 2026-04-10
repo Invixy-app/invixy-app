@@ -568,7 +568,7 @@ const styles2 = StyleSheet.create({
   colTotal: { width: '14%', textAlign: 'right' },
 
   summarySection: {
-    marginTop: 0, 
+    marginTop: 0,
     flexDirection: 'row',
     justifyContent: 'flex-end',
   },
@@ -629,19 +629,19 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
         <View style={{ ...styles2.addressBox, borderRightWidth: 1, borderRightColor: '#93C5FD' }}>
           <View style={styles2.addressBoxHeader}><Text>Bill to</Text></View>
           <View style={styles2.addressBoxContent}>
-             <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Customer</Text><Text style={styles2.addressValue}>{invoice.customer.name}</Text></View>
-             <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Customer ID#</Text><Text style={styles2.addressValue}>{invoice.customer.id ? invoice.customer.id.substring(0, 8) : '-'}</Text></View>
-             <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Address</Text><Text style={styles2.addressValue}>{invoice.customer.address || '-'}</Text></View>
-             <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Email</Text><Text style={styles2.addressValue}>{invoice.customer.email || '-'}</Text></View>
-             <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Phone</Text><Text style={styles2.addressValue}>{invoice.customer.phone || '-'}</Text></View>
+            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Customer</Text><Text style={styles2.addressValue}>{invoice.customer.name}</Text></View>
+            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Customer ID#</Text><Text style={styles2.addressValue}>{invoice.customer.id ? invoice.customer.id.substring(0, 8) : '-'}</Text></View>
+            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Address</Text><Text style={styles2.addressValue}>{invoice.customer.address || '-'}</Text></View>
+            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Email</Text><Text style={styles2.addressValue}>{invoice.customer.email || '-'}</Text></View>
+            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Phone</Text><Text style={styles2.addressValue}>{invoice.customer.phone || '-'}</Text></View>
           </View>
         </View>
         <View style={styles2.addressBox}>
           <View style={styles2.addressBoxHeader}><Text>Ship to</Text></View>
           <View style={styles2.addressBoxContent}>
-             <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Recipient</Text><Text style={styles2.addressValue}>{invoice.customer.name}</Text></View>
-             <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Address</Text><Text style={styles2.addressValue}>{invoice.customer.address || '-'}</Text></View>
-             <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Phone</Text><Text style={styles2.addressValue}>{invoice.customer.phone || '-'}</Text></View>
+            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Recipient</Text><Text style={styles2.addressValue}>{invoice.customer.name}</Text></View>
+            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Address</Text><Text style={styles2.addressValue}>{invoice.customer.address || '-'}</Text></View>
+            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Phone</Text><Text style={styles2.addressValue}>{invoice.customer.phone || '-'}</Text></View>
           </View>
         </View>
       </View>
@@ -671,13 +671,13 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
         </View>
         {invoice.items.map((item, index) => (
           <View key={index} style={styles2.tableRow}>
-             <Text style={styles2.colQty}>{item.quantity}</Text>
-             <Text style={styles2.colItem}>{item.product?.sku || '-'}</Text>
-             <Text style={styles2.colDesc}>{item.description}</Text>
-             <Text style={styles2.colPrice}>{formatCurrency(item.unitPrice, invoice.currency)}</Text>
-             <Text style={styles2.colDiscount}>{item.discount ? formatCurrency(item.discount, invoice.currency) : '-'}</Text>
-             <Text style={styles2.colTax}>{item.taxAmount > 0 ? formatCurrency(item.taxAmount, invoice.currency) : '-'}</Text>
-             <Text style={styles2.colTotal}>{formatCurrency(item.total, invoice.currency)}</Text>
+            <Text style={styles2.colQty}>{item.quantity}</Text>
+            <Text style={styles2.colItem}>{item.product?.sku || '-'}</Text>
+            <Text style={styles2.colDesc}>{item.description}</Text>
+            <Text style={styles2.colPrice}>{formatCurrency(item.unitPrice, invoice.currency)}</Text>
+            <Text style={styles2.colDiscount}>{item.discount ? formatCurrency(item.discount, invoice.currency) : '-'}</Text>
+            <Text style={styles2.colTax}>{item.taxAmount > 0 ? formatCurrency(item.taxAmount, invoice.currency) : '-'}</Text>
+            <Text style={styles2.colTotal}>{formatCurrency(item.total, invoice.currency)}</Text>
           </View>
         ))}
         {invoice.items.length === 0 && (
@@ -691,16 +691,16 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
             <Text style={styles2.colTotal}>-</Text>
           </View>
         )}
-         {Array.from({ length: emptyRows }).map((_, index) => (
-           <View key={`empty-${index}`} style={styles2.tableRow}>
-             <Text style={styles2.colQty}></Text>
-             <Text style={styles2.colItem}></Text>
-             <Text style={styles2.colDesc}></Text>
-             <Text style={styles2.colPrice}></Text>
-             <Text style={styles2.colDiscount}></Text>
-             <Text style={styles2.colTax}></Text>
-             <Text style={styles2.colTotal}></Text>
-           </View>
+        {Array.from({ length: emptyRows }).map((_, index) => (
+          <View key={`empty-${index}`} style={styles2.tableRow}>
+            <Text style={styles2.colQty}></Text>
+            <Text style={styles2.colItem}></Text>
+            <Text style={styles2.colDesc}></Text>
+            <Text style={styles2.colPrice}></Text>
+            <Text style={styles2.colDiscount}></Text>
+            <Text style={styles2.colTax}></Text>
+            <Text style={styles2.colTotal}></Text>
+          </View>
         ))}
       </View>
 
@@ -708,22 +708,22 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
       <View style={styles2.summarySection}>
         <View style={styles2.summaryTable}>
           <View style={styles2.summaryRow}>
-             <Text>Total Discount</Text>
-             <Text>{formatCurrency(totalDiscount, invoice.currency)}</Text>
+            <Text>Total Discount</Text>
+            <Text>{formatCurrency(totalDiscount, invoice.currency)}</Text>
           </View>
           <View style={styles2.summaryRow}>
-             <Text>Subtotal</Text>
-             <Text>{formatCurrency(invoice.subtotal, invoice.currency)}</Text>
+            <Text>Subtotal</Text>
+            <Text>{formatCurrency(invoice.subtotal, invoice.currency)}</Text>
           </View>
           {taxSummaryLines.map((tax, i) => (
             <View key={i} style={styles2.summaryRow}>
-               <Text>Tax ({tax.name})</Text>
-               <Text>{formatCurrency(tax.amount, invoice.currency)}</Text>
+              <Text>Tax ({tax.name})</Text>
+              <Text>{formatCurrency(tax.amount, invoice.currency)}</Text>
             </View>
           ))}
           <View style={styles2.totalRow}>
-             <Text style={{ fontFamily: 'NotoSans-Bold' }}>Total</Text>
-             <Text style={{ fontFamily: 'NotoSans-Bold' }}>{formatCurrency(invoice.totalAmount, invoice.currency)}</Text>
+            <Text style={{ fontFamily: 'NotoSans-Bold' }}>Total</Text>
+            <Text style={{ fontFamily: 'NotoSans-Bold' }}>{formatCurrency(invoice.totalAmount, invoice.currency)}</Text>
           </View>
         </View>
       </View>
@@ -732,13 +732,13 @@ export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
       <View style={styles2.footer}>
         <Text style={styles2.thankYou}>Thank you for your business!</Text>
         <View style={{ marginTop: 20 }}>
-           <Text style={{ ...styles2.companyFooter, fontFamily: 'Helvetica-Bold' }}>{invoice.business.name}</Text>
-           <Text style={styles2.companyFooter}>{invoice.business.address}</Text>
-           <Text style={styles2.companyFooter}>{invoice.business.phone} | {invoice.business.email}</Text>
-           {invoice.business.taxRegistrationNumber && (
-             <Text style={styles2.companyFooter}>Tax Registration No. {invoice.business.taxRegistrationNumber}</Text>
-           )}
-           {invoice.notes && <Text style={styles2.companyFooter}>{invoice.notes}</Text>}
+          <Text style={{ ...styles2.companyFooter, fontFamily: 'Helvetica-Bold' }}>{invoice.business.name}</Text>
+          <Text style={styles2.companyFooter}>{invoice.business.address}</Text>
+          <Text style={styles2.companyFooter}>{invoice.business.phone} | {invoice.business.email}</Text>
+          {invoice.business.taxRegistrationNumber && (
+            <Text style={styles2.companyFooter}>Tax Registration No. {invoice.business.taxRegistrationNumber}</Text>
+          )}
+          {invoice.notes && <Text style={styles2.companyFooter}>{invoice.notes}</Text>}
         </View>
       </View>
 

@@ -1,0 +1,1 @@
+const { PrismaClient } = require('@prisma/client'); const prisma = new PrismaClient(); async function main() { const taxes = await prisma.invoiceItemTax.findMany({ include: { invoiceItem: { include: { invoice: true } } } }); console.dir(taxes, { depth: null }); } main().catch(console.error).finally(() => prisma.$disconnect());
