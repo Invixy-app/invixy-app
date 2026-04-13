@@ -135,7 +135,7 @@ export default function FinancialStatementPDFTemplate({ data }: { data: Financia
           )}
         </View>
         {data.transactions.length > 50 && (
-          <Text style={{ fontSize: 10, color: '#6b7280', marginTop: 10, fontStyle: 'italic' }}>* Note: Listing limited to 50 transactions. Please use the Excel export for full ledger.</Text>
+          <Text style={{ fontSize: 10, color: '#6b7280', marginTop: 10 }}>* Note: Listing limited to 50 transactions. Please use the Excel export for full ledger.</Text>
         )}
 
         <View style={styles.footer} fixed>

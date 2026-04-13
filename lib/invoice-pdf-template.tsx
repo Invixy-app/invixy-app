@@ -449,299 +449,169 @@ export const Template1: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
 };
 
 // --- Template 2 Styles (Professional/Modern) ---
-const styles2 = StyleSheet.create({
-  page: {
-    padding: 40,
-    fontSize: 10,
-    fontFamily: 'NotoSans',
-    color: '#333',
-  },
-  header: {
-    marginBottom: 30,
-  },
-  logoText: {
-    fontSize: 22,
-    fontFamily: 'Helvetica-Bold',
-    color: '#2F5C96', // Blue color from image
-    textTransform: 'uppercase',
-  },
-  headerDate: {
-    fontSize: 10,
-    color: '#2F5C96',
-    marginTop: 4,
-    fontFamily: 'Helvetica-Bold',
-  },
-  invoiceTitle: {
-    fontSize: 14,
-    fontFamily: 'Helvetica-Bold',
-    color: '#2F5C96',
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  addressBoxContainer: {
-    flexDirection: 'row',
-    marginBottom: 0,
-    borderWidth: 1,
-    borderColor: '#93C5FD', // Light blue border
-  },
-  addressBox: {
-    width: '50%',
-  },
-  addressBoxHeader: {
-    backgroundColor: '#DCE6F1', // Light blue background
-    padding: 5,
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#93C5FD',
-  },
-  addressBoxContent: {
-    padding: 8,
-  },
-  addressRow: {
-    flexDirection: 'row',
-    marginBottom: 4,
-  },
-  addressLabel: {
-    width: 80,
-    fontFamily: 'Helvetica-Bold',
-  },
-  addressValue: {
-    flex: 1,
-  },
-  detailsGrid: {
-    marginTop: -1, // Overlap border
-    borderWidth: 1,
-    borderColor: '#93C5FD',
-    marginBottom: 20,
-  },
-  detailsRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#93C5FD',
-  },
-  detailsCell: {
-    flex: 1,
-    padding: 2,
-  },
-  detailsLabel: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 9,
-    marginBottom: 2,
-    color: '#000',
-    paddingLeft: 4,
-  },
-  detailsValue: {
-    paddingLeft: 4,
-    fontSize: 9,
-  },
-  table: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#93C5FD',
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#DCE6F1',
-    borderBottomWidth: 1,
-    borderBottomColor: '#93C5FD',
-    padding: 6,
-  },
-  tableHeaderCell: {
-    fontFamily: 'Helvetica-Bold',
-    fontSize: 9,
-    color: '#000',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#93C5FD',
-    padding: 6,
-    minHeight: 24,
-  },
-  colQty: { width: '8%', textAlign: 'center' },
-  colItem: { width: '12%', textAlign: 'center' },
-  colDesc: { width: '32%' },
-  colPrice: { width: '14%', textAlign: 'right' },
-  colDiscount: { width: '10%', textAlign: 'center' },
-  colTax: { width: '10%', textAlign: 'right' },
-  colTotal: { width: '14%', textAlign: 'right' },
+const numberToWords = (num: number): string => {
+  if (num === 0) return 'Zero';
+  if (isNaN(num)) return '';
+  const a = ['','One ','Two ','Three ','Four ','Five ','Six ','Seven ','Eight ','Nine ','Ten ','Eleven ','Twelve ','Thirteen ','Fourteen ','Fifteen ','Sixteen ','Seventeen ','Eighteen ','Nineteen '];
+  const b = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  const format = (n: number): string => {
+    if (n < 20) return a[n];
+    if (n < 100) return b[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + a[n % 10] : '');
+    if (n < 1000) return a[Math.floor(n / 100)] + 'Hundred ' + (n % 100 !== 0 ? 'and ' + format(n % 100) : '');
+    if (n < 1000000) return format(Math.floor(n / 1000)) + 'Thousand ' + (n % 1000 !== 0 ? format(n % 1000) : '');
+    if (n < 1000000000) return format(Math.floor(n / 1000000)) + 'Million ' + (n % 1000000 !== 0 ? format(n % 1000000) : '');
+    return format(Math.floor(n / 1000000000)) + 'Billion ' + (n % 1000000000 !== 0 ? format(n % 1000000000) : '');
+  };
+  return format(Math.floor(num)).trim();
+};
 
-  summarySection: {
-    marginTop: 0,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  summaryTable: {
-    width: '40%',
-    borderLeftWidth: 1,
-    borderLeftColor: '#93C5FD',
-    borderRightWidth: 1,
-    borderRightColor: '#93C5FD',
-    borderBottomWidth: 1,
-    borderBottomColor: '#93C5FD',
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#93C5FD',
-  },
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 6,
-    backgroundColor: '#93C5FD', // Darker blue for total
-  },
-  footer: {
-    marginTop: 40,
-  },
-  thankYou: {
-    color: '#2F5C96',
-    fontSize: 12,
-    fontFamily: 'Helvetica-Bold',
-    marginBottom: 20,
-  },
-  companyFooter: {
-    fontSize: 9,
-    color: '#4B5563',
-  },
+const styles2 = StyleSheet.create({
+  page: { padding: 30, fontSize: 9, fontFamily: 'NotoSans', color: '#1f2937' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
+  invoiceTitle: { fontSize: 24, fontFamily: 'NotoSans-Bold', color: '#111827', textTransform: 'uppercase' },
+  businessBlock: { width: '50%' },
+  businessName: { fontFamily: 'NotoSans-Bold', fontSize: 12, marginBottom: 4 },
+  invoiceDetails: { alignItems: 'flex-end' },
+  metaRow: { flexDirection: 'row', marginBottom: 3 },
+  metaLabel: { fontFamily: 'NotoSans-Bold', width: 80, textAlign: 'right', marginRight: 10 },
+  metaVal: { width: 80, textAlign: 'right' },
+  
+  splitRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, paddingTop: 15, borderTopWidth: 1, borderColor: '#e5e7eb' },
+  addressBlock: { width: '45%' },
+  addressTitle: { fontFamily: 'NotoSans-Bold', fontSize: 10, marginBottom: 4, color: '#6b7280', textTransform: 'uppercase' },
+  
+  tableHeader: { flexDirection: 'row', backgroundColor: '#f3f4f6', padding: 8, fontSize: 8, fontFamily: 'NotoSans-Bold', borderRadius: 4, marginBottom: 8 },
+  thNum: { width: '5%' },
+  thDesc: { width: '40%' },
+  thQty: { width: '10%', textAlign: 'center' },
+  thRate: { width: '15%', textAlign: 'right' },
+  thTax: { width: '15%', textAlign: 'right' },
+  thAmt: { width: '15%', textAlign: 'right' },
+  
+  tr: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '#f3f4f6', paddingVertical: 8, paddingHorizontal: 8 },
+  tdNum: { width: '5%', fontSize: 8 },
+  tdDesc: { width: '40%', fontSize: 8 },
+  tdQty: { width: '10%', fontSize: 8, textAlign: 'center' },
+  tdRate: { width: '15%', fontSize: 8, textAlign: 'right' },
+  tdTax: { width: '15%', fontSize: 8, textAlign: 'right' },
+  tdAmt: { width: '15%', fontSize: 8, textAlign: 'right', fontFamily: 'NotoSans-Bold' },
+  
+  totalsBlock: { width: '40%', alignSelf: 'flex-end', marginTop: 15 },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4, paddingVertical: 2 },
+  totalLabel: { fontSize: 9 },
+  totalVal: { fontSize: 9, fontFamily: 'NotoSans-Bold' },
+  grandTotal: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4, paddingTop: 8, borderTopWidth: 1, borderColor: '#e5e7eb' },
+  grandTotalLabel: { fontSize: 11, fontFamily: 'NotoSans-Bold' },
+  grandTotalVal: { fontSize: 11, fontFamily: 'NotoSans-Bold', color: '#111827' },
+  
+  amountWords: { marginTop: 20, padding: 10, backgroundColor: '#f9fafb', borderRadius: 4 },
+  amountWordsLabel: { fontSize: 8, color: '#6b7280', marginBottom: 2 },
+  amountWordsVal: { fontSize: 9, fontFamily: 'NotoSans-Bold' },
+  
+  footer: { position: 'absolute', bottom: 30, left: 30, right: 30, textAlign: 'center', color: '#9ca3af', fontSize: 8, borderTopWidth: 1, borderColor: '#e5e7eb', paddingTop: 10 }
 });
 
 export const Template2: React.FC<{ invoice: InvoiceData }> = ({ invoice }) => {
-  // Generate empty rows
-  const emptyRows = Math.max(0, 8 - invoice.items.length);
   const taxSummaryLines = getTaxSummaryLines(invoice);
-  const totalDiscount = getTotalDiscount(invoice);
-
+  const totalAmount = invoice.totalAmount;
+  
   return (
     <Page size="A4" style={styles2.page}>
-      {/* Header */}
       <View style={styles2.header}>
-        <Text style={styles2.logoText}>{invoice.business.name}</Text>
-        <Text style={styles2.headerDate}>{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</Text>
-        <Text style={styles2.invoiceTitle}>INVOICE #{invoice.invoiceNumber}</Text>
-      </View>
-
-      {/* Bill To / Ship To Grid */}
-      <View style={styles2.addressBoxContainer}>
-        <View style={{ ...styles2.addressBox, borderRightWidth: 1, borderRightColor: '#93C5FD' }}>
-          <View style={styles2.addressBoxHeader}><Text>Bill to</Text></View>
-          <View style={styles2.addressBoxContent}>
-            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Customer</Text><Text style={styles2.addressValue}>{invoice.customer.name}</Text></View>
-            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Customer ID#</Text><Text style={styles2.addressValue}>{invoice.customer.id ? invoice.customer.id.substring(0, 8) : '-'}</Text></View>
-            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Address</Text><Text style={styles2.addressValue}>{invoice.customer.address || '-'}</Text></View>
-            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Email</Text><Text style={styles2.addressValue}>{invoice.customer.email || '-'}</Text></View>
-            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Phone</Text><Text style={styles2.addressValue}>{invoice.customer.phone || '-'}</Text></View>
-          </View>
+        <View style={styles2.businessBlock}>
+          <Text style={styles2.businessName}>{invoice.business.name}</Text>
+          {invoice.business.address && <Text>{invoice.business.address}</Text>}
+          {invoice.business.email && <Text>{invoice.business.email}</Text>}
+          {invoice.business.phone && <Text>{invoice.business.phone}</Text>}
+          {invoice.business.taxRegistrationNumber && <Text>Tax ID: {invoice.business.taxRegistrationNumber}</Text>}
         </View>
-        <View style={styles2.addressBox}>
-          <View style={styles2.addressBoxHeader}><Text>Ship to</Text></View>
-          <View style={styles2.addressBoxContent}>
-            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Recipient</Text><Text style={styles2.addressValue}>{invoice.customer.name}</Text></View>
-            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Address</Text><Text style={styles2.addressValue}>{invoice.customer.address || '-'}</Text></View>
-            <View style={styles2.addressRow}><Text style={styles2.addressLabel}>Phone</Text><Text style={styles2.addressValue}>{invoice.customer.phone || '-'}</Text></View>
-          </View>
-        </View>
-      </View>
-
-      {/* Middle Details Grid - Simplified to remove placeholders */}
-      <View style={styles2.detailsGrid}>
-        <View style={{ ...styles2.detailsRow, borderBottomWidth: 0 }}>
-          <View style={styles2.detailsCell}><Text style={styles2.detailsLabel}>Payment Due</Text><Text style={styles2.detailsValue}>{formatDate(invoice.dueDate)}</Text></View>
-          <View style={{ ...styles2.detailsCell, borderLeftWidth: 1, borderLeftColor: '#93C5FD' }}><Text style={styles2.detailsLabel}>Payment Terms</Text><Text style={styles2.detailsValue}>{invoice.terms || '-'}</Text></View>
-        </View>
-        <View style={styles2.detailsRow}>
-          <View style={styles2.detailsCell}><Text style={styles2.detailsLabel}>Currency</Text><Text style={styles2.detailsValue}>{String(invoice.currency || 'USD').trim().toUpperCase()}</Text></View>
-          <View style={{ ...styles2.detailsCell, borderLeftWidth: 1, borderLeftColor: '#93C5FD' }}><Text style={styles2.detailsLabel}>Invoice Date</Text><Text style={styles2.detailsValue}>{formatDate(invoice.issueDate)}</Text></View>
-        </View>
-      </View>
-
-      {/* Items Table */}
-      <View style={styles2.table}>
-        <View style={styles2.tableHeader}>
-          <Text style={styles2.colQty}>Qty.</Text>
-          <Text style={styles2.colItem}>Item#</Text>
-          <Text style={styles2.colDesc}>Description</Text>
-          <Text style={styles2.colPrice}>Unit price</Text>
-          <Text style={styles2.colDiscount}>Discount</Text>
-          <Text style={styles2.colTax}>Tax</Text>
-          <Text style={styles2.colTotal}>Line total</Text>
-        </View>
-        {invoice.items.map((item, index) => (
-          <View key={index} style={styles2.tableRow}>
-            <Text style={styles2.colQty}>{item.quantity}</Text>
-            <Text style={styles2.colItem}>{item.product?.sku || '-'}</Text>
-            <Text style={styles2.colDesc}>{item.description}</Text>
-            <Text style={styles2.colPrice}>{formatCurrency(item.unitPrice, invoice.currency)}</Text>
-            <Text style={styles2.colDiscount}>{item.discount ? formatCurrency(item.discount, invoice.currency) : '-'}</Text>
-            <Text style={styles2.colTax}>{item.taxAmount > 0 ? formatCurrency(item.taxAmount, invoice.currency) : '-'}</Text>
-            <Text style={styles2.colTotal}>{formatCurrency(item.total, invoice.currency)}</Text>
-          </View>
-        ))}
-        {invoice.items.length === 0 && (
-          <View style={styles2.tableRow}>
-            <Text style={styles2.colQty}>-</Text>
-            <Text style={styles2.colItem}>-</Text>
-            <Text style={styles2.colDesc}>No line items</Text>
-            <Text style={styles2.colPrice}>-</Text>
-            <Text style={styles2.colDiscount}>-</Text>
-            <Text style={styles2.colTax}>-</Text>
-            <Text style={styles2.colTotal}>-</Text>
-          </View>
-        )}
-        {Array.from({ length: emptyRows }).map((_, index) => (
-          <View key={`empty-${index}`} style={styles2.tableRow}>
-            <Text style={styles2.colQty}></Text>
-            <Text style={styles2.colItem}></Text>
-            <Text style={styles2.colDesc}></Text>
-            <Text style={styles2.colPrice}></Text>
-            <Text style={styles2.colDiscount}></Text>
-            <Text style={styles2.colTax}></Text>
-            <Text style={styles2.colTotal}></Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Summary */}
-      <View style={styles2.summarySection}>
-        <View style={styles2.summaryTable}>
-          <View style={styles2.summaryRow}>
-            <Text>Total Discount</Text>
-            <Text>{formatCurrency(totalDiscount, invoice.currency)}</Text>
-          </View>
-          <View style={styles2.summaryRow}>
-            <Text>Subtotal</Text>
-            <Text>{formatCurrency(invoice.subtotal, invoice.currency)}</Text>
-          </View>
-          {taxSummaryLines.map((tax, i) => (
-            <View key={i} style={styles2.summaryRow}>
-              <Text>Tax ({tax.name})</Text>
-              <Text>{formatCurrency(tax.amount, invoice.currency)}</Text>
+        <View style={styles2.invoiceDetails}>
+          <Text style={styles2.invoiceTitle}>Invoice</Text>
+          <View style={{ marginTop: 10 }}>
+            <View style={styles2.metaRow}>
+              <Text style={styles2.metaLabel}>Invoice No.</Text>
+              <Text style={styles2.metaVal}>{invoice.invoiceNumber}</Text>
             </View>
-          ))}
-          <View style={styles2.totalRow}>
-            <Text style={{ fontFamily: 'NotoSans-Bold' }}>Total</Text>
-            <Text style={{ fontFamily: 'NotoSans-Bold' }}>{formatCurrency(invoice.totalAmount, invoice.currency)}</Text>
+            <View style={styles2.metaRow}>
+              <Text style={styles2.metaLabel}>Date</Text>
+              <Text style={styles2.metaVal}>{formatDateShort(invoice.issueDate)}</Text>
+            </View>
+            <View style={styles2.metaRow}>
+              <Text style={styles2.metaLabel}>Due Date</Text>
+              <Text style={styles2.metaVal}>{formatDateShort(invoice.dueDate)}</Text>
+            </View>
           </View>
         </View>
       </View>
 
-      {/* Footer */}
-      <View style={styles2.footer}>
-        <Text style={styles2.thankYou}>Thank you for your business!</Text>
-        <View style={{ marginTop: 20 }}>
-          <Text style={{ ...styles2.companyFooter, fontFamily: 'Helvetica-Bold' }}>{invoice.business.name}</Text>
-          <Text style={styles2.companyFooter}>{invoice.business.address}</Text>
-          <Text style={styles2.companyFooter}>{invoice.business.phone} | {invoice.business.email}</Text>
-          {invoice.business.taxRegistrationNumber && (
-            <Text style={styles2.companyFooter}>Tax Registration No. {invoice.business.taxRegistrationNumber}</Text>
-          )}
-          {invoice.notes && <Text style={styles2.companyFooter}>{invoice.notes}</Text>}
+      <View style={styles2.splitRow}>
+        <View style={styles2.addressBlock}>
+          <Text style={styles2.addressTitle}>Bill To</Text>
+          <Text style={{ fontFamily: 'NotoSans-Bold', marginBottom: 2 }}>{invoice.customer.name}</Text>
+          {invoice.customer.address && <Text>{invoice.customer.address}</Text>}
+          {invoice.customer.email && <Text>{invoice.customer.email}</Text>}
+          {invoice.customer.phone && <Text>{invoice.customer.phone}</Text>}
         </View>
       </View>
 
+      <View>
+        <View style={styles2.tableHeader}>
+          <Text style={styles2.thNum}>#</Text>
+          <Text style={styles2.thDesc}>Description</Text>
+          <Text style={styles2.thQty}>Qty</Text>
+          <Text style={styles2.thRate}>Price</Text>
+          <Text style={styles2.thTax}>Tax</Text>
+          <Text style={styles2.thAmt}>Amount</Text>
+        </View>
+
+        {invoice.items.map((item, i) => (
+          <View key={i} style={styles2.tr}>
+            <Text style={styles2.tdNum}>{i + 1}</Text>
+            <View style={[styles2.tdDesc, { paddingRight: 10 }]}>
+              <Text style={{ fontFamily: 'NotoSans-Bold', marginBottom: 2 }}>{item.product?.name || item.description}</Text>
+              {item.product?.name && item.description && <Text style={{ color: '#6b7280' }}>{item.description}</Text>}
+            </View>
+            <Text style={styles2.tdQty}>{item.quantity}</Text>
+            <Text style={styles2.tdRate}>{formatCurrency(item.unitPrice, invoice.currency)}</Text>
+            <Text style={styles2.tdTax}>{item.taxAmount > 0 ? formatCurrency(item.taxAmount, invoice.currency) : '-'}</Text>
+            <Text style={styles2.tdAmt}>{formatCurrency(item.total, invoice.currency)}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={styles2.totalsBlock}>
+        <View style={styles2.totalRow}>
+          <Text style={styles2.totalLabel}>Subtotal</Text>
+          <Text style={styles2.totalVal}>{formatCurrency(invoice.subtotal, invoice.currency)}</Text>
+        </View>
+        
+        {taxSummaryLines.map((tax, i) => (
+          <View style={styles2.totalRow} key={i}>
+            <Text style={styles2.totalLabel}>{tax.name} ({(tax.rate * 100).toFixed(1)}%)</Text>
+            <Text style={styles2.totalVal}>{formatCurrency(tax.amount, invoice.currency)}</Text>
+          </View>
+        ))}
+        
+        <View style={styles2.grandTotal}>
+          <Text style={styles2.grandTotalLabel}>Total Due</Text>
+          <Text style={styles2.grandTotalVal}>{formatCurrency(invoice.totalAmount, invoice.currency)}</Text>
+        </View>
+      </View>
+
+      <View style={styles2.amountWords}>
+        <Text style={styles2.amountWordsLabel}>Total in Words</Text>
+        <Text style={styles2.amountWordsVal}>{String(invoice.currency || 'USD').trim().toUpperCase()} {numberToWords(totalAmount)}</Text>
+      </View>
+
+      {invoice.notes && (
+        <View style={{ marginTop: 20 }}>
+          <Text style={{ fontFamily: 'NotoSans-Bold', fontSize: 10, marginBottom: 4 }}>Notes / Terms</Text>
+          <Text style={{ color: '#4b5563' }}>{invoice.notes}</Text>
+          {invoice.terms && <Text style={{ color: '#4b5563', marginTop: 4 }}>{invoice.terms}</Text>}
+        </View>
+      )}
+      
+      <Text style={styles2.footer}>This is a system generated invoice and does not require a signature.</Text>
     </Page>
   );
 };
