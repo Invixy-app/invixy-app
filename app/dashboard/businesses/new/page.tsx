@@ -138,30 +138,6 @@ export default function NewBusinessPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Business Name</CardTitle>
-              <Building2 className="h-4 w-4 text-[var(--brand-cobalt)]" />
-            </CardHeader>
-            <CardContent><div className="text-2xl font-bold">{formData.name ? "Set" : "Required"}</div></CardContent>
-          </Card>
-          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Contact Email</CardTitle>
-              <Mail className="h-4 w-4 text-[var(--brand-teal)]" />
-            </CardHeader>
-            <CardContent><div className="text-2xl font-bold">{formData.email ? "Set" : "Required"}</div></CardContent>
-          </Card>
-          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Website</CardTitle>
-              <Globe className="h-4 w-4 text-[var(--brand-indigo)]" />
-            </CardHeader>
-            <CardContent><div className="text-2xl font-bold">{formData.website ? "Set" : "Optional"}</div></CardContent>
-          </Card>
-        </div>
-
         <Card className="shadow-sm border-border/80">
           <CardHeader>
             <CardTitle>Business Information</CardTitle>

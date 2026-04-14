@@ -519,9 +519,9 @@ export default function EditInvoicePage() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             {/* Invoice Details */}
             <Card className="shadow-sm border-border/80">
               <CardHeader>
@@ -870,7 +870,7 @@ export default function EditInvoicePage() {
           </div>
 
           {/* Invoice Summary Sidebar */}
-          <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
