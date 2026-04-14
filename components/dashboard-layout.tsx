@@ -18,7 +18,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Loader2,
-  BarChart2
+  BarChart2,
+  CreditCard
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useSession, signOut } from "next-auth/react"
@@ -60,6 +61,11 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
       title: "Invoices",
       href: "/dashboard/invoices",
       icon: FileText,
+    },
+    {
+      title: "Record Payments",
+      href: "/dashboard/record-payments",
+      icon: CreditCard,
     },
     {
       title: "Customers",

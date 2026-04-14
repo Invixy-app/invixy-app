@@ -6,7 +6,7 @@ import { z } from "zod";
 import { updateProductStock } from "@/lib/product";
 
 const updateStatusSchema = z.object({
-  status: z.enum(["DRAFT", "SENT", "PAID", "CANCELLED"])
+  status: z.enum(["DRAFT", "SENT", "PARTIALLY_PAID", "PAID", "CANCELLED"])
 });
 
 export async function PATCH(

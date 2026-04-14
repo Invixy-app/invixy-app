@@ -338,6 +338,7 @@ enum TaxType {
 enum InvoiceStatus {
   DRAFT
   SENT
+  PARTIALLY_PAID
   PAID
   CANCELLED
 }
@@ -374,10 +375,6 @@ enum SubscriptionStatus{
 
 enum TransactionStatus{
   PENDING
-  COMPLETED
-  FAILED
-  REFUNDED
-}
   COMPLETED
   FAILED
   REFUNDED
