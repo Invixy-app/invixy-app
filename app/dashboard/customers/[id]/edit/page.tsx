@@ -201,36 +201,6 @@ export default function EditCustomerPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Profile</CardTitle>
-              <User className="h-4 w-4 text-[var(--brand-cobalt)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formData.name ? "Ready" : "Draft"}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Contact</CardTitle>
-              <AtSign className="h-4 w-4 text-[var(--brand-teal)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formData.email ? "Complete" : "Optional"}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Address</CardTitle>
-              <Map className="h-4 w-4 text-[var(--brand-indigo)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formData.billingAddress ? "Set" : "Pending"}</div>
-            </CardContent>
-          </Card>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Basic Information */}

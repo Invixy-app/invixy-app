@@ -45,8 +45,7 @@ import {
   UserPlus, 
   PackagePlus, 
   Download,
-  Lock,
-  DollarSign
+  Lock
 } from "lucide-react";
 import Link from "next/link";
 import { z } from "zod";
@@ -346,9 +345,8 @@ function NewInvoiceContent() {
         fetchProductHistory(productId, formData.customerId);
       }
 
-      setFormData(prev => ({
-        ...prev,
-        items: prev.items.map((item, i) => {
+      setFormData(prev => {
+        const updatedItems = prev.items.map((item, i) => {
           if (i === index) {
             const updatedItem = {
               ...item,
@@ -363,8 +361,34 @@ function NewInvoiceContent() {
             return updatedItem;
           }
           return item;
-        })
-      }));
+        });
+
+        const isSelectedRowLast = index === prev.items.length - 1;
+        const lastItem = updatedItems[updatedItems.length - 1];
+        const isLastItemEmpty =
+          !lastItem.productId &&
+          !lastItem.description?.trim() &&
+          lastItem.unitPrice === 0 &&
+          lastItem.discount === 0 &&
+          lastItem.lineTotal === 0;
+
+        if (isSelectedRowLast && !isLastItemEmpty) {
+          updatedItems.push({
+            productId: "",
+            description: "",
+            quantity: 1,
+            unitPrice: 0,
+            discount: 0,
+            lineTotal: 0,
+            taxSystemIds: []
+          });
+        }
+
+        return {
+          ...prev,
+          items: updatedItems
+        };
+      });
     }
   };
 
@@ -675,40 +699,10 @@ function NewInvoiceContent() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Customer</CardTitle>
-              <User className="h-4 w-4 text-[var(--brand-cobalt)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formData.customerId ? "Selected" : "Required"}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Items</CardTitle>
-              <FileText className="h-4 w-4 text-[var(--brand-teal)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formData.items.length}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total</CardTitle>
-              <DollarSign className="h-4 w-4 text-[var(--brand-indigo)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(total)}</div>
-            </CardContent>
-          </Card>
-        </div>
-
         <form onSubmit={(e) => handleSubmit(e, 'draft')} className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="space-y-6">
             {/* Invoice Details */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-6">
               {/* Customer & Dates */}
               <Card className="shadow-sm border-border/80">
                 <CardHeader>
@@ -1083,7 +1077,7 @@ function NewInvoiceContent() {
             </div>
 
             {/* Invoice Summary */}
-            <div className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-3">
               {/* Customer Info */}
               {selectedCustomer && (
                 <Card>
