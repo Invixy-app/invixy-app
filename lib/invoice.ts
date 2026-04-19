@@ -405,7 +405,6 @@ export async function createInvoice(
     });
   }
 
-  // Create invoice with items and their taxes
   const invoice = await prisma.invoice.create({
     data: {
       businessId: invoiceData.businessId,
@@ -455,6 +454,31 @@ export async function createInvoice(
       payments: true
     }
   });
+
+  // Track customer specifically negotiated custom prices
+  if (invoiceData.customerId && invoiceData.businessId) {
+    for (const item of invoiceData.items) {
+      if (item.productId) {
+        await prisma.customerProductPrice.upsert({
+          where: {
+            customerId_productId: {
+              customerId: invoiceData.customerId,
+              productId: item.productId,
+            }
+          },
+          update: {
+            price: item.unitPrice,
+          },
+          create: {
+            businessId: invoiceData.businessId,
+            customerId: invoiceData.customerId,
+            productId: item.productId,
+            price: item.unitPrice,
+          }
+        });
+      }
+    }
+  }
 
   return {
     ...invoice,
@@ -798,7 +822,7 @@ export async function updateInvoice(
     };
   }
 
-  // Update invoice
+  // Update invoice totals
   const updatedInvoice = await prisma.invoice.update({
     where: { id: invoiceId },
     data: updateData,
@@ -840,6 +864,32 @@ export async function updateInvoice(
       payments: true
     }
   });
+
+  // Track customer specifically negotiated custom prices
+  if (invoiceData.items) {
+    const customerId = invoiceData.customerId || existingInvoice.customerId;
+    for (const item of invoiceData.items) {
+      if (item.productId) {
+        await prisma.customerProductPrice.upsert({
+          where: {
+            customerId_productId: {
+              customerId: customerId,
+              productId: item.productId,
+            }
+          },
+          update: {
+            price: item.unitPrice,
+          },
+          create: {
+            businessId: existingInvoice.businessId,
+            customerId: customerId,
+            productId: item.productId,
+            price: item.unitPrice,
+          }
+        });
+      }
+    }
+  }
 
   return {
     ...updatedInvoice,

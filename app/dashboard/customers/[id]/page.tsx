@@ -18,7 +18,8 @@ import {
   FileText,
   User,
   Hash,
-  Calendar
+  Calendar,
+  Percent
 } from "lucide-react";
 import Link from "next/link";
 
@@ -188,7 +189,13 @@ export default function CustomerDetailsPage() {
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
+            <Link href={`/dashboard/customers/${customer.id}/rates`}>
+              <Button variant="outline" className="border-[var(--brand-cobalt)]/20 text-[var(--brand-cobalt)] hover:bg-[var(--brand-cobalt)]/5">
+                <Percent className="h-4 w-4 mr-2" />
+                Special Rates
+              </Button>
+            </Link>
             <Link href={`/dashboard/customers/${customer.id}/edit`}>
               <Button variant="outline">
                 <Edit className="h-4 w-4 mr-2" />

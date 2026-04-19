@@ -71,7 +71,7 @@ export async function GET(
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }
 
-    const [invoicesInRange, taxLineItems] = await Promise.all([
+    const [invoicesInRange, taxLineItems, expensesInRange] = await Promise.all([
       prisma.invoice.findMany({
         where: { businessId, status: { in: ['SENT', 'PAID'] }, issueDate: { gte, lte } },
         select: { 
@@ -95,6 +95,11 @@ export async function GET(
           invoiceItem: { select: { invoice: { select: { id: true, currency: true, exchangeRate: true } } } },
         },
       }),
+      prisma.expense.findMany({
+        where: { businessId, status: 'COMPLETED', date: { gte } },
+        select: { amount: true, currency: true, date: true, description: true, category: { select: { name: true } }, paymentMethod: true },
+        orderBy: { date: 'asc' },
+      })
     ]);
 
     // Process Summary
@@ -118,7 +123,6 @@ export async function GET(
     const taxJurisdictions = Array.from(taxMap.values());
     const totalTaxCollected = taxJurisdictions.reduce((s, t) => s + t.taxCollected, 0);
 
-    // Transaction List
     const transactions = invoicesInRange.map(inv => ({
       date: new Date(inv.issueDate).toISOString(),
       invoiceNumber: inv.invoiceNumber,
@@ -129,18 +133,30 @@ export async function GET(
       amountDue: (toNum(inv.totalAmount) - toNum(inv.paidAmount)) * (toNum(inv.exchangeRate) || 1),
     }));
 
+    const expensesList = expensesInRange.map(exp => ({
+      date: new Date(exp.date).toISOString(),
+      categoryName: exp.category?.name || 'Uncategorized',
+      description: exp.description || '',
+      paymentMethod: exp.paymentMethod || '',
+      amount: toNum(exp.amount),
+    }));
+    const totalExpenses = expensesList.reduce((s, e) => s + e.amount, 0);
+
     const reportData = {
       businessName: business.name,
       timeframeLabel: `${label} (${gte.toLocaleDateString()} - ${lte.toLocaleDateString()})`,
       currency: business.currency,
       summary: {
         totalRevenue,
+        totalExpenses,
         totalOutstanding,
         totalTaxCollected,
-        totalInvoices
+        totalInvoices,
+        netIncome: totalRevenue - totalExpenses - totalTaxCollected
       },
       taxJurisdictions,
-      transactions
+      transactions,
+      expensesList
     };
 
     // Generate XLSX
@@ -154,8 +170,11 @@ export async function GET(
       ['Currency', reportData.currency],
       [],
       ['Total Revenue', reportData.summary.totalRevenue],
-      ['Total Outstanding', reportData.summary.totalOutstanding],
-      ['Total Tax Collected', reportData.summary.totalTaxCollected],
+      ['Total Expenses', reportData.summary.totalExpenses],
+      ['Total Tax Collected (Owed)', reportData.summary.totalTaxCollected],
+      ['Net Income', reportData.summary.netIncome],
+      [],
+      ['Total Outstanding Receivables', reportData.summary.totalOutstanding],
       ['Total Invoices', reportData.summary.totalInvoices]
     ];
     const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
@@ -184,6 +203,20 @@ export async function GET(
       }))
     );
     XLSX.utils.book_append_sheet(wb, wsTaxes, 'Tax Liabilities');
+
+    // Sheet 4: Expenses
+    if (reportData.expensesList.length > 0) {
+      const wsExpenses = XLSX.utils.json_to_sheet(
+        reportData.expensesList.map(e => ({
+          'Date': new Date(e.date).toLocaleDateString(),
+          'Category': e.categoryName,
+          'Description': e.description,
+          'Payment Method': e.paymentMethod,
+          ['Amount (' + reportData.currency + ')']: e.amount
+        }))
+      );
+      XLSX.utils.book_append_sheet(wb, wsExpenses, 'Operating Expenses');
+    }
 
     const fileContent = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
     const buffer = new Uint8Array(fileContent);

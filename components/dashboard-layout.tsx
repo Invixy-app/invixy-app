@@ -19,7 +19,8 @@ import {
   PanelLeftOpen,
   Loader2,
   BarChart2,
-  CreditCard
+  CreditCard,
+  Receipt
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useSession, signOut } from "next-auth/react"
@@ -73,6 +74,11 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
       icon: Users,
     },
     {
+      title: "Expenses",
+      href: "/dashboard/expenses",
+      icon: Receipt,
+    },
+    {
       title: "Products",
       href: "/dashboard/products",
       icon: Package,
@@ -97,6 +103,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
   const routeMeta = [
     { key: "invoices", label: "Invoices", icon: FileText },
     { key: "customers", label: "Customers", icon: Users },
+    { key: "expenses", label: "Expenses", icon: Receipt },
     { key: "products", label: "Products", icon: Package },
     { key: "tax-systems", label: "Tax Systems", icon: Calculator },
     { key: "analytics", label: "Financial Reporting and Analytics", icon: BarChart2 },
