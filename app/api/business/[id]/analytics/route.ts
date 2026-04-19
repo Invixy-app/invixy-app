@@ -345,6 +345,7 @@ export async function GET(
       allCustomersInvoices,
       outstandingInvoices,
       taxLineItems,
+      expensesInRange,
     ] = await Promise.all([
       prisma.invoice.findMany({
         where: { businessId, status: { in: ["SENT", "PAID"] }, issueDate: { gte, lte } },
@@ -385,7 +386,12 @@ export async function GET(
           invoiceItem: { select: { invoice: { select: { id: true, currency: true, exchangeRate: true } } } },
         },
       }),
+      prisma.expense.findMany({
+        where: { businessId, status: "COMPLETED", date: { gte } },
+        select: { amount: true, currency: true, date: true, category: { select: { name: true } } },
+      }),
     ]);
+
 
     // ── 1. Revenue Time Series ─────────────────────────────────────────────────
     const totalDays = Math.round((lte.getTime() - gte.getTime()) / DAY_MS) + 1;
@@ -497,6 +503,26 @@ export async function GET(
         color: TAX_CLR[i % TAX_CLR.length],
       }));
 
+    // ── 7. Expenses ────────────────────────────────────────────────────────────
+    let totalExpenses = 0;
+    const expenseCatMap = new Map<string, number>();
+    for (const exp of expensesInRange) {
+      // NOTE: Exchange rate for expenses isn't natively supported yet. Assume base currency.
+      const amt = toNum(exp.amount);
+      totalExpenses += amt;
+      const catName = exp.category?.name || "Uncategorized";
+      expenseCatMap.set(catName, (expenseCatMap.get(catName) ?? 0) + amt);
+    }
+    
+    const EXP_COLORS = ["#ef4444","#f97316","#f59e0b","#8b5cf6","#3b82f6","#14b8a6","#64748b"];
+    const expenseCategories = Array.from(expenseCatMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, total], i) => ({
+        name,
+        total: Math.round(total * 100) / 100,
+        color: EXP_COLORS[i % EXP_COLORS.length]
+      }));
+
     // ── Summary KPIs ───────────────────────────────────────────────────────────
     const totalRevenue = invoicesInRange.reduce(
       (s, inv) => s + toNum(inv.totalAmount) * (toNum(inv.exchangeRate) || 1), 0
@@ -507,6 +533,7 @@ export async function GET(
       timeframe,
       summary: {
         totalRevenue: Math.round(totalRevenue * 100) / 100,
+        totalExpenses: Math.round(totalExpenses * 100) / 100,
         totalOutstandingReceivables: Math.round(totalOutstandingReceivables * 100) / 100,
         totalTaxCollected: Math.round(totalTaxCollected * 100) / 100,
         totalInvoices: invoicesInRange.length,
@@ -522,6 +549,7 @@ export async function GET(
       cashFlowBuckets,
       totalOutstandingReceivables: Math.round(totalOutstandingReceivables * 100) / 100,
       taxJurisdictions,
+      expenseCategories,
     });
   } catch (error) {
     console.error("Analytics error:", error);

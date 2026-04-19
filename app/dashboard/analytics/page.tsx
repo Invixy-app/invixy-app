@@ -134,6 +134,7 @@ interface AnalyticsData {
   timeframe: Timeframe;
   summary: {
     totalRevenue: number;
+    totalExpenses: number;
     totalOutstandingReceivables: number;
     totalTaxCollected: number;
     totalInvoices: number;
@@ -145,6 +146,7 @@ interface AnalyticsData {
   topProducts: TopProduct[];
   topCustomers: TopCustomer[];
   cashFlowBuckets: CashFlowBucket[];
+  expenseCategories: { name: string; total: number; color: string }[];
   totalOutstandingReceivables: number;
   taxJurisdictions: TaxJurisdiction[];
 }
@@ -641,6 +643,13 @@ export default function AnalyticsPage() {
               >
                 <Globe2 className="h-3.5 w-3.5" />
                 Tax Liability
+              </TabsTrigger>
+              <TabsTrigger
+                value="balancesheet"
+                className="rounded-lg gap-1.5 px-4 data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-foreground"
+              >
+                <Landmark className="h-3.5 w-3.5" />
+                Balance Sheet
               </TabsTrigger>
             </TabsList>
 
@@ -1230,7 +1239,33 @@ export default function AnalyticsPage() {
                   </CardContent>
                 </Card>
 
-                <div className="sm:col-span-2 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                <Card className="sm:col-span-1 rounded-[22px] border-red-500/20 bg-gradient-to-br from-red-500/5 to-rose-500/5 shadow-[0_8px_24px_-12px_rgba(239,68,68,0.2)]">
+                  <CardContent className="p-6 flex flex-col gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-500/15">
+                      <TrendingDown className="h-6 w-6 text-red-500" />
+                    </div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                        Total Cash Outflow (Expenses)
+                      </p>
+                      {loading ? (
+                        <div className="mt-2 h-10 w-36 animate-pulse rounded-lg bg-muted" />
+                      ) : (
+                        <p className="mt-1 text-[2.2rem] font-bold tracking-tight text-foreground">
+                          {formatCurrency(
+                            data?.summary.totalExpenses ?? 0,
+                            currency
+                          )}
+                        </p>
+                      )}
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Logged outbound cashflow in period
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <div className="sm:col-span-1 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-5 md:col-span-1 xl:col-span-3">
                   {(data?.cashFlowBuckets ?? []).map((bucket) => (
                     <Card
                       key={bucket.label}
@@ -1631,6 +1666,168 @@ export default function AnalyticsPage() {
                   </div>
                 </CardContent>
               </Card>
+            </TabsContent>
+
+            {/* ══════════════════════════════════════════════════════════
+                TAB 4 – BALANCE SHEET PREVIEW
+            ══════════════════════════════════════════════════════════ */}
+            <TabsContent value="balancesheet" className="space-y-6 mt-0">
+              <SectionHeader
+                icon={Landmark}
+                title="Balance Sheet Preview"
+                description={`A high-level P&L statement of your business finances for ${TIMEFRAME_LABELS[timeframe]}`}
+                accent="#6366f1"
+              />
+
+              <div className="grid lg:grid-cols-3 gap-6">
+                 {/* Statement */}
+                 <Card className="lg:col-span-2 rounded-[22px] border-border/80 bg-card shadow-[0_8px_24px_-12px_rgba(15,23,42,0.2)] dark:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.6)]">
+                    <CardHeader className="border-b bg-muted/20 px-6 pb-4 pt-5">
+                       <CardTitle className="text-lg">Statement of Profit & Loss</CardTitle>
+                       <CardDescription>Based on selected {TIMEFRAME_LABELS[timeframe]}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                       <div className="divide-y divide-border/60">
+                          {/* Revenue */}
+                          <div className="px-6 py-5">
+                             <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">Income</h4>
+                             <div className="space-y-2">
+                                <div className="flex justify-between items-center text-sm">
+                                   <span className="text-foreground">Total Invoiced Revenue</span>
+                                   <span className="font-medium">{formatCurrency(data?.summary.totalRevenue ?? 0, currency)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm pl-4 text-muted-foreground border-l-2 border-muted">
+                                   <span>Outstanding Receivables</span>
+                                   <span>{formatCurrency(data?.summary.totalOutstandingReceivables ?? 0, currency)}</span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm pl-4 text-[var(--brand-cobalt)] font-medium border-l-2 border-[var(--brand-cobalt)]/30 bg-blue-50/50 dark:bg-blue-900/10 py-1 px-2 rounded-r-md">
+                                   <span>Realized Cash Collected</span>
+                                   <span>{formatCurrency((data?.summary.totalRevenue ?? 0) - (data?.summary.totalOutstandingReceivables ?? 0), currency)}</span>
+                                </div>
+                             </div>
+                          </div>
+
+                          {/* Expenses */}
+                          <div className="px-6 py-5">
+                             <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider flex items-center justify-between">
+                                Operating Expenses
+                                <Badge variant="secondary" className="bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400">{data?.expenseCategories?.length || 0} Categories</Badge>
+                             </h4>
+                             <div className="space-y-2 mb-3">
+                                {(data?.expenseCategories?.length ?? 0) > 0 ? (
+                                   data?.expenseCategories.map(cat => (
+                                      <div key={cat.name} className="flex justify-between items-center text-sm text-foreground">
+                                         <span className="flex items-center gap-2">
+                                            <div className="h-2 w-2 rounded-full" style={{ background: cat.color }} />
+                                            {cat.name}
+                                         </span>
+                                         <span>{formatCurrency(cat.total, currency)}</span>
+                                      </div>
+                                   ))
+                                ) : (
+                                   <div className="text-sm text-muted-foreground italic">No expenses logged in this period.</div>
+                                )}
+                             </div>
+                             <div className="flex justify-between items-center text-sm font-medium border-t border-border/50 pt-2">
+                                <span className="text-foreground">Total Expenses</span>
+                                <span className="text-red-600 dark:text-red-400">-{formatCurrency(data?.summary.totalExpenses ?? 0, currency)}</span>
+                             </div>
+                          </div>
+
+                          {/* Taxes */}
+                          <div className="px-6 py-5">
+                             <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider flex items-center justify-between">
+                                Tax Liabilities
+                                <Globe2 className="h-4 w-4 text-muted-foreground" />
+                             </h4>
+                             <div className="space-y-2">
+                                {(data?.taxJurisdictions ?? []).map((t, i) => (
+                                   <div key={i} className="flex justify-between items-center text-sm text-foreground">
+                                      <span className="flex items-center gap-2">
+                                         <div className="h-2 w-2 rounded-full" style={{ background: t.color }} />
+                                         {t.jurisdiction} <span className="text-muted-foreground text-xs">({t.rate})</span>
+                                      </span>
+                                      <span>{formatCurrency(t.taxCollectedUSD, currency)}</span>
+                                   </div>
+                                ))}
+                             </div>
+                             <div className="flex justify-between items-center text-sm font-medium border-t border-border/50 pt-2 mt-3">
+                                <span className="text-foreground">Taxes Collected (Owed)</span>
+                                <span className="text-amber-600 dark:text-amber-500">-{formatCurrency(data?.summary.totalTaxCollected ?? 0, currency)}</span>
+                             </div>
+                          </div>
+
+                          {/* Net Profit */}
+                          <div className="px-6 py-5 bg-gradient-to-r from-[var(--brand-cobalt)]/5 via-[var(--brand-indigo)]/5 to-transparent dark:from-[var(--brand-cobalt)]/10 dark:via-[var(--brand-indigo)]/10">
+                             <div className="flex justify-between items-center text-lg font-bold">
+                                <span className="text-foreground">Net Income</span>
+                                <span className={
+                                   ((data?.summary.totalRevenue ?? 0) - (data?.summary.totalExpenses ?? 0) - (data?.summary.totalTaxCollected ?? 0)) >= 0
+                                      ? "text-[var(--brand-cobalt)]"
+                                      : "text-red-600 dark:text-red-400"
+                                }>
+                                   {formatCurrency(
+                                      (data?.summary.totalRevenue ?? 0) - (data?.summary.totalExpenses ?? 0) - (data?.summary.totalTaxCollected ?? 0), 
+                                      currency
+                                   )}
+                                </span>
+                             </div>
+                             <p className="text-xs text-muted-foreground mt-1">Revenue minus operating expenses and tax liabilities.</p>
+                          </div>
+                       </div>
+                    </CardContent>
+                 </Card>
+                 
+                 {/* Expense distribution */}
+                 <Card className="rounded-[22px] border-border/80 bg-card shadow-[0_8px_24px_-12px_rgba(15,23,42,0.2)] dark:shadow-[0_12px_32px_-16px_rgba(0,0,0,0.6)] h-fit">
+                   <CardHeader className="border-b bg-muted/20 px-6 pb-4 pt-5">
+                     <CardTitle className="text-md flex items-center gap-2">
+                       <PieChartIcon className="h-4 w-4 text-muted-foreground" />
+                       Cost Distribution
+                     </CardTitle>
+                   </CardHeader>
+                   <CardContent className="p-6">
+                     {(data?.expenseCategories ?? []).length === 0 ? (
+                       <div className="text-center py-8">
+                          <PieChartIcon className="h-10 w-10 text-muted-foreground/30 mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">No expenses recorded in this period.</p>
+                       </div>
+                     ) : (
+                       <div className="flex flex-col items-center">
+                          <ResponsiveContainer width="100%" height={220}>
+                            <PieChart>
+                              <Pie
+                                data={data?.expenseCategories ?? []}
+                                cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="total"
+                              >
+                                {(data?.expenseCategories ?? []).map((entry, i) => (
+                                  <Cell key={i} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                formatter={(v: any) => formatCurrency(v, currency)}
+                                contentStyle={{ borderRadius: "12px", border: "1px solid var(--border)", background: "var(--card)", color: "var(--foreground)", fontSize: "12px" }}
+                                itemStyle={{ color: "var(--foreground)" }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                          <div className="w-full space-y-2 mt-2">
+                             {(data?.expenseCategories ?? []).slice(0, 7).map(cat => (
+                                <div key={cat.name} className="flex justify-between items-center text-xs">
+                                   <div className="flex items-center gap-2">
+                                      <div className="h-2 w-2 rounded-full" style={{ background: cat.color }} />
+                                      <span className="text-muted-foreground truncate max-w-[120px]">{cat.name}</span>
+                                   </div>
+                                   <span className="font-medium text-foreground">{((cat.total / (data?.summary.totalExpenses || 1)) * 100).toFixed(1)}%</span>
+                                </div>
+                             ))}
+                          </div>
+                       </div>
+                     )}
+                   </CardContent>
+                 </Card>
+              </div>
+
             </TabsContent>
           </Tabs>
         )}
