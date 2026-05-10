@@ -277,10 +277,24 @@ function NewInvoiceContent() {
       const data = await response.json();
       const items = (data.items || []) as Product[];
 
-      setProductOptionsByIndex(prev => ({
-        ...prev,
-        [index]: items,
-      }));
+      setProductOptionsByIndex(prev => {
+        let updatedItems = [...items];
+        // Ensure the currently selected product is always in the list
+        const currentProductId = formData.items[index]?.productId;
+        if (currentProductId && !search.trim()) {
+          const isCurrentlyInFetched = items.some(p => p.id === currentProductId);
+          if (!isCurrentlyInFetched) {
+             const currentlySelectedProduct = productLookup[currentProductId] || prev[index]?.find(p => p.id === currentProductId);
+             if (currentlySelectedProduct) {
+                 updatedItems = [currentlySelectedProduct, ...items].slice(0, PRODUCT_PAGE_SIZE);
+             }
+          }
+        }
+        return {
+          ...prev,
+          [index]: updatedItems,
+        };
+      });
 
       setProductLookup(prev => {
         const next = { ...prev };
