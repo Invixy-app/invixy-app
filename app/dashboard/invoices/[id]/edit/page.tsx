@@ -38,6 +38,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { 
   ArrowLeft, 
   Trash2,
@@ -741,11 +747,11 @@ export default function EditInvoicePage() {
                                         <Button
                                           variant="outline"
                                           role="combobox"
-                                          className={`w-full justify-between font-normal ${!item.productId ? "text-muted-foreground" : ""} ${idError ? "border-red-500" : ""}`}
+                                          className={`flex-1 min-w-0 w-full justify-between font-normal ${!item.productId ? "text-muted-foreground" : ""} ${idError ? "border-red-500" : ""}`}
                                         >
-                                          {item.productId 
+                                          <span className="truncate">{item.productId 
                                             ? productLookup[item.productId]?.name || "Selected Product" 
-                                            : "Select/Search Product..."}
+                                            : "Select/Search Product..."}</span>
                                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                       </PopoverTrigger>
@@ -782,6 +788,22 @@ export default function EditInvoicePage() {
                                         </Command>
                                       </PopoverContent>
                                     </Popover>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => {}} // Note: Add Product dialog logic if you want to restore it here
+                                            className="h-9 w-9 shrink-0 flex items-center justify-center rounded-md"
+                                          >
+                                            <Plus className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Add New Product</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   </div>
                                   {item.productId && productHistories[item.productId]?.hasHistory && (
                                     <div className="flex items-center justify-between text-xs text-muted-foreground ml-1">
