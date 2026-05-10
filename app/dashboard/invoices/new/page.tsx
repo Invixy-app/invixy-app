@@ -943,11 +943,11 @@ function NewInvoiceContent() {
                                         <Button
                                           variant="outline"
                                           role="combobox"
-                                          className={`w-full justify-between font-normal ${!item.productId ? "text-muted-foreground" : ""} ${idError ? "border-red-500" : ""}`}
+                                          className={`flex-1 min-w-0 w-full justify-between font-normal ${!item.productId ? "text-muted-foreground" : ""} ${idError ? "border-red-500" : ""}`}
                                         >
-                                          {item.productId 
+                                          <span className="truncate">{item.productId 
                                             ? productLookup[item.productId]?.name || "Selected Product" 
-                                            : "Select/Search Product..."}
+                                            : "Select/Search Product..."}</span>
                                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
                                       </PopoverTrigger>
