@@ -17,7 +17,10 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
-  Loader2
+  Loader2,
+  BarChart2,
+  CreditCard,
+  Receipt
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useSession, signOut } from "next-auth/react"
@@ -61,9 +64,19 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
       icon: FileText,
     },
     {
+      title: "Record Payments",
+      href: "/dashboard/record-payments",
+      icon: CreditCard,
+    },
+    {
       title: "Customers",
       href: "/dashboard/customers",
       icon: Users,
+    },
+    {
+      title: "Expenses",
+      href: "/dashboard/expenses",
+      icon: Receipt,
     },
     {
       title: "Products",
@@ -76,6 +89,11 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
       icon: Calculator,
     },
     {
+      title: "Financial Reporting and Analytics",
+      href: "/dashboard/analytics",
+      icon: BarChart2,
+    },
+    {
       title: "Settings",
       href: "/dashboard/business-settings",
       icon: Settings,
@@ -85,8 +103,10 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
   const routeMeta = [
     { key: "invoices", label: "Invoices", icon: FileText },
     { key: "customers", label: "Customers", icon: Users },
+    { key: "expenses", label: "Expenses", icon: Receipt },
     { key: "products", label: "Products", icon: Package },
     { key: "tax-systems", label: "Tax Systems", icon: Calculator },
+    { key: "analytics", label: "Financial Reporting and Analytics", icon: BarChart2 },
     { key: "business-settings", label: "Business Settings", icon: Settings },
     { key: "settings", label: "Settings", icon: Settings },
     { key: "businesses", label: "Businesses", icon: LayoutDashboard },
@@ -135,7 +155,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
             )}
           </AnimatePresence>
 
-          <Button
+          {/* <Button
             variant="outline"
             size="icon"
             onClick={toggleSidebar}
@@ -143,7 +163,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
           >
              <ChevronRight className={`h-4 w-4 transition-transform duration-300 ${isSidebarOpen ? "rotate-180" : ""}`} />
              <span className="sr-only">Toggle Sidebar</span>
-          </Button>
+          </Button> */}
         </div>
 
         <div className="px-3 py-2">
@@ -332,7 +352,7 @@ export function DashboardLayout({ children }: { readonly children: React.ReactNo
 
         {/* Page Content */}
         <div className="flex-1 overflow-y-auto p-3 md:p-6 scroll-smooth bg-muted/30 dark:bg-zinc-950/40">
-          <div className="max-w-7xl mx-auto space-y-6">
+          <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
             {children}
           </div>
         </div>

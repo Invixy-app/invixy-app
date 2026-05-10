@@ -309,9 +309,9 @@ export default function EditTaxSystemPage() {
           </Dialog>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6">
           {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Basic Information */}
               <Card className="shadow-sm border-border/80">
@@ -510,7 +510,7 @@ export default function EditTaxSystemPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
             {/* Current Tax System Info */}
             <Card>
               <CardHeader>

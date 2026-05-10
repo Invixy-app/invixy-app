@@ -27,7 +27,7 @@ export default function LandingPage() {
 
       <main className="flex-1 overflow-hidden">
         <section className="relative pb-20 pt-12 ">
-          <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-8 lg:grid-cols-2 lg:gap-20 ">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-4 sm:px-6 lg:px-8 lg:grid-cols-2 lg:gap-20 ">
             <div className="relative z-10 text-left">
               <span className="mb-8 inline-block rounded-full border border-border bg-muted/40 px-4 py-2 font-mono text-[10px] font-light uppercase tracking-[0.26em] text-muted-foreground">
                 Intelligent Finance Operating Layer
@@ -84,7 +84,7 @@ export default function LandingPage() {
                   </div>
 
                   <div className="space-y-5">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="rounded-xl border border-border bg-card p-5">
                         <p className="font-mono text-[10px] font-light uppercase tracking-[0.2em] text-muted-foreground">
                           Monthly Billing
@@ -125,7 +125,7 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="absolute -bottom-7 -left-7 z-20 flex items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-2xl">
+              <div className="absolute -bottom-7 left-3 z-20 hidden items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-2xl sm:flex md:-left-7">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-cobalt)]">
                   <DollarSign className="h-5 w-5 text-stone-50" />
                 </div>
@@ -143,7 +143,7 @@ export default function LandingPage() {
         </section>
 
         <section className="bg-muted/30 py-20 text-foreground md:py-24 lg:py-28">
-          <div className="mx-auto max-w-7xl px-8 text-center ">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center ">
             <h2 className="text-5xl font-black tracking-tight md:text-7xl">
               Designed for operational excellence.
             </h2>
@@ -156,10 +156,10 @@ export default function LandingPage() {
 
         <section id="features" className="relative overflow-hidden bg-foreground py-24 text-background dark:bg-zinc-950 dark:text-zinc-50 md:py-28">
           <div className="absolute right-0 top-0 h-[420px] w-[420px] translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--brand-indigo)]/25 blur-[130px]" />
-          <div className="relative z-10 mx-auto max-w-7xl px-8 ">
+          <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ">
             <div className="mb-16 grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
               <div>
-                <h2 className="text-5xl font-black leading-[0.95] md:text-7xl">
+                <h2 className="text-4xl font-black leading-[0.95] md:text-7xl">
                   Comprehensive power for modern finance.
                 </h2>
                 <p className="mt-8 max-w-xl font-mono text-sm leading-relaxed text-zinc-400 md:text-base">
@@ -191,7 +191,7 @@ export default function LandingPage() {
         </section>
 
         <section id="pricing" className="bg-muted/30 py-20 text-foreground md:py-24">
-          <div className="mx-auto px-8 ">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8 ">
             <div className="mx-auto mb-14 max-w-3xl text-center md:mb-16">
               <h2 className="text-4xl font-black tracking-tight sm:text-6xl">
                 Simple, transparent pricing
@@ -212,7 +212,7 @@ export default function LandingPage() {
         </section>
 
         <section className="bg-zinc-950 py-20 dark:bg-zinc-950 md:py-24">
-          <div className="mx-auto px-8 ">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8 ">
             <div className="relative overflow-hidden rounded-3xl border border-stone-200/10 bg-[var(--brand-cobalt)] p-10 text-center text-stone-50 md:p-16 lg:p-20">
               <div className="relative z-10 mx-auto max-w-3xl space-y-6 md:space-y-8">
                 <h2 className="text-4xl font-black tracking-tight md:text-6xl">

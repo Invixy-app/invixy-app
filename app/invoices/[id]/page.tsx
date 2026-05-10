@@ -137,6 +137,25 @@ const getTaxSummaryLines = (invoice: Invoice) => {
 const getTotalDiscount = (invoice: Invoice) =>
   invoice.items.reduce((sum, item) => sum + Number(item.discount || 0), 0);
 
+const numberToWords = (num: number): string => {
+  if (num === 0) return "Zero";
+  if (Number.isNaN(num)) return "";
+
+  const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  const convert = (n: number): string => {
+    if (n < 20) return ones[n];
+    if (n < 100) return `${tens[Math.floor(n / 10)]}${n % 10 ? ` ${ones[n % 10]}` : ""}`;
+    if (n < 1000) return `${ones[Math.floor(n / 100)]} Hundred${n % 100 ? ` ${convert(n % 100)}` : ""}`;
+    if (n < 1000000) return `${convert(Math.floor(n / 1000))} Thousand${n % 1000 ? ` ${convert(n % 1000)}` : ""}`;
+    if (n < 1000000000) return `${convert(Math.floor(n / 1000000))} Million${n % 1000000 ? ` ${convert(n % 1000000)}` : ""}`;
+    return `${convert(Math.floor(n / 1000000000))} Billion${n % 1000000000 ? ` ${convert(n % 1000000000)}` : ""}`;
+  };
+
+  return convert(Math.floor(num)).trim();
+};
+
 function Template1Html({ invoice }: { invoice: Invoice }) {
   const taxSummaryLines = getTaxSummaryLines(invoice);
   const totalDiscount = getTotalDiscount(invoice);
@@ -170,7 +189,7 @@ function Template1Html({ invoice }: { invoice: Invoice }) {
         <div>
           <p className="mb-1 text-xs uppercase tracking-wide text-gray-500">Invoice details</p>
           <p className="text-sm">Invoice no.: {invoice.invoiceNumber}</p>
-          <p className="text-sm">Terms: {invoice.terms || "-"}</p>
+          <p className="text-sm">Currency: {String(invoice.currency || "USD").trim().toUpperCase()}</p>
           <p className="text-sm">Invoice date: {formatDateShort(invoice.issueDate)}</p>
           <p className="text-sm">Due date: {formatDateShort(invoice.dueDate)}</p>
         </div>
@@ -242,102 +261,123 @@ function Template1Html({ invoice }: { invoice: Invoice }) {
 function Template2Html({ invoice }: { invoice: Invoice }) {
   const taxSummaryLines = getTaxSummaryLines(invoice);
   const totalDiscount = getTotalDiscount(invoice);
-  const emptyRows = Math.max(0, 8 - invoice.items.length);
+  const currencyCode = String(invoice.currency || "USD").trim().toUpperCase();
 
   return (
-    <div className="rounded-lg bg-white p-8 text-[#333] shadow-sm">
-      <div className="mb-6">
-        <p className="text-3xl font-bold uppercase text-[#2F5C96]">{invoice.business.name}</p>
-        <p className="text-sm font-bold text-[#2F5C96]">{formatDateLong(new Date().toISOString())}</p>
-        <p className="mt-3 text-lg font-bold text-[#2F5C96]">INVOICE #{invoice.invoiceNumber}</p>
+    <div className="rounded-lg bg-white p-8 text-[#1f2937] shadow-sm">
+      <div className="mb-6 flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+        <div className="max-w-md space-y-1">
+          <p className="text-xl font-bold text-[#111827]">{invoice.business.name}</p>
+          <p className="text-sm text-gray-700 whitespace-pre-line">{invoice.business.billingAddress}</p>
+          {invoice.business.email && <p className="text-sm text-gray-700">{invoice.business.email}</p>}
+          {invoice.business.phone && <p className="text-sm text-gray-700">{invoice.business.phone}</p>}
+          {invoice.business.taxRegistrationNumber && (
+            <p className="text-sm text-gray-700">Tax ID: {invoice.business.taxRegistrationNumber}</p>
+          )}
+        </div>
+
+        <div className="text-left md:text-right">
+          <p className="text-3xl font-extrabold uppercase tracking-[0.08em] text-[#111827]">Invoice</p>
+          <div className="mt-3 space-y-1 text-sm text-gray-700">
+            <p><span className="font-semibold">Invoice No.:</span> {invoice.invoiceNumber}</p>
+            <p><span className="font-semibold">Date:</span> {formatDateShort(invoice.issueDate)}</p>
+            <p><span className="font-semibold">Due Date:</span> {formatDateShort(invoice.dueDate)}</p>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 border border-[#93C5FD] md:grid-cols-2">
-        <div className="border-r border-[#93C5FD]">
-          <p className="bg-[#DCE6F1] px-3 py-2 text-sm font-bold">Bill to</p>
-          <div className="space-y-1 px-3 py-3 text-sm">
-            <p><span className="font-semibold">Customer:</span> {invoice.customer.name}</p>
-            <p><span className="font-semibold">Address:</span> {invoice.customer.billingAddress || "-"}</p>
-            <p><span className="font-semibold">Phone:</span> {invoice.customer.phone || "-"}</p>
-          </div>
+      <div className="mb-6 grid grid-cols-1 gap-6 border-t border-gray-200 pt-6 md:grid-cols-2">
+        <div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Bill To</p>
+          <p className="font-semibold text-[#111827]">{invoice.customer.name}</p>
+          {invoice.customer.billingAddress && <p className="text-sm text-gray-700 whitespace-pre-line">{invoice.customer.billingAddress}</p>}
+          {invoice.customer.email && <p className="text-sm text-gray-700">{invoice.customer.email}</p>}
+          {invoice.customer.phone && <p className="text-sm text-gray-700">{invoice.customer.phone}</p>}
         </div>
         <div>
-          <p className="bg-[#DCE6F1] px-3 py-2 text-sm font-bold">Ship to</p>
-          <div className="space-y-1 px-3 py-3 text-sm">
-            <p><span className="font-semibold">Recipient:</span> {invoice.customer.name}</p>
-            <p><span className="font-semibold">Address:</span> {invoice.customer.billingAddress || "-"}</p>
-            <p><span className="font-semibold">Phone:</span> {invoice.customer.phone || "-"}</p>
-          </div>
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.14em] text-gray-500">Invoice Meta</p>
+          <p className="text-sm text-gray-700"><span className="font-semibold">Status:</span> {invoice.status.replace("_", " ")}</p>
+          <p className="text-sm text-gray-700"><span className="font-semibold">Currency:</span> {currencyCode}</p>
+          <p className="text-sm text-gray-700"><span className="font-semibold">Payment Terms:</span> {invoice.terms || "-"}</p>
+          <p className="text-sm text-gray-700"><span className="font-semibold">Payment Due:</span> {formatDateLong(invoice.dueDate)}</p>
         </div>
       </div>
 
-      <div className="mb-5 border border-t-0 border-[#93C5FD] px-3 py-2 text-sm">
-        <p><span className="font-semibold">Payment Due:</span> {formatDateLong(invoice.dueDate)}</p>
-        <p><span className="font-semibold">Payment Terms:</span> {invoice.terms || "-"}</p>
-      </div>
-
-      <div className="overflow-x-auto border border-[#93C5FD]">
+      <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="bg-[#DCE6F1]">
-              <th className="px-2 py-2 text-center">Qty.</th>
-              <th className="px-2 py-2 text-center">Item#</th>
-              <th className="px-2 py-2 text-left">Description</th>
-              <th className="px-2 py-2 text-right">Unit price</th>
-              <th className="px-2 py-2 text-center">Discount</th>
-              <th className="px-2 py-2 text-right">Tax</th>
-              <th className="px-2 py-2 text-right">Line total</th>
+            <tr className="rounded bg-gray-100 text-gray-700">
+              <th className="px-2 py-2 text-left font-semibold">#</th>
+              <th className="px-2 py-2 text-left font-semibold">Description</th>
+              <th className="px-2 py-2 text-center font-semibold">Qty</th>
+              <th className="px-2 py-2 text-right font-semibold">Price</th>
+              <th className="px-2 py-2 text-right font-semibold">Tax</th>
+              <th className="px-2 py-2 text-right font-semibold">Amount</th>
             </tr>
           </thead>
           <tbody>
-            {invoice.items.map((item) => (
-              <tr key={item.id} className="border-t border-[#93C5FD]">
-                <td className="px-2 py-2 text-center">{item.quantity}</td>
-                <td className="px-2 py-2 text-center">{item.product?.id?.slice(0, 8) || "-"}</td>
-                <td className="px-2 py-2">{item.description}</td>
-                <td className="px-2 py-2 text-right">{formatCurrency(item.unitPrice, invoice.currency)}</td>
-                <td className="px-2 py-2 text-center">{item.discount ? formatCurrency(item.discount, invoice.currency) : "-"}</td>
-                <td className="px-2 py-2 text-right">{item.taxAmount > 0 ? formatCurrency(item.taxAmount, invoice.currency) : "-"}</td>
-                <td className="px-2 py-2 text-right">{formatCurrency(item.lineTotal, invoice.currency)}</td>
-              </tr>
-            ))}
-            {Array.from({ length: emptyRows }).map((_, i) => (
-              <tr key={`empty-${i}`} className="border-t border-[#93C5FD]">
-                <td className="h-8 px-2 py-2" colSpan={7}></td>
+            {invoice.items.map((item, index) => (
+              <tr key={item.id} className="border-b border-gray-100">
+                <td className="px-2 py-2 align-top text-xs">{index + 1}</td>
+                <td className="px-2 py-2 align-top">
+                  <p className="font-semibold text-[#111827]">{item.product?.name || item.description}</p>
+                  {item.product?.name && item.description && (
+                    <p className="text-xs text-gray-500">{item.description}</p>
+                  )}
+                </td>
+                <td className="px-2 py-2 text-center align-top">{item.quantity}</td>
+                <td className="px-2 py-2 text-right align-top">{formatCurrency(item.unitPrice, invoice.currency)}</td>
+                <td className="px-2 py-2 text-right align-top">{item.taxAmount > 0 ? formatCurrency(item.taxAmount, invoice.currency) : "-"}</td>
+                <td className="px-2 py-2 text-right align-top font-semibold">{formatCurrency(item.lineTotal, invoice.currency)}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="mt-0 flex justify-end">
-        <div className="w-full max-w-sm border-x border-b border-[#93C5FD]">
-          <div className="flex justify-between border-b border-[#93C5FD] px-3 py-2 text-sm">
-            <span>Total Discount</span>
-            <span>{formatCurrency(totalDiscount, invoice.currency)}</span>
-          </div>
-          <div className="flex justify-between border-b border-[#93C5FD] px-3 py-2 text-sm">
+      <div className="mt-5 flex justify-end">
+        <div className="w-full max-w-md">
+          {totalDiscount > 0 && (
+            <div className="flex justify-between py-1 text-sm">
+              <span>Total Discount</span>
+              <span>{formatCurrency(totalDiscount, invoice.currency)}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between py-1 text-sm">
             <span>Subtotal</span>
-            <span>{formatCurrency(invoice.subtotal, invoice.currency)}</span>
+            <span className="font-semibold">{formatCurrency(invoice.subtotal, invoice.currency)}</span>
           </div>
+
           {taxSummaryLines.map((tax, i) => (
-            <div key={`${tax.name}-${i}`} className="flex justify-between border-b border-[#93C5FD] px-3 py-2 text-sm">
-              <span>Tax ({tax.name})</span>
-              <span>{formatCurrency(tax.amount, invoice.currency)}</span>
+            <div key={`${tax.name}-${i}`} className="flex justify-between py-1 text-sm">
+              <span>{tax.name} ({(tax.rate * 100).toFixed(1)}%)</span>
+              <span className="font-semibold">{formatCurrency(tax.amount, invoice.currency)}</span>
             </div>
           ))}
-          <div className="flex justify-between bg-[#93C5FD] px-3 py-2 font-bold">
-            <span>Total</span>
-            <span>{formatCurrency(invoice.totalAmount, invoice.currency)}</span>
+
+          <div className="mt-2 flex justify-between border-t border-gray-200 pt-2">
+            <span className="text-base font-bold">Total Due</span>
+            <span className="text-lg font-bold text-[#111827]">{formatCurrency(invoice.totalAmount, invoice.currency)}</span>
           </div>
         </div>
       </div>
 
-      <div className="mt-8 text-sm">
-        <p className="font-bold text-[#2F5C96]">Thank you for your business!</p>
-        <p className="mt-4 font-semibold">{invoice.business.name}</p>
-        <p>{invoice.business.billingAddress}</p>
-        <p>{invoice.business.phone} | {invoice.business.email}</p>
+      <div className="mt-6 rounded bg-gray-50 px-3 py-2">
+        <p className="text-xs uppercase tracking-wide text-gray-500">Total in Words</p>
+        <p className="text-sm font-semibold text-[#111827]">{currencyCode} {numberToWords(invoice.totalAmount)}</p>
+      </div>
+
+      {(invoice.notes || invoice.terms) && (
+        <div className="mt-6">
+          <p className="mb-1 text-sm font-semibold text-[#111827]">Notes / Terms</p>
+          {invoice.notes && <p className="text-sm text-gray-700">{invoice.notes}</p>}
+          {invoice.terms && <p className="text-sm text-gray-700">{invoice.terms}</p>}
+        </div>
+      )}
+
+      <div className="mt-8 border-t border-gray-200 pt-3 text-center text-xs text-gray-400">
+        This is a system generated invoice and does not require a signature.
       </div>
     </div>
   );

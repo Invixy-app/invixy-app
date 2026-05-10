@@ -337,30 +337,6 @@ export default function EditBusinessPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Business Name</CardTitle>
-              <Building2 className="h-4 w-4 text-[var(--brand-cobalt)]" />
-            </CardHeader>
-            <CardContent><div className="text-2xl font-bold">{formData.name ? "Set" : "Required"}</div></CardContent>
-          </Card>
-          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Contact</CardTitle>
-              <Phone className="h-4 w-4 text-[var(--brand-teal)]" />
-            </CardHeader>
-            <CardContent><div className="text-2xl font-bold">{formData.email ? "Set" : "Pending"}</div></CardContent>
-          </Card>
-          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Role</CardTitle>
-              <Badge variant={business.role === 'OWNER' ? 'default' : 'secondary'}>{business.role.toLowerCase()}</Badge>
-            </CardHeader>
-            <CardContent><div className="text-2xl font-bold">Access</div></CardContent>
-          </Card>
-        </div>
-
         {hasChanges && (
           <div className="bg-[var(--brand-cobalt)]/10 border border-[var(--brand-cobalt)]/25 rounded-lg p-4">
             <div className="flex items-center gap-2">

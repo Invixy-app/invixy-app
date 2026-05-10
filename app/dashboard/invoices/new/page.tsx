@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -27,19 +28,28 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { 
-  ArrowLeft, 
+  ArrowLeft,
   Save, 
   Send, 
   Plus, 
-  Trash2, 
-  User, 
-  FileText, 
+  Trash2,
+  User,
+  FileText,
   UserPlus, 
   PackagePlus, 
   Download,
   Lock,
-  DollarSign
+  Check,
+  ChevronsUpDown
 } from "lucide-react";
 import Link from "next/link";
 import { z } from "zod";
@@ -98,13 +108,17 @@ function NewInvoiceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
+  const PRODUCT_PAGE_SIZE = 100;
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [productOptionsByIndex, setProductOptionsByIndex] = useState<Record<number, Product[]>>({});
+  const [productLookup, setProductLookup] = useState<Record<string, Product>>({});
   const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [productHistories, setProductHistories] = useState<Record<string, ProductHistory>>({});
   const [productSearchQueries, setProductSearchQueries] = useState<Record<number, string>>({});
+  const [popoverOpenIndex, setPopoverOpenIndex] = useState<number | null>(null);
+  const productSearchTimersRef = useRef<Record<number, ReturnType<typeof setTimeout> | null>>({});
   
   const [lastInvoice, setLastInvoice] = useState<any | null>(null);
   const [isLoadingLastInvoice, setIsLoadingLastInvoice] = useState(false);
@@ -173,6 +187,16 @@ function NewInvoiceContent() {
     }
   }, [currentBusiness?.currency]);
 
+  useEffect(() => {
+    return () => {
+      Object.values(productSearchTimersRef.current).forEach((timer) => {
+        if (timer) {
+          clearTimeout(timer);
+        }
+      });
+    };
+  }, []);
+
 
 
   useEffect(() => {
@@ -232,24 +256,78 @@ function NewInvoiceContent() {
     showSuccess("Success", "Previous invoice autofilled!");
   };
 
+  const loadProductOptions = async (index: number, search = "") => {
+    if (!currentBusiness?.id) return;
+
+    try {
+      const params = new URLSearchParams({
+        businessId: currentBusiness.id,
+        paginated: "true",
+        page: "1",
+        pageSize: String(PRODUCT_PAGE_SIZE),
+      });
+
+      if (search.trim()) {
+        params.set("search", search.trim());
+      }
+
+      const response = await fetch(`/api/products?${params.toString()}`);
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const items = (data.items || []) as Product[];
+
+      setProductOptionsByIndex(prev => ({
+        ...prev,
+        [index]: items,
+      }));
+
+      setProductLookup(prev => {
+        const next = { ...prev };
+        for (const product of items) {
+          next[product.id] = product;
+        }
+        return next;
+      });
+    } catch (error) {
+      console.error("Error fetching product options:", error);
+    }
+  };
+
+  const handleProductSearchChange = (index: number, value: string) => {
+    setProductSearchQueries(prev => ({ ...prev, [index]: value }));
+
+    const timer = productSearchTimersRef.current[index];
+    if (timer) {
+      clearTimeout(timer);
+    }
+
+    productSearchTimersRef.current[index] = setTimeout(() => {
+      loadProductOptions(index, value);
+    }, 250);
+  };
+
+  const handleProductSelectOpen = (index: number, open: boolean) => {
+    if (!open) {
+      setProductSearchQueries(prev => ({ ...prev, [index]: "" }));
+      return;
+    }
+
+    void loadProductOptions(index, productSearchQueries[index] || "");
+  };
+
   const fetchData = async () => {
     if (!currentBusiness?.id) return;
 
     try {
-      const [customersRes, productsRes, taxSystemsRes] = await Promise.all([
+      const [customersRes, taxSystemsRes] = await Promise.all([
         fetch(`/api/customers?businessId=${currentBusiness.id}`),
-        fetch(`/api/products?businessId=${currentBusiness.id}`),
         fetch(`/api/tax-systems?businessId=${currentBusiness.id}`)
       ]);
 
       if (customersRes.ok) {
         const customersData = await customersRes.json();
         setCustomers(customersData);
-      }
-
-      if (productsRes.ok) {
-        const productsData = await productsRes.json();
-        setProducts(productsData);
       }
 
       if (taxSystemsRes.ok) {
@@ -296,7 +374,7 @@ function NewInvoiceContent() {
           
           // Stock check
           if (field === 'quantity' && updatedItem.productId) {
-            const product = products.find(p => p.id === updatedItem.productId);
+            const product = productLookup[updatedItem.productId];
             if (product && product.stockQuantity !== null && product.stockQuantity !== undefined) {
               if (updatedItem.quantity > product.stockQuantity) {
                 showWarning(
@@ -324,7 +402,7 @@ function NewInvoiceContent() {
   };
 
   const selectProduct = (index: number, productId: string) => {
-    const product = products.find(p => p.id === productId);
+    const product = productLookup[productId];
     if (product) {
       // Stock check
       if (product.stockQuantity !== null && product.stockQuantity !== undefined && product.stockQuantity < 1) {
@@ -339,9 +417,8 @@ function NewInvoiceContent() {
         fetchProductHistory(productId, formData.customerId);
       }
 
-      setFormData(prev => ({
-        ...prev,
-        items: prev.items.map((item, i) => {
+      setFormData(prev => {
+        const updatedItems = prev.items.map((item, i) => {
           if (i === index) {
             const updatedItem = {
               ...item,
@@ -356,8 +433,34 @@ function NewInvoiceContent() {
             return updatedItem;
           }
           return item;
-        })
-      }));
+        });
+
+        const isSelectedRowLast = index === prev.items.length - 1;
+        const lastItem = updatedItems[updatedItems.length - 1];
+        const isLastItemEmpty =
+          !lastItem.productId &&
+          !lastItem.description?.trim() &&
+          lastItem.unitPrice === 0 &&
+          lastItem.discount === 0 &&
+          lastItem.lineTotal === 0;
+
+        if (isSelectedRowLast && !isLastItemEmpty) {
+          updatedItems.push({
+            productId: "",
+            description: "",
+            quantity: 1,
+            unitPrice: 0,
+            discount: 0,
+            lineTotal: 0,
+            taxSystemIds: []
+          });
+        }
+
+        return {
+          ...prev,
+          items: updatedItems
+        };
+      });
     }
   };
 
@@ -464,7 +567,20 @@ function NewInvoiceContent() {
 
       if (response.ok) {
         const createdProduct = await response.json();
-        setProducts(prev => [...prev, createdProduct]);
+        setProductLookup(prev => ({
+          ...prev,
+          [createdProduct.id]: createdProduct,
+        }));
+        setProductOptionsByIndex(prev => {
+          const next: Record<number, Product[]> = {};
+          for (const [rowIndex, rowProducts] of Object.entries(prev)) {
+            const existing = rowProducts || [];
+            next[Number(rowIndex)] = existing.some(product => product.id === createdProduct.id)
+              ? existing
+              : [createdProduct, ...existing].slice(0, PRODUCT_PAGE_SIZE);
+          }
+          return next;
+        });
         setNewProduct({
           name: "",
           description: "",
@@ -668,40 +784,10 @@ function NewInvoiceContent() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Customer</CardTitle>
-              <User className="h-4 w-4 text-[var(--brand-cobalt)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formData.customerId ? "Selected" : "Required"}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Items</CardTitle>
-              <FileText className="h-4 w-4 text-[var(--brand-teal)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formData.items.length}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total</CardTitle>
-              <DollarSign className="h-4 w-4 text-[var(--brand-indigo)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(total)}</div>
-            </CardContent>
-          </Card>
-        </div>
-
         <form onSubmit={(e) => handleSubmit(e, 'draft')} className="space-y-6">
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="space-y-6">
             {/* Invoice Details */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-6">
               {/* Customer & Dates */}
               <Card className="shadow-sm border-border/80">
                 <CardHeader>
@@ -739,12 +825,10 @@ function NewInvoiceContent() {
                         <SelectContent>
                           {customers.map((customer) => (
                             <SelectItem key={customer.id} value={customer.id}>
-                              <div className="flex flex-col items-start gap-0">
-                                <div className="text-md">{customer.name}</div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{customer.name}</span>
                                 {customer.email && (
-                                  <div className="text-sm text-muted-foreground">
-                                    {customer.email}
-                                  </div>
+                                  <span className="text-xs text-muted-foreground">- {customer.email}</span>
                                 )}
                               </div>
                             </SelectItem>
@@ -820,205 +904,238 @@ function NewInvoiceContent() {
                     </Button>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {formData.items.map((item, index) => (
-                      <div key={index} className="border rounded-lg p-4 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium">Item {index + 1}</h4>
-                          {formData.items.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeItem(index)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <Label>Product <span className="text-red-500">*</span></Label>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowAddProductDialog(true)}
-                                className="h-8 text-xs"
-                              >
-                                <PackagePlus className="h-3 w-3 mr-1" />
-                                Add New
-                              </Button>
-                            </div>
-                            <Select
-                              value={item.productId || ""}
-                              onValueChange={(value) => value && value !== "custom" ? selectProduct(index, value) : updateItem(index, "productId", "")}
-                              onOpenChange={(open) => {
-                                if (!open) setProductSearchQueries(prev => ({ ...prev, [index]: "" }));
-                              }}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a product" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <div className="p-2 sticky top-0 bg-popover z-10 border-b">
-                                  <Input 
-                                    placeholder="Search products..." 
-                                    value={productSearchQueries[index] || ""}
-                                    onChange={(e) => setProductSearchQueries(prev => ({ ...prev, [index]: e.target.value }))}
-                                    onKeyDown={(e) => e.stopPropagation()}
-                                  />
-                                </div>
-                                {products
-                                  .filter(p => p.name.toLowerCase().includes((productSearchQueries[index] || "").toLowerCase()))
-                                  .map((product) => (
-                                  <SelectItem key={product.id} value={product.id}>
-                                    <div className="flex flex-col items-start">
-                                      <div className="font-medium">{product.name}</div>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                                {products.filter(p => p.name.toLowerCase().includes((productSearchQueries[index] || "").toLowerCase())).length === 0 && (
-                                  <div className="p-4 text-center text-sm text-muted-foreground">
-                                    No products found.
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50 border-y">
+                          <TableHead className="w-[30%] min-w-[220px] h-12">PRODUCT / ACCOUNT</TableHead>
+                          <TableHead className="w-[20%] min-w-[150px] h-12">DESCRIPTION</TableHead>
+                          <TableHead className="w-[100px] min-w-[100px] h-12">QTY</TableHead>
+                          <TableHead className="w-[120px] min-w-[120px] h-12">PRICE</TableHead>
+                          <TableHead className="w-[100px] min-w-[100px] h-12">DISC.</TableHead>
+                          {taxSystems.length > 0 && <TableHead className="w-[140px] min-w-[140px] h-12">TAX</TableHead>}
+                          <TableHead className="w-[120px] min-w-[120px] text-right h-12">TOTAL</TableHead>
+                          <TableHead className="w-[60px] min-w-[60px] text-center h-12"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {formData.items.map((item, index) => {
+                          const idError = errors["items." + index + ".productId"];
+                          const descError = errors["items." + index + ".description"];
+                          const qtyError = errors["items." + index + ".quantity"];
+                          const priceError = errors["items." + index + ".unitPrice"];
+                          const discError = errors["items." + index + ".discount"];
+                          
+                          return (
+                            <TableRow key={index} className="group border-b">
+                              <TableCell className="align-top p-3">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <Popover 
+                                      open={popoverOpenIndex === index} 
+                                      onOpenChange={(open) => {
+                                        setPopoverOpenIndex(open ? index : null);
+                                        handleProductSelectOpen(index, open);
+                                      }}
+                                    >
+                                      <PopoverTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          role="combobox"
+                                          className={`w-full justify-between font-normal ${!item.productId ? "text-muted-foreground" : ""} ${idError ? "border-red-500" : ""}`}
+                                        >
+                                          {item.productId 
+                                            ? productLookup[item.productId]?.name || "Selected Product" 
+                                            : "Select/Search Product..."}
+                                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-[300px] p-0" align="start">
+                                        <Command shouldFilter={false}>
+                                          <CommandInput 
+                                            placeholder="Search products..." 
+                                            value={productSearchQueries[index] || ""}
+                                            onValueChange={(value) => handleProductSearchChange(index, value)}
+                                          />
+                                          <CommandList>
+                                            {(productOptionsByIndex[index] || []).length === 0 ? (
+                                               <CommandEmpty>No products found.</CommandEmpty>
+                                            ) : (
+                                              <CommandGroup>
+                                                {(productOptionsByIndex[index] || []).map((product) => (
+                                                  <CommandItem
+                                                    key={product.id}
+                                                    value={product.id}
+                                                    onSelect={(value) => {
+                                                      selectProduct(index, value);
+                                                      setPopoverOpenIndex(null);
+                                                    }}
+                                                  >
+                                                    <Check
+                                                      className={`mr-2 h-4 w-4 ${item.productId === product.id ? "opacity-100" : "opacity-0"}`}
+                                                    />
+                                                    {product.name}
+                                                  </CommandItem>
+                                                ))}
+                                              </CommandGroup>
+                                            )}
+                                          </CommandList>
+                                        </Command>
+                                      </PopoverContent>
+                                    </Popover>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setShowAddProductDialog(true)}
+                                            className="h-9 w-9 shrink-0 flex items-center justify-center rounded-md"
+                                          >
+                                            <Plus className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Add New Product</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
                                   </div>
-                                )}
-                              </SelectContent>
-                            </Select>
-                            {item.productId && productHistories[item.productId]?.hasHistory && (
-                              <div className="mt-2 p-2 bg-[var(--brand-cobalt)]/10 border border-[var(--brand-cobalt)]/25 rounded-md text-sm">
-                                <div className="font-medium text-[var(--brand-cobalt)]">Last Purchase Price</div>
-                                <div className="text-[var(--brand-cobalt)]">
-                                  {formatCurrency(productHistories[item.productId].lastPrice || 0)}
-                                  {productHistories[item.productId].lastInvoice && (
-                                    <span className="text-xs text-[var(--brand-cobalt)] ml-1">
-                                      (Invoice {productHistories[item.productId].lastInvoice?.number})
-                                    </span>
+                                  {item.productId && productHistories[item.productId]?.hasHistory && (
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground ml-1">
+                                      <span>Last Purchase:</span>
+                                      <span className="font-medium">{formatCurrency(productHistories[item.productId].lastPrice || 0)}</span>
+                                    </div>
                                   )}
+                                  {idError && typeof idError === 'string' && <p className="text-xs text-red-500 mt-1">{idError}</p>}
                                 </div>
-                                
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Description (Optional)</Label>
-                            <Input
-                              placeholder="Item description"
-                              value={item.description}
-                              onChange={(e) => updateItem(index, "description", e.target.value)}
-                              className={errors[`items.${index}.description`] ? "border-red-500" : ""}
-                            />
-                            {errors[`items.${index}.description`] && (
-                                <p className="text-xs text-red-500 mt-1">{errors[`items.${index}.description`]}</p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          <div className="space-y-2">
-                            <Label>Quantity</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0.01"
-                              placeholder="1"
-                              value={item.quantity || ""}
-                              onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)}
-                              className={errors[`items.${index}.quantity`] ? "border-red-500" : ""}
-                            />
-                            {errors[`items.${index}.quantity`] && (
-                                <p className="text-xs text-red-500 mt-1">{errors[`items.${index}.quantity`]}</p>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Unit Price</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              value={item.unitPrice || ""}
-                              onChange={(e) => updateItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
-                              className={errors[`items.${index}.unitPrice`] ? "border-red-500" : ""}
-                            />
-                            {errors[`items.${index}.unitPrice`] && (
-                                <p className="text-xs text-red-500 mt-1">{errors[`items.${index}.unitPrice`]}</p>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Discount</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              placeholder="0.00"
-                              value={item.discount || ""}
-                              onChange={(e) => updateItem(index, "discount", parseFloat(e.target.value) || 0)}
-                              className={errors[`items.${index}.discount`] ? "border-red-500" : ""}
-                            />
-                            {errors[`items.${index}.discount`] && (
-                                <p className="text-xs text-red-500 mt-1">{errors[`items.${index}.discount`]}</p>
-                            )}
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Line Total</Label>
-                            <div className="flex items-center h-10 px-3 py-2 border border-input bg-muted rounded-md text-sm">
-                              {formatCurrency(item.lineTotal)}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Tax selection for this item */}
-                        {taxSystems.length > 0 && (
-                          <div className="space-y-2 pt-2 border-t">
-                            <Label className="text-sm font-medium">Applicable Taxes</Label>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {taxSystems.map((tax) => (
-                                <div key={tax.id} className="flex items-center space-x-2">
-                                  <input
-                                    type="checkbox"
-                                    id={`tax-${index}-${tax.id}`}
-                                    checked={item.taxSystemIds.includes(tax.id)}
-                                    onChange={() => toggleItemTax(index, tax.id)}
-                                    className="rounded"
-                                  />
-                                  <label 
-                                    htmlFor={`tax-${index}-${tax.id}`} 
-                                    className="flex-1 flex items-center justify-between text-sm cursor-pointer"
+                              </TableCell>
+  
+                              <TableCell className="align-top p-3">
+                                <Input
+                                  placeholder="-"
+                                  value={item.description}
+                                  onChange={(e) => updateItem(index, "description", e.target.value)}
+                                  className={"w-full bg-transparent border-transparent hover:border-input focus:border-input focus:bg-background transition-all " + (descError ? "border-red-500 bg-background" : "")}
+                                />
+                                {descError && typeof descError === 'string' && <p className="text-xs text-red-500 mt-1">{descError}</p>}
+                              </TableCell>
+  
+                              <TableCell className="align-top p-3">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0.01"
+                                  placeholder="1"
+                                  value={item.quantity || ""}
+                                  onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)}
+                                  className={"w-full " + (qtyError ? "border-red-500" : "")}
+                                />
+                                {qtyError && typeof qtyError === 'string' && <p className="text-xs text-red-500 mt-1">{qtyError}</p>}
+                              </TableCell>
+  
+                              <TableCell className="align-top p-3">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={item.unitPrice || ""}
+                                  onChange={(e) => updateItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                                  className={"w-full " + (priceError ? "border-red-500" : "")}
+                                />
+                                {priceError && typeof priceError === 'string' && <p className="text-xs text-red-500 mt-1">{priceError}</p>}
+                              </TableCell>
+  
+                              <TableCell className="align-top p-3">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={item.discount || ""}
+                                  onChange={(e) => updateItem(index, "discount", parseFloat(e.target.value) || 0)}
+                                  className={"w-full bg-transparent border-transparent hover:border-input focus:border-input focus:bg-background transition-all " + (discError ? "border-red-500 bg-background" : "")}
+                                />
+                                {discError && typeof discError === 'string' && <p className="text-xs text-red-500 mt-1">{discError}</p>}
+                              </TableCell>
+  
+                              {taxSystems.length > 0 && (
+                                <TableCell className="align-top p-3">
+                                  <div className="space-y-2">
+                                    <div className="mt-1">
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button variant="outline" className="h-8 w-full justify-between px-2 text-xs">
+                                            <span className="truncate">
+                                              {item.taxSystemIds.length > 0
+                                                ? `${item.taxSystemIds.length} Selected`
+                                                : "Select Tax"}
+                                            </span>
+                                            <span className="text-[10px] text-muted-foreground ml-1">▼</span>
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-[180px]">
+                                          {taxSystems.map((tax) => {
+                                            const isSelected = item.taxSystemIds.includes(tax.id);
+                                            return (
+                                              <DropdownMenuCheckboxItem
+                                                key={tax.id}
+                                                checked={isSelected}
+                                                onCheckedChange={() => toggleItemTax(index, tax.id)}
+                                              >
+                                                {tax.name} ({(tax.rate * 100).toFixed(0)}%)
+                                              </DropdownMenuCheckboxItem>
+                                            );
+                                          })}
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
+                                    {item.taxSystemIds.length > 0 && (
+                                      <div className="text-[10px] text-muted-foreground font-medium">
+                                        Tax: {formatCurrency(
+                                          item.taxSystemIds.reduce((sum, taxId) => {
+                                            const tax = taxSystems.find(t => t.id === taxId);
+                                            return sum + (tax ? item.lineTotal * tax.rate : 0);
+                                          }, 0)
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              )}
+  
+                              <TableCell className="align-top p-3 text-right">
+                                <div className="font-medium py-2">
+                                  {formatCurrency(item.lineTotal)}
+                                </div>
+                              </TableCell>
+  
+                              <TableCell className="align-top p-3 text-center">
+                                <div className="flex items-center justify-center gap-1 opacity-100 mt-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeItem(index)}
+                                    disabled={formData.items.length === 1}
+                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-50"
                                   >
-                                    <span>{tax.name}</span>
-                                    <Badge variant="outline" className="text-xs">
-                                      {(tax.rate * 100).toFixed(2)}%
-                                    </Badge>
-                                  </label>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
                                 </div>
-                              ))}
-                            </div>
-                            {item.taxSystemIds.length > 0 && (
-                              <div className="text-sm text-muted-foreground pt-1">
-                                Tax on this item: {formatCurrency(
-                                  item.taxSystemIds.reduce((sum, taxId) => {
-                                    const tax = taxSystems.find(t => t.id === taxId);
-                                    return sum + (tax ? item.lineTotal * tax.rate : 0);
-                                  }, 0)
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {errors.items && (
-                      <p className="text-sm text-red-500">{errors.items}</p>
-                    )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
                   </div>
+                  {errors.items && typeof errors.items === 'string' && (
+                    <div className="p-4 border-t">
+                      <p className="text-sm text-red-500 font-medium">{errors.items}</p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -1062,7 +1179,7 @@ function NewInvoiceContent() {
             </div>
 
             {/* Invoice Summary */}
-            <div className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-3">
               {/* Customer Info */}
               {selectedCustomer && (
                 <Card>

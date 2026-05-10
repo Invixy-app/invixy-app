@@ -108,7 +108,7 @@ export function BusinessSwitcher({ className }: BusinessSwitcherProps) {
           <Button variant="outline" className="flex items-center gap-2 min-w-[200px] w-full justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
-              <div className="flex flex-col items-start">
+              <div className="flex items-center gap-2">
                 <span className="text-sm font-medium truncate max-w-[120px]">
                   {currentBusiness?.name || "Select Business"}
                 </span>

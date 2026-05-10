@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Fraunces, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const fraunces = Fraunces({
   variable: "--font-fraunces",
@@ -62,6 +64,8 @@ export default function RootLayout({
         className={`${fraunces.variable} ${ibmPlexMono.variable} antialiased`}
       >
         <Providers>{children}</Providers>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

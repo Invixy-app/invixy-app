@@ -55,7 +55,7 @@ export default function AboutPage() {
       <main className="flex-1 overflow-hidden">
         {/* Hero Section */}
         <section className="relative pb-16 pt-20 md:pt-28">
-          <div className="mx-auto max-w-7xl px-8 text-center">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
             <span className="mb-8 inline-block rounded-full border border-border bg-muted/40 px-4 py-2 font-mono text-[10px] font-light uppercase tracking-[0.26em] text-muted-foreground">
               Our Vision
             </span>
@@ -71,7 +71,7 @@ export default function AboutPage() {
         {/* The Story / Mission */}
         <section className="relative overflow-hidden bg-foreground py-24 text-background dark:bg-zinc-950 dark:text-zinc-50 md:py-28 mt-12 shrink-0">
           <div className="absolute right-0 top-0 h-[420px] w-[420px] translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--brand-indigo)]/25 blur-[130px]" />
-          <div className="relative z-10 mx-auto max-w-7xl px-8 grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
+          <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
             <div>
               <h2 className="text-4xl font-black leading-[0.95] md:text-5xl lg:text-6xl">
                 Bridge the <br className="hidden md:block"/> software gap.
@@ -91,42 +91,10 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Meet the Founders */}
-        <section className="relative py-20 md:py-28 bg-muted/30">
-          <div className="mx-auto max-w-7xl px-8">
-            <div className="mb-14 text-center md:mb-20">
-              <h2 className="text-4xl font-black tracking-tight sm:text-5xl">
-                Meet the Founders
-              </h2>
-              <p className="mt-5 font-mono text-sm text-muted-foreground md:text-base">
-                The team building the future of financial operations.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-              {founders.map((founder) => (
-                <div key={founder.name} className="relative group rounded-3xl border border-border bg-card p-8 shadow-[0_10px_40px_-15px_rgba(0,0,0,0.05)] transition-all duration-300 hover:shadow-[0_15px_45px_-10px_rgba(0,0,0,0.1)] hover:border-primary/50 text-center">
-                  <div className="mx-auto w-24 h-24 rounded-full bg-gradient-to-tr from-[var(--brand-cobalt)] to-[var(--brand-cyan)] p-[2px] mb-6 shadow-md">
-                    <div className="w-full h-full rounded-full bg-card flex items-center justify-center font-black text-2xl text-foreground">
-                      {founder.initials}
-                    </div>
-                  </div>
-                  <h3 className="text-2xl font-bold">{founder.name}</h3>
-                  <p className="text-[var(--brand-cobalt)] font-mono text-sm font-semibold uppercase tracking-widest mt-2 mb-6">{founder.role}</p>
-                  
-                  <Link href={founder.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 justify-center w-full rounded-xl bg-muted/50 px-4 py-3 text-sm font-semibold transition-colors hover:bg-[var(--brand-cobalt)]/10 hover:text-[var(--brand-cobalt)]">
-                    <Linkedin className="h-5 w-5" />
-                    <span>Connect on LinkedIn</span>
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* Values Bento Grid */}
         <section className="py-20 md:py-28">
-          <div className="mx-auto max-w-7xl px-8">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mb-14 text-center md:mb-16">
               <h2 className="text-4xl font-black tracking-tight sm:text-5xl">
                 Our Core Values
@@ -156,7 +124,7 @@ export default function AboutPage() {
         </section>
 
         <section className="bg-zinc-950 py-20 dark:bg-zinc-950 md:py-24">
-          <div className="mx-auto px-8 max-w-7xl">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
             <div className="relative overflow-hidden rounded-[2.5rem] border border-stone-200/10 bg-[var(--brand-cobalt)] p-10 text-center text-stone-50 md:p-16 lg:p-20 shadow-2xl">
               <div className="relative z-10 mx-auto max-w-3xl space-y-6 md:space-y-8">
                 <h2 className="text-4xl font-black tracking-tight md:text-6xl">

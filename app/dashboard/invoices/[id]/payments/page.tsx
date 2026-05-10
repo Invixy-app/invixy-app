@@ -373,9 +373,9 @@ export default function InvoicePaymentsPage() {
           )}
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6">
           {/* Payment Summary */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             {/* Payment Progress */}
             <Card className="shadow-sm border-border/80">
               <CardHeader>
@@ -522,7 +522,7 @@ export default function InvoicePaymentsPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
             {/* Invoice Info */}
             <Card className="shadow-sm border-border/80">
               <CardHeader>

@@ -51,7 +51,8 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  XCircle
+  XCircle,
+  CreditCard
 } from "lucide-react";
 import Link from "next/link";
 
@@ -618,6 +619,12 @@ export default function InvoicesPage() {
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                   <DropdownMenuSeparator />
+                                  <Link href={`/dashboard/record-payments/${invoice.customer.id}?invoiceId=${invoice.id}`}>
+                                    <DropdownMenuItem>
+                                      <CreditCard className="h-4 w-4 mr-2" />
+                                      Record Payment
+                                    </DropdownMenuItem>
+                                  </Link>
                                   <Link href={`/dashboard/invoices/${invoice.id}`}>
                                     <DropdownMenuItem>
                                       <Eye className="h-4 w-4 mr-2" />

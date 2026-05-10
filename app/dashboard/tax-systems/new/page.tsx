@@ -260,10 +260,6 @@ function NewTaxSystemContent() {
     return taxTemplates[selectedTemplate as keyof typeof taxTemplates];
   };
 
-  const formatPercentage = (rate: number) => {
-    return `${(rate * 100).toFixed(2)}%`;
-  };
-
   const templateInfo = getTemplateInfo();
 
   if (businessLoading) {
@@ -317,47 +313,9 @@ function NewTaxSystemContent() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tax Name</CardTitle>
-              <Info className="h-4 w-4 text-[var(--brand-cobalt)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formData.name ? "Set" : "Required"}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Type</CardTitle>
-              <Percent className="h-4 w-4 text-[var(--brand-teal)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formData.taxType.replace("_", " ")}</div>
-            </CardContent>
-          </Card>
-          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Rate</CardTitle>
-              <Calculator className="h-4 w-4 text-[var(--brand-indigo)]" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {(() => {
-                  const numericRate = Number(formData.rate || 0);
-                  if (formData.taxType === "FIXED_AMOUNT") {
-                    return formatCurrency(numericRate);
-                  }
-                  return formatPercentage(numericRate / 100);
-                })()}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6">
           {/* Main Form */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             {/* Template Info */}
             {templateInfo && (
               <Card className="shadow-sm border-border/80">
@@ -632,7 +590,7 @@ function NewTaxSystemContent() {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
             {/* Preview */}
             {formData.name && formData.rate && (
               <Card>
