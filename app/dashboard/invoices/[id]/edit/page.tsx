@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,20 +33,25 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { 
   ArrowLeft, 
-  Save, 
-  Plus,
   Trash2,
+  Tags,
+  Plus,
   Calculator,
   User,
   FileText,
   AlertTriangle,
-  Edit
+  Edit,
+  Save,
+  Check,
+  ChevronsUpDown
 } from "lucide-react";
-import Link from "next/link";
 import { showError, showSuccess, showConfirm } from "@/lib/alert-store";
 import { z } from "zod";
 import { invoiceSchema } from "@/lib/validations/invoice";
@@ -63,6 +69,7 @@ interface Product {
   price: number;
   unit: string;
   taxSystemId?: string;
+  stockQuantity?: number | null;
 }
 
 interface TaxSystem {
@@ -109,14 +116,17 @@ export default function EditInvoicePage() {
   const router = useRouter();
   const params = useParams();
   const { currentBusiness } = useBusinessContext();
+  const PRODUCT_PAGE_SIZE = 100;
   
   const [invoice, setInvoice] = useState<any>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [productOptionsByIndex, setProductOptionsByIndex] = useState<Record<number, Product[]>>({});
+  const [productLookup, setProductLookup] = useState<Record<string, Product>>({});
   const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [productHistories, setProductHistories] = useState<Record<string, ProductHistory>>({});
+  const [popoverOpenIndex, setPopoverOpenIndex] = useState<number | null>(null);
   
   const [formData, setFormData] = useState<InvoiceFormData>({
     customerId: "",
@@ -129,6 +139,17 @@ export default function EditInvoicePage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [productSearchQueries, setProductSearchQueries] = useState<Record<number, string>>({});
+  const productSearchTimersRef = useRef<Record<number, ReturnType<typeof setTimeout> | null>>({});
+
+  useEffect(() => {
+    return () => {
+      Object.values(productSearchTimersRef.current).forEach((timer) => {
+        if (timer) {
+          clearTimeout(timer);
+        }
+      });
+    };
+  }, []);
 
   useEffect(() => {
     if (params?.id && currentBusiness?.id) {
@@ -170,7 +191,6 @@ export default function EditInvoicePage() {
       // Fetch related data
       await Promise.all([
         fetchCustomers(),
-        fetchProducts(),
         fetchTaxSystems()
       ]);
     } catch (error) {
@@ -193,16 +213,62 @@ export default function EditInvoicePage() {
     }
   };
 
-  const fetchProducts = async () => {
+  const loadProductOptions = async (index: number, search = "") => {
     try {
-      const response = await fetch(`/api/products?businessId=${currentBusiness?.id}`);
+      const params = new URLSearchParams({
+        businessId: String(currentBusiness?.id || ""),
+        paginated: "true",
+        page: "1",
+        pageSize: String(PRODUCT_PAGE_SIZE),
+      });
+
+      if (search.trim()) {
+        params.set("search", search.trim());
+      }
+
+      const response = await fetch(`/api/products?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setProducts(data);
+        const items = (data.items || []) as Product[];
+
+        setProductOptionsByIndex(prev => ({
+          ...prev,
+          [index]: items,
+        }));
+
+        setProductLookup(prev => {
+          const next = { ...prev };
+          for (const product of items) {
+            next[product.id] = product;
+          }
+          return next;
+        });
       }
     } catch (error) {
       console.error("Error fetching products:", error);
     }
+  };
+
+  const handleProductSearchChange = (index: number, value: string) => {
+    setProductSearchQueries(prev => ({ ...prev, [index]: value }));
+
+    const timer = productSearchTimersRef.current[index];
+    if (timer) {
+      clearTimeout(timer);
+    }
+
+    productSearchTimersRef.current[index] = setTimeout(() => {
+      loadProductOptions(index, value);
+    }, 250);
+  };
+
+  const handleProductSelectOpen = (index: number, open: boolean) => {
+    if (!open) {
+      setProductSearchQueries(prev => ({ ...prev, [index]: "" }));
+      return;
+    }
+
+    void loadProductOptions(index, productSearchQueries[index] || "");
   };
 
   const fetchTaxSystems = async () => {
@@ -261,6 +327,17 @@ export default function EditInvoicePage() {
           if (field === 'quantity' || field === 'unitPrice' || field === 'discount') {
             updatedItem.lineTotal = calculateLineTotal(updatedItem.quantity, updatedItem.unitPrice, updatedItem.discount);
           }
+          if (field === 'quantity' && updatedItem.productId) {
+            const product = productLookup[updatedItem.productId];
+            if (product && product.stockQuantity !== null && product.stockQuantity !== undefined) {
+              if (updatedItem.quantity > product.stockQuantity) {
+                showError(
+                  "Stock Warning",
+                  `Requested quantity (${updatedItem.quantity}) exceeds available stock (${product.stockQuantity}) for ${product.name}.`
+                );
+              }
+            }
+          }
           return updatedItem;
         }
         return item;
@@ -270,7 +347,7 @@ export default function EditInvoicePage() {
   };
 
   const selectProduct = (index: number, productId: string) => {
-    const product = products.find(p => p.id === productId);
+    const product = productLookup[productId];
     if (product) {
       if (formData.customerId && currentBusiness?.id) {
         fetchProductHistory(productId, formData.customerId);
@@ -653,41 +730,58 @@ export default function EditInvoicePage() {
                               <TableCell className="align-top p-3">
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-2">
-                                    <Select
-                                      value={item.productId || ""}
-                                      onValueChange={(value) => value && value !== "custom" ? selectProduct(index, value) : updateItem(index, "productId", "")}
+                                    <Popover 
+                                      open={popoverOpenIndex === index} 
                                       onOpenChange={(open) => {
+                                        setPopoverOpenIndex(open ? index : null);
                                         if (!open) setProductSearchQueries(prev => ({ ...prev, [index]: "" }));
                                       }}
                                     >
-                                      <SelectTrigger className={"w-full " + (idError ? "border-red-500" : "")}>
-                                        <SelectValue placeholder="Select Product" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <div className="p-2 sticky top-0 bg-popover z-10 border-b">
-                                          <Input 
+                                      <PopoverTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          role="combobox"
+                                          className={`w-full justify-between font-normal ${!item.productId ? "text-muted-foreground" : ""} ${idError ? "border-red-500" : ""}`}
+                                        >
+                                          {item.productId 
+                                            ? productLookup[item.productId]?.name || "Selected Product" 
+                                            : "Select/Search Product..."}
+                                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-[300px] p-0" align="start">
+                                        <Command shouldFilter={false}>
+                                          <CommandInput 
                                             placeholder="Search products..." 
                                             value={productSearchQueries[index] || ""}
-                                            onChange={(e) => setProductSearchQueries(prev => ({ ...prev, [index]: e.target.value }))}
-                                            onKeyDown={(e) => e.stopPropagation()}
+                                            onValueChange={(value) => handleProductSearchChange(index, value)}
                                           />
-                                        </div>
-                                        {products
-                                          .filter(p => p.name.toLowerCase().includes((productSearchQueries[index] || "").toLowerCase()))
-                                          .map((product) => (
-                                          <SelectItem key={product.id} value={product.id}>
-                                            <div className="flex items-center gap-2">
-                                              <span className="font-medium">{product.name}</span>
-                                            </div>
-                                          </SelectItem>
-                                        ))}
-                                        {products.filter(p => p.name.toLowerCase().includes((productSearchQueries[index] || "").toLowerCase())).length === 0 && (
-                                          <div className="p-4 text-center text-sm text-muted-foreground">
-                                            No products found.
-                                          </div>
-                                        )}
-                                      </SelectContent>
-                                    </Select>
+                                          <CommandList>
+                                            {(productOptionsByIndex[index] || []).length === 0 ? (
+                                               <CommandEmpty>No products found.</CommandEmpty>
+                                            ) : (
+                                              <CommandGroup>
+                                                {(productOptionsByIndex[index] || []).map((product) => (
+                                                  <CommandItem
+                                                    key={product.id}
+                                                    value={product.id}
+                                                    onSelect={(value) => {
+                                                      selectProduct(index, value);
+                                                      setPopoverOpenIndex(null);
+                                                    }}
+                                                  >
+                                                    <Check
+                                                      className={`mr-2 h-4 w-4 ${item.productId === product.id ? "opacity-100" : "opacity-0"}`}
+                                                    />
+                                                    {product.name}
+                                                  </CommandItem>
+                                                ))}
+                                              </CommandGroup>
+                                            )}
+                                          </CommandList>
+                                        </Command>
+                                      </PopoverContent>
+                                    </Popover>
                                   </div>
                                   {item.productId && productHistories[item.productId]?.hasHistory && (
                                     <div className="flex items-center justify-between text-xs text-muted-foreground ml-1">
