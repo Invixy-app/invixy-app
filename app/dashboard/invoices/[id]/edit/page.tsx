@@ -134,6 +134,22 @@ export default function EditInvoicePage() {
   const [productHistories, setProductHistories] = useState<Record<string, ProductHistory>>({});
   const [popoverOpenIndex, setPopoverOpenIndex] = useState<number | null>(null);
   
+  // Add Product Dialog State
+  const [showAddProductDialog, setShowAddProductDialog] = useState(false);
+  const [savingProduct, setSavingProduct] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    name: "",
+    description: "",
+    sku: "",
+    price: 0,
+    cost: 0,
+    category: "",
+    unit: "pcs",
+    stockQuantity: 0,
+    minStockLevel: 0,
+    taxSystemId: ""
+  });
+  
   const [formData, setFormData] = useState<InvoiceFormData>({
     customerId: "",
     issueDate: new Date().toISOString().split('T')[0],
@@ -194,6 +210,20 @@ export default function EditInvoicePage() {
         }))
       });
 
+      // Pre-fill products globally so selected products display their label properly
+      const newProductsLookup: Record<string, Product> = {};
+      const newOptionsByIndex: Record<number, Product[]> = {};
+
+      invoiceData.items.forEach((item: any, index: number) => {
+        if (item.product) {
+          newProductsLookup[item.product.id] = item.product;
+          newOptionsByIndex[index] = [item.product]; // Seed the select options with at least the selected product
+        }
+      });
+      
+      setProductLookup(prev => ({ ...prev, ...newProductsLookup }));
+      setProductOptionsByIndex(prev => ({ ...prev, ...newOptionsByIndex }));
+
       // Fetch related data
       await Promise.all([
         fetchCustomers(),
@@ -237,10 +267,25 @@ export default function EditInvoicePage() {
         const data = await response.json();
         const items = (data.items || []) as Product[];
 
-        setProductOptionsByIndex(prev => ({
-          ...prev,
-          [index]: items,
-        }));
+        setProductOptionsByIndex(prev => {
+          let updatedItems = [...items];
+          // Ensure the currently selected product is always in the list
+          const currentProductId = formData.items[index]?.productId;
+          if (currentProductId && !search.trim()) {
+            const isCurrentlyInFetched = items.some(p => p.id === currentProductId);
+            if (!isCurrentlyInFetched) {
+               // Try to find the product in the lookup or previous state
+               const currentlySelectedProduct = productLookup[currentProductId] || prev[index]?.find(p => p.id === currentProductId);
+               if (currentlySelectedProduct) {
+                   updatedItems = [currentlySelectedProduct, ...items].slice(0, PRODUCT_PAGE_SIZE);
+               }
+            }
+          }
+          return {
+            ...prev,
+            [index]: updatedItems,
+          };
+        });
 
         setProductLookup(prev => {
           const next = { ...prev };
@@ -323,6 +368,78 @@ export default function EditInvoicePage() {
         }));
       }
     );
+  };
+
+  const handleAddProduct = async () => {
+    if (!newProduct.name.trim()) {
+      showError("Validation Error", "Product name is required");
+      return;
+    }
+
+    if (newProduct.price <= 0) {
+      showError("Validation Error", "Product price must be greater than 0");
+      return;
+    }
+
+    if (!currentBusiness?.id) {
+      showError("Error", "No business selected");
+      return;
+    }
+
+    setSavingProduct(true);
+    try {
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...newProduct,
+          businessId: currentBusiness.id,
+          taxSystemId: newProduct.taxSystemId || null,
+        }),
+      });
+
+      if (response.ok) {
+        const createdProduct = await response.json();
+        setProductLookup(prev => ({
+          ...prev,
+          [createdProduct.id]: createdProduct,
+        }));
+        setProductOptionsByIndex(prev => {
+          const next: Record<number, Product[]> = {};
+          for (const [rowIndex, rowProducts] of Object.entries(prev)) {
+            const existing = rowProducts || [];
+            next[Number(rowIndex)] = existing.some(product => product.id === createdProduct.id)
+              ? existing
+              : [createdProduct, ...existing].slice(0, PRODUCT_PAGE_SIZE);
+          }
+          return next;
+        });
+        setNewProduct({
+          name: "",
+          description: "",
+          sku: "",
+          price: 0,
+          cost: 0,
+          category: "",
+          unit: "pcs",
+          stockQuantity: 0,
+          minStockLevel: 0,
+          taxSystemId: ""
+        });
+        setShowAddProductDialog(false);
+        showSuccess("Success", "Product created successfully");
+      } else {
+        const error = await response.json();
+        showError("Error", "Something went wrong. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error creating product:", error);
+      showError("Error", "Something went wrong. Please try again.");
+    } finally {
+      setSavingProduct(false);
+    }
   };
 
   const updateItem = (index: number, field: string, value: any) => {
@@ -740,7 +857,7 @@ export default function EditInvoicePage() {
                                       open={popoverOpenIndex === index} 
                                       onOpenChange={(open) => {
                                         setPopoverOpenIndex(open ? index : null);
-                                        if (!open) setProductSearchQueries(prev => ({ ...prev, [index]: "" }));
+                                        handleProductSelectOpen(index, open);
                                       }}
                                     >
                                       <PopoverTrigger asChild>
@@ -750,7 +867,7 @@ export default function EditInvoicePage() {
                                           className={`flex-1 min-w-0 w-full justify-between font-normal ${!item.productId ? "text-muted-foreground" : ""} ${idError ? "border-red-500" : ""}`}
                                         >
                                           <span className="truncate">{item.productId 
-                                            ? productLookup[item.productId]?.name || "Selected Product" 
+                                            ? productLookup[item.productId]?.name || item.description || "Selected Product" 
                                             : "Select/Search Product..."}</span>
                                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                         </Button>
@@ -795,7 +912,7 @@ export default function EditInvoicePage() {
                                             type="button"
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => {}} // Note: Add Product dialog logic if you want to restore it here
+                                            onClick={() => setShowAddProductDialog(true)}
                                             className="h-9 w-9 shrink-0 flex items-center justify-center rounded-md"
                                           >
                                             <Plus className="h-4 w-4" />
@@ -1066,7 +1183,183 @@ export default function EditInvoicePage() {
           </div>
         </div>
 
+        {/* Add Product Dialog */}
+        <Dialog open={showAddProductDialog} onOpenChange={setShowAddProductDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Product</DialogTitle>
+              <DialogDescription>
+                Create a new product to add to your catalog
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="productName">Product Name <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="productName"
+                    value={newProduct.name}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter product name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="productSKU">SKU</Label>
+                  <Input
+                    id="productSKU"
+                    value={newProduct.sku}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, sku: e.target.value }))}
+                    placeholder="Product SKU"
+                  />
+                </div>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="productDescription">Description</Label>
+                <Textarea
+                  id="productDescription"
+                  value={newProduct.description}
+                  onChange={(e) => setNewProduct(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Product description"
+                  rows={2}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="productPrice">Price <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="productPrice"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newProduct.price || ""}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="productCost">Cost</Label>
+                  <Input
+                    id="productCost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={newProduct.cost || ""}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, cost: parseFloat(e.target.value) || 0 }))}
+                    placeholder="0.00"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="productUnit">Unit</Label>
+                  <Select
+                    value={newProduct.unit}
+                    onValueChange={(value) => setNewProduct(prev => ({ ...prev, unit: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pcs">Pieces</SelectItem>
+                      <SelectItem value="kg">Kilogram</SelectItem>
+                      <SelectItem value="g">Gram</SelectItem>
+                      <SelectItem value="lb">Pound</SelectItem>
+                      <SelectItem value="l">Liter</SelectItem>
+                      <SelectItem value="ml">Milliliter</SelectItem>
+                      <SelectItem value="m">Meter</SelectItem>
+                      <SelectItem value="ft">Feet</SelectItem>
+                      <SelectItem value="box">Box</SelectItem>
+                      <SelectItem value="pack">Pack</SelectItem>
+                      <SelectItem value="hrs">Hours</SelectItem>
+                      <SelectItem value="days">Days</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="productCategory">Category</Label>
+                  <Input
+                    id="productCategory"
+                    value={newProduct.category}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, category: e.target.value }))}
+                    placeholder="Product category"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="productStock">Stock Quantity</Label>
+                  <Input
+                    id="productStock"
+                    type="number"
+                    min="0"
+                    value={newProduct.stockQuantity || ""}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, stockQuantity: parseInt(e.target.value) || 0 }))}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="productMinStock">Min Stock Level</Label>
+                  <Input
+                    id="productMinStock"
+                    type="number"
+                    min="0"
+                    value={newProduct.minStockLevel || ""}
+                    onChange={(e) => setNewProduct(prev => ({ ...prev, minStockLevel: parseInt(e.target.value) || 0 }))}
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+
+              {taxSystems.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="productTax">Default Tax</Label>
+                  <Select
+                    value={newProduct.taxSystemId || "none"}
+                    onValueChange={(value) => setNewProduct(prev => ({ ...prev, taxSystemId: value === "none" ? "" : value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select default tax (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No default tax</SelectItem>
+                      {taxSystems.map((tax) => (
+                        <SelectItem key={tax.id} value={tax.id}>
+                          {tax.name} ({(tax.rate * 100).toFixed(2)}%)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowAddProductDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleAddProduct}
+                disabled={savingProduct}
+              >
+                {savingProduct ? "Creating..." : "Create Product"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+      </div>
     </DashboardLayout>
   );
 }

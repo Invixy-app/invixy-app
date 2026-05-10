@@ -122,7 +122,7 @@ export async function getInvoicesByBusiness(
       },
       items: {
         include: {
-          itemTaxes: {
+          product: true, itemTaxes: {
             include: {
               taxSystem: {
                 select: {
@@ -239,7 +239,7 @@ export async function getInvoiceById(
       },
       items: {
         include: {
-          itemTaxes: {
+          product: true, itemTaxes: {
             include: {
               taxSystem: {
                 select: {
@@ -437,7 +437,7 @@ export async function createInvoice(
       },
       items: {
         include: {
-          itemTaxes: {
+          product: true, itemTaxes: {
             include: {
               taxSystem: {
                 select: {
@@ -614,7 +614,7 @@ export async function applyTaxesToInvoice(
       },
       items: {
         include: {
-          itemTaxes: {
+          product: true, itemTaxes: {
             include: {
               taxSystem: {
                 select: {
@@ -838,7 +838,7 @@ export async function updateInvoice(
       },
       items: {
         include: {
-          itemTaxes: {
+          product: true, itemTaxes: {
             include: {
               taxSystem: {
                 select: {
@@ -975,7 +975,7 @@ export async function updateInvoiceStatus(
       },
       items: {
         include: {
-          itemTaxes: {
+          product: true, itemTaxes: {
             include: {
               taxSystem: {
                 select: {
