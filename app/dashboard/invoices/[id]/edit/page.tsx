@@ -475,9 +475,8 @@ export default function EditInvoicePage() {
       if (formData.customerId && currentBusiness?.id) {
         fetchProductHistory(productId, formData.customerId);
       }
-      setFormData(prev => ({
-        ...prev,
-        items: prev.items.map((item, i) => {
+      setFormData(prev => {
+        const updatedItems = prev.items.map((item, i) => {
           if (i === index) {
             const updatedItem = {
               ...item,
@@ -490,8 +489,31 @@ export default function EditInvoicePage() {
             return updatedItem;
           }
           return item;
-        })
-      }));
+        });
+
+        const isSelectedRowLast = index === prev.items.length - 1;
+        const lastItem = updatedItems[updatedItems.length - 1];
+        const isLastItemEmpty =
+          !lastItem.productId &&
+          !lastItem.description?.trim() &&
+          lastItem.unitPrice === 0 &&
+          lastItem.discount === 0 &&
+          lastItem.lineTotal === 0;
+
+        if (isSelectedRowLast && !isLastItemEmpty) {
+          updatedItems.push({
+            productId: "",
+            description: "",
+            quantity: 1,
+            unitPrice: 0,
+            discount: 0,
+            lineTotal: 0,
+            taxSystemIds: []
+          });
+        }
+
+        return { ...prev, items: updatedItems };
+      });
     }
   };
 
