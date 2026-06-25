@@ -27,6 +27,7 @@ model User {
   BusinessUserRole BusinessUserRole[]
   createdInvoices  Invoice[]          @relation("InvoiceCreator")
   createdPayments  Payment[]          @relation("PaymentCreator")
+  createdExpenses  Expense[]          @relation("ExpenseCreator")
   settings         UserSettings?
 }
 
@@ -89,6 +90,9 @@ model Business {
   invoices         Invoice[]
   subscriptions    Subscription[]
   transactions     Transaction[]
+  customerPrices   CustomerProductPrice[]
+  expenseCategories ExpenseCategory[]
+  expenses         Expense[]
 }
 
 model BusinessUserRole {
@@ -107,6 +111,7 @@ model BusinessUserRole {
 enum InvoiceTemplate {
   TEMPLATE_1
   TEMPLATE_2
+  INDIA_TEMPLATE
 }
 
 enum Role {
@@ -133,6 +138,7 @@ model Customer {
 
   business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
   invoices Invoice[]
+  customPrices CustomerProductPrice[]
 }
 
 model Product {
@@ -155,6 +161,7 @@ model Product {
   business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   taxSystem    TaxSystem?    @relation(fields: [taxSystemId], references: [id])
   invoiceItems InvoiceItem[]
+  customerPrices CustomerProductPrice[]
 
   @@unique([businessId, sku])
 }
@@ -339,6 +346,7 @@ enum InvoiceStatus {
   DRAFT
   SENT
   VIEWED
+  PARTIALLY_PAID
   PARTIAL_PAID
   PAID
   OVERDUE
@@ -382,3 +390,62 @@ enum TransactionStatus{
   FAILED
   REFUNDED
 }
+
+model CustomerProductPrice {
+  id         String   @id @default(cuid())
+  businessId String
+  customerId String
+  productId  String
+  price      Decimal  @db.Decimal(10, 2)
+  updatedAt  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, productId])
+}
+
+model ExpenseCategory {
+  id          String    @id @default(cuid())
+  businessId  String
+  name        String
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  business Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@unique([businessId, name])
+}
+
+model Expense {
+  id              String          @id @default(cuid())
+  businessId      String
+  categoryId      String?         
+  amount          Decimal         @db.Decimal(10, 2)
+  currency        String          @default("USD")
+  date            DateTime        @default(now())
+  description     String
+  paymentMethod   PaymentMethod   @default(CASH)
+  reference       String?         
+  receiptUrl      String?         
+  status          ExpenseStatus   @default(COMPLETED)
+  createdBy       String?         
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  business Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category ExpenseCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  creator  User?              @relation("ExpenseCreator", fields: [createdBy], references: [id], onDelete: SetNull)
+}
+
+enum ExpenseStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+

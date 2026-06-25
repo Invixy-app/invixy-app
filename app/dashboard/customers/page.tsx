@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
@@ -31,7 +31,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { LIMITS } from "@/lib/constants-limits";
-import { Edit, Eye, Mail, MapPin, MoreHorizontal, Phone, Plus, Search, Trash2 } from "lucide-react";
+import { Edit, Eye, Mail, MapPin, MoreHorizontal, Phone, Plus, Search, Trash2, Users, UserCheck, AtSign } from "lucide-react";
 import Link from "next/link";
 import { BulkCustomerImport } from "@/components/customers/bulk-customer-import";
 
@@ -49,56 +49,86 @@ interface Customer {
 }
 
 export default function CustomersPage() {
+  const ITEMS_PER_PAGE = 10;
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
+  const [totalCustomers, setTotalCustomers] = useState(0);
+  const [activeCustomers, setActiveCustomers] = useState(0);
+  const [customersWithEmail, setCustomersWithEmail] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const hasLoadedOnceRef = useRef(false);
 
   // Calculate limits
   const currentPlan = currentBusiness?.plan || "FREE";
   const customerLimit = LIMITS[currentPlan].CUSTOMERS;
-  const canCreateCustomer = customers.length < customerLimit;
+  const canCreateCustomer = totalCustomers < customerLimit;
 
   useEffect(() => {
-    if (currentBusiness?.id) {
-      fetchCustomers(currentBusiness.id);
-    } else if (!businessLoading) {
-      setLoading(false);
+    if (!currentBusiness?.id && !businessLoading) {
+      setInitialLoading(false);
     }
   }, [currentBusiness?.id, businessLoading]);
 
   useEffect(() => {
-    filterCustomers();
-  }, [customers, searchTerm]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-  const fetchCustomers = async (businessId: string) => {
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, currentBusiness?.id]);
+
+  useEffect(() => {
+    if (currentBusiness?.id) {
+      fetchCustomers(currentBusiness.id, currentPage, debouncedSearchTerm);
+    }
+  }, [currentBusiness?.id, currentPage, debouncedSearchTerm]);
+
+  const fetchCustomers = async (businessId: string, page = 1, search = "") => {
+    const isInitialFetch = !hasLoadedOnceRef.current;
     try {
-      setLoading(true);
-      const response = await fetch(`/api/customers?businessId=${businessId}`);
+      if (isInitialFetch) {
+        setInitialLoading(true);
+      } else {
+        setTableLoading(true);
+      }
+      const params = new URLSearchParams({
+        businessId,
+        paginated: "true",
+        page: String(page),
+        pageSize: String(ITEMS_PER_PAGE),
+      });
+      if (search.trim()) {
+        params.set("search", search.trim());
+      }
+
+      const response = await fetch(`/api/customers?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setCustomers(data);
+        setCustomers(data.items || []);
+        setTotalCustomers(data.total || 0);
+        setTotalPages(data.totalPages || 1);
+        setActiveCustomers(data.stats?.activeCount || 0);
+        setCustomersWithEmail(data.stats?.withEmailCount || 0);
       } else {
         console.error("Failed to fetch customers");
       }
     } catch (error) {
       console.error("Error fetching customers:", error);
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterCustomers = () => {
-    if (!searchTerm) {
-      setFilteredCustomers(customers);
-    } else {
-      const filtered = customers.filter(customer =>
-        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        customer.phone?.includes(searchTerm)
-      );
-      setFilteredCustomers(filtered);
+      if (isInitialFetch) {
+        hasLoadedOnceRef.current = true;
+        setInitialLoading(false);
+      }
+      setTableLoading(false);
     }
   };
 
@@ -113,7 +143,9 @@ export default function CustomersPage() {
           });
 
           if (response.ok) {
-            setCustomers(customers.filter(c => c.id !== customerId));
+            if (currentBusiness?.id) {
+                await fetchCustomers(currentBusiness.id, currentPage, debouncedSearchTerm);
+            }
             showSuccess("Success", "Customer deleted successfully");
           } else {
             const errorData = await response.json();
@@ -135,11 +167,15 @@ export default function CustomersPage() {
     return new Date(dateString).toLocaleDateString();
   };
 
-  if (loading) {
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const rangeStart = totalCustomers === 0 ? 0 : startIndex + 1;
+  const rangeEnd = Math.min(startIndex + ITEMS_PER_PAGE, totalCustomers);
+
+  if (initialLoading || businessLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -165,9 +201,9 @@ export default function CustomersPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Customers</h1>
             <p className="text-muted-foreground">
@@ -175,12 +211,18 @@ export default function CustomersPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <BulkCustomerImport />
+            <BulkCustomerImport
+              onImportSuccess={async () => {
+                if (currentBusiness?.id) {
+                  await fetchCustomers(currentBusiness.id, currentPage, debouncedSearchTerm);
+                }
+              }}
+            />
             <TooltipProvider>
               <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <span>
-                  <Button disabled={!canCreateCustomer} asChild={canCreateCustomer}>
+                  <Button disabled={!canCreateCustomer} asChild={canCreateCustomer} className="bg-[var(--brand-cobalt)] hover:bg-[var(--brand-indigo)] text-white">
                     {canCreateCustomer ? (
                       <Link href="/dashboard/customers/new">
                         <Plus className="h-4 w-4 mr-2" />
@@ -205,8 +247,48 @@ export default function CustomersPage() {
           </div>
         </div>
 
+        {/* Summary Stats */}
+        {totalCustomers > 0 && (
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+                <Users className="h-4 w-4 text-[var(--brand-cobalt)]" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{totalCustomers}</div>
+                <p className="text-xs text-muted-foreground">Customer records</p>
+              </CardContent>
+            </Card>
+            <Card className="border-[var(--brand-teal)]/25 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
+                <UserCheck className="h-4 w-4 text-[var(--brand-teal)]" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {activeCustomers}
+                </div>
+                <p className="text-xs text-muted-foreground">Currently active profiles</p>
+              </CardContent>
+            </Card>
+            <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">With Email</CardTitle>
+                <AtSign className="h-4 w-4 text-[var(--brand-indigo)]" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {customersWithEmail}
+                </div>
+                <p className="text-xs text-muted-foreground">Reachable by email</p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Search and Filters */}
-        <Card>
+        <Card className="shadow-sm border-border/80">
           <CardHeader>
             <CardTitle>Customer Directory</CardTitle>
             <CardDescription>
@@ -227,23 +309,29 @@ export default function CustomersPage() {
             </div>
 
             {/* Customers Table */}
-            {filteredCustomers.length > 0 ? (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="max-w-[200px]">Customer</TableHead>
-                      <TableHead className="max-w-[200px]">Contact</TableHead>
-                      <TableHead className="max-w-[250px]">Address</TableHead>
-                      <TableHead className="w-[120px]">Tax ID</TableHead>
-                      <TableHead className="w-[100px]">Status</TableHead>
-                      <TableHead className="w-[120px]">Added</TableHead>
-                      <TableHead className="text-right w-[50px]">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredCustomers.map((customer) => (
-                      <TableRow key={customer.id}>
+            {tableLoading ? (
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-border/80 bg-muted/40 px-4 py-8 text-sm text-muted-foreground">
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand-cobalt)] border-b-transparent" />
+                Loading customers...
+              </div>
+            ) : customers.length > 0 ? (
+              <div>
+                <div className="rounded-xl border border-border/80 overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="max-w-[200px]">Customer</TableHead>
+                        <TableHead className="max-w-[200px]">Contact</TableHead>
+                        <TableHead className="max-w-[250px]">Address</TableHead>
+                        <TableHead className="w-[120px]">Tax ID</TableHead>
+                        <TableHead className="w-[100px]">Status</TableHead>
+                        <TableHead className="w-[120px]">Added</TableHead>
+                        <TableHead className="text-right w-[50px]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {customers.map((customer) => (
+                        <TableRow key={customer.id}>
                         <TableCell className="max-w-[200px]">
                           <div>
                             <div className="font-medium line-clamp-2" title={customer.name}>{customer.name}</div>
@@ -317,7 +405,7 @@ export default function CustomersPage() {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem 
                                 onClick={() => handleDeleteCustomer(customer.id)}
-                                className="text-red-600"
+                                className="text-destructive"
                               >
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Delete
@@ -325,10 +413,37 @@ export default function CustomersPage() {
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="flex items-center justify-between border-t border-border/80 px-4 py-3">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {rangeStart}-{rangeEnd} of {totalCustomers} customers
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
               </div>
             ) : (
               <div className="text-center py-12">
@@ -377,39 +492,6 @@ export default function CustomersPage() {
           </CardContent>
         </Card>
 
-        {/* Summary Stats */}
-        {customers.length > 0 && (
-          <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{customers.length}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {customers.filter(c => c.isActive).length}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium">With Email</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">
-                  {customers.filter(c => c.email).length}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
       </div>
     </DashboardLayout>
   );

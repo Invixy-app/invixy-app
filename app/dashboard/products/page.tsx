@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
@@ -69,64 +69,95 @@ interface Product {
 }
 
 export default function ProductsPage() {
+  const ITEMS_PER_PAGE = 10;
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [activeProductsCount, setActiveProductsCount] = useState(0);
+  const [lowStockProductsCount, setLowStockProductsCount] = useState(0);
+  const [categoryCount, setCategoryCount] = useState(0);
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const hasLoadedOnceRef = useRef(false);
 
   // Calculate limits
   const currentPlan = currentBusiness?.plan || "FREE";
   const productLimit = LIMITS[currentPlan].PRODUCTS;
-  const canCreateProduct = products.length < productLimit;
+  const canCreateProduct = totalProducts < productLimit;
 
   useEffect(() => {
-    if (currentBusiness?.id) {
-      fetchProducts(currentBusiness.id);
-    } else if (!businessLoading) {
-      setLoading(false);
+    if (!currentBusiness?.id && !businessLoading) {
+      setInitialLoading(false);
     }
   }, [currentBusiness?.id, businessLoading]);
 
   useEffect(() => {
-    filterProducts();
-  }, [products, searchTerm, selectedCategory]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-  const fetchProducts = async (businessId: string) => {
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, selectedCategory, currentBusiness?.id]);
+
+  useEffect(() => {
+    if (currentBusiness?.id) {
+      fetchProducts(currentBusiness.id, currentPage, debouncedSearchTerm, selectedCategory);
+    }
+  }, [currentBusiness?.id, currentPage, debouncedSearchTerm, selectedCategory]);
+
+  const fetchProducts = async (businessId: string, page = 1, search = "", category = "") => {
+    const isInitialFetch = !hasLoadedOnceRef.current;
     try {
-      setLoading(true);
-      const response = await fetch(`/api/products?businessId=${businessId}`);
+      if (isInitialFetch) {
+        setInitialLoading(true);
+      } else {
+        setTableLoading(true);
+      }
+      const params = new URLSearchParams({
+        businessId,
+        paginated: "true",
+        page: String(page),
+        pageSize: String(ITEMS_PER_PAGE),
+      });
+      if (search.trim()) {
+        params.set("search", search.trim());
+      }
+      if (category.trim()) {
+        params.set("category", category.trim());
+      }
+
+      const response = await fetch(`/api/products?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setProducts(data);
+        setProducts(data.items || []);
+        setTotalProducts(data.total || 0);
+        setTotalPages(data.totalPages || 1);
+        setActiveProductsCount(data.stats?.activeCount || 0);
+        setLowStockProductsCount(data.stats?.lowStockCount || 0);
+        setCategoryCount(data.stats?.categoryCount || 0);
+        setCategoryOptions(data.categoryOptions || []);
       } else {
         console.error("Failed to fetch products");
       }
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
-      setLoading(false);
+      if (isInitialFetch) {
+        hasLoadedOnceRef.current = true;
+        setInitialLoading(false);
+      }
+      setTableLoading(false);
     }
-  };
-
-  const filterProducts = () => {
-    let filtered = products;
-
-    if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    if (selectedCategory) {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
-
-    setFilteredProducts(filtered);
   };
 
   const handleDeleteProduct = (productId: string) => {
@@ -145,7 +176,7 @@ export default function ProductsPage() {
           });
 
           if (response.ok) {
-            setProducts(products.filter(p => p.id !== productId));
+            await fetchProducts(currentBusiness.id, currentPage, debouncedSearchTerm, selectedCategory);
             showSuccess("Success", "Product deleted successfully");
           } else {
             const errorData = await response.json();
@@ -186,13 +217,15 @@ export default function ProductsPage() {
     return { status: "In stock", variant: "default" as const };
   };
 
-  const categories = Array.from(new Set(products.map(p => p.category).filter(Boolean)));
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const rangeStart = totalProducts === 0 ? 0 : startIndex + 1;
+  const rangeEnd = Math.min(startIndex + ITEMS_PER_PAGE, totalProducts);
 
-  if (loading) {
+  if (initialLoading || businessLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -217,337 +250,261 @@ export default function ProductsPage() {
   }
 
   return (
- <DashboardLayout>
-  <div className="space-y-6">
-    {/* Header */}
-    <div className="flex justify-between items-center">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Products</h1>
-        <p className="text-muted-foreground">
-          Manage your product catalog and inventory
-        </p>
-      </div>
-      <div className="flex items-center space-x-2">
-        <BulkProductImport />
-        <TooltipProvider>
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <span>
-                <Button disabled={!canCreateProduct} asChild={canCreateProduct}>
-                  {canCreateProduct ? (
-                    <Link href="/dashboard/products/new">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Product
-                    </Link>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Product
-                    </>
-                  )}
-                </Button>
-              </span>
-            </TooltipTrigger>
-            {!canCreateProduct && (
-              <TooltipContent side="left">
-                <p>You have reached the limit of {productLimit} products for the {currentPlan} plan.</p>
-                <p className="font-semibold text-primary mt-1">Upgrade to Pro for unlimited products.</p>
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-    </div>
-
-    {/* Search and Filters */}
-    <Card className="border border-gray-100 shadow-sm rounded-xl">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold text-gray-900">
-          Product Catalog
-        </CardTitle>
-        <CardDescription>Search and manage your products</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col sm:flex-row gap-4 mb-5">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search products by name, description, or Item Code..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight">Product Catalog</h1>
+            <p className="text-muted-foreground">Manage your enterprise inventory and pricing structures.</p>
           </div>
-          {categories.length > 0 && (
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 border border-gray-300 bg-white rounded-md text-sm shadow-sm"
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category || ""}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          )}
+          <div className="flex items-center gap-2">
+            <BulkProductImport
+              onImportSuccess={async () => {
+                if (currentBusiness?.id) {
+                  await fetchProducts(currentBusiness.id, currentPage, debouncedSearchTerm, selectedCategory);
+                }
+              }}
+            />
+            <TooltipProvider>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button disabled={!canCreateProduct} asChild={canCreateProduct} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
+                      {canCreateProduct ? (
+                        <Link href="/dashboard/products/new">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Product
+                        </Link>
+                      ) : (
+                        <>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Product
+                        </>
+                      )}
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {!canCreateProduct && (
+                  <TooltipContent side="left">
+                    <p>You reached the limit of {productLimit} products for {currentPlan}.</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+          </div>
         </div>
 
-        {/* Products Table */}
-        {filteredProducts.length > 0 ? (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <Table>
-              <TableHeader className="bg-gray-50">
-                <TableRow>
-                  <TableHead className="font-semibold text-gray-700 max-w-[250px]">
-                    Product
-                  </TableHead>
-                  <TableHead className="w-[120px]">Item Code</TableHead>
-                  <TableHead className="w-[120px]">Price</TableHead>
-                  <TableHead className="w-[150px]">Stock</TableHead>
-                  <TableHead className="w-[120px]">Category</TableHead>
-                  <TableHead className="w-[150px]">Tax System</TableHead>
-                  <TableHead className="w-[100px]">Status</TableHead>
-                  <TableHead className="text-right w-[50px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProducts.map((product) => {
-                  const stockStatus = getStockStatus(product);
-                  return (
-                    <TableRow
-                      key={product.id}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      <TableCell className="max-w-[250px]">
-                        <div>
-                          <div className="font-medium text-gray-900 line-clamp-2" title={product.name}>
-                            {product.name}
-                          </div>
-                          {product.description && (
-                            <div className="text-sm text-gray-500 line-clamp-2" title={product.description}>
-                              {product.description}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {product.sku && (
-                          <div className="flex items-center text-sm text-gray-700">
-                            {/* <Hash className="h-3 w-3 mr-1 text-gray-400" /> */}
-                            {product.sku}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center text-gray-900">
-                          {/* <DollarSign className="h-3 w-3 mr-1 text-gray-400" /> */}
-                          {formatCurrency(product.price)}
-                        </div>
-                        {product.cost && (
-                          <div className="text-xs text-gray-500">
-                            Cost: {formatCurrency(product.cost)}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          {product.stockQuantity === null ? (
-                            <span className="text-sm text-gray-500">
-                              Not tracked
-                            </span>
-                          ) : (
-                            <>
-                              <span className="font-medium text-gray-900">
-                                {product.stockQuantity}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                {product.unit}
-                              </span>
-                              {getStockStatus(product).status === "Low stock" && (
-                                <AlertTriangle className="h-3 w-3 text-yellow-500" />
-                              )}
-                            </>
-                          )}
-                        </div>
-                        <Badge
-                          variant={stockStatus.variant}
-                          className="text-xs mt-1"
-                        >
-                          {stockStatus.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {product.category && (
-                          <Badge variant="outline" className="text-xs">
-                            {product.category}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {product.taxSystem && (
-                          <div className="text-sm text-gray-800">
-                            <div className="font-medium">
-                              {product.taxSystem.name}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {(product.taxSystem.rate * 100).toFixed(2)}%
-                            </div>
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={product.isActive ? "default" : "secondary"}
-                          className="text-xs"
-                        >
-                          {product.isActive ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="h-8 w-8 p-0 hover:bg-gray-100"
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <Link href={`/dashboard/products/${product.id}`}>
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View Details
-                              </DropdownMenuItem>
-                            </Link>
-                            <Link href={`/dashboard/products/${product.id}/edit`}>
-                              <DropdownMenuItem>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit Product
-                              </DropdownMenuItem>
-                            </Link>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              onClick={() => handleDeleteProduct(product.id)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div className="text-center py-14">
-            <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <Package className="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              {searchTerm || selectedCategory
-                ? "No products found"
-                : "No products yet"}
-            </h3>
-            <p className="text-gray-500 mb-4">
-              {searchTerm || selectedCategory
-                ? "Try adjusting your search terms or filters."
-                : "Get started by adding your first product."}
-            </p>
-            {!(searchTerm || selectedCategory) && (
-              <TooltipProvider>
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button disabled={!canCreateProduct} asChild={canCreateProduct} className="bg-blue-600 hover:bg-blue-700 text-white">
-                        {canCreateProduct ? (
-                          <Link href="/dashboard/products/new">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Your First Product
-                          </Link>
-                        ) : (
-                          <>
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Your First Product
-                          </>
-                        )}
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  {!canCreateProduct && (
-                    <TooltipContent>
-                      <p>Limit reached on {currentPlan} plan.</p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-
-    {/* Summary Stats */}
-    {products.length > 0 && (
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          {
-            title: "Total Products",
-            value: products.length,
-          },
-          {
-            title: "Active Products",
-            value: products.filter((p) => p.isActive).length,
-          },
-          {
-            title: "Low Stock Items",
-            value: products.filter(
-              (p) =>
-                p.stockQuantity !== null &&
-                p.minStockLevel !== null &&
-                typeof p.stockQuantity === "number" &&
-                typeof p.minStockLevel === "number" &&
-                p.stockQuantity <= p.minStockLevel
-            ).length,
-            color: "text-yellow-600",
-          },
-          {
-            title: "Categories",
-            value: categories.length,
-          },
-        ].map((stat) => (
-          <Card
-            key={stat.title}
-            className="border border-gray-100 shadow-sm rounded-xl hover:shadow-md transition-shadow"
-          >
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-gray-700">
-                {stat.title}
-              </CardTitle>
+        <div className="grid gap-3 md:grid-cols-4">
+          <Card className="rounded-2xl border-border/80 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <Package className="h-4 w-4 text-[var(--brand-cobalt)]" />
             </CardHeader>
             <CardContent>
-              <div
-                className={`text-3xl font-semibold ${
-                  stat.color || "text-gray-900"
-                }`}
-              >
-                {stat.value}
-              </div>
+              <div className="text-2xl font-bold">{totalProducts.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Catalog volume</p>
             </CardContent>
           </Card>
-        ))}
-      </div>
-    )}
-  </div>
-</DashboardLayout>
+          <Card className="rounded-2xl border-border/80 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Products</CardTitle>
+              <Eye className="h-4 w-4 text-[var(--brand-teal)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{activeProductsCount.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Published and available</p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-border/80 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{lowStockProductsCount.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Needs restocking attention</p>
+            </CardContent>
+          </Card>
+          <Card className="rounded-2xl border-border/80 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Categories</CardTitle>
+              <Hash className="h-4 w-4 text-[var(--brand-indigo)]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{categoryCount.toLocaleString()}</div>
+              <p className="text-xs text-muted-foreground">Active taxonomy groups</p>
+            </CardContent>
+          </Card>
+        </div>
 
+        <Card className="rounded-2xl border-border/80 shadow-sm">
+          <CardHeader className="border-b bg-muted/20 pb-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative w-full max-w-md">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search products, Item Code, category..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="h-10 pl-9"
+                  />
+                </div>
+                {categoryOptions.length > 0 && (
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="h-10 rounded-md border border-border/80 bg-background px-4 text-sm shadow-sm"
+                  >
+                    <option value="">All Categories</option>
+                    {categoryOptions.map((category) => (
+                      <option key={category} value={category || ""}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Showing {rangeStart}-{rangeEnd} of {totalProducts.toLocaleString()} products
+              </p>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {tableLoading ? (
+              <div className="flex items-center justify-center gap-2 px-5 py-8 text-sm text-muted-foreground">
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand-cobalt)] border-b-transparent" />
+                Loading products...
+              </div>
+            ) : products.length > 0 ? (
+              <div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-muted/30">
+                      <TableRow>
+                        <TableHead className="px-5 text-[10px] uppercase tracking-[0.14em]">Product Name</TableHead>
+                        <TableHead className="text-[10px] uppercase tracking-[0.14em]">Item Code</TableHead>
+                        <TableHead className="text-[10px] uppercase tracking-[0.14em]">Category</TableHead>
+                        <TableHead className="text-[10px] uppercase tracking-[0.14em]">Price</TableHead>
+                        <TableHead className="text-[10px] uppercase tracking-[0.14em]">Stock</TableHead>
+                        <TableHead className="text-[10px] uppercase tracking-[0.14em]">Tax System</TableHead>
+                        <TableHead className="text-[10px] uppercase tracking-[0.14em]">Status</TableHead>
+                        <TableHead className="text-right text-[10px] uppercase tracking-[0.14em]">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {products.map((product) => {
+                        const stockStatus = getStockStatus(product);
+                        return (
+                          <TableRow key={product.id} className="hover:bg-muted/20">
+                            <TableCell className="px-5 py-3">
+                              <div className="font-medium">{product.name}</div>
+                              <div className="text-xs text-muted-foreground line-clamp-1">{product.description || "-"}</div>
+                            </TableCell>
+                            <TableCell className="py-3 text-sm text-muted-foreground">{product.sku || "-"}</TableCell>
+                            <TableCell className="py-3">
+                              {product.category ? <Badge variant="outline">{product.category}</Badge> : "-"}
+                            </TableCell>
+                            <TableCell className="py-3 font-semibold">{formatCurrency(product.price)}</TableCell>
+                            <TableCell className="py-3">
+                              <div className="text-sm font-medium">{product.stockQuantity ?? "-"}</div>
+                              <Badge variant={stockStatus.variant} className="mt-1 text-[10px]">
+                                {stockStatus.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-3 text-xs text-muted-foreground">
+                              {product.taxSystem ? `${product.taxSystem.name} (${(product.taxSystem.rate * 100).toFixed(0)}%)` : "-"}
+                            </TableCell>
+                            <TableCell className="py-3">
+                              <Badge variant={product.isActive ? "default" : "secondary"} className="text-[10px]">
+                                {product.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-3 text-right">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-muted">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <Link href={`/dashboard/products/${product.id}`}>
+                                    <DropdownMenuItem>
+                                      <Eye className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                  </Link>
+                                  <Link href={`/dashboard/products/${product.id}/edit`}>
+                                    <DropdownMenuItem>
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Edit Product
+                                    </DropdownMenuItem>
+                                  </Link>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteProduct(product.id)}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="flex items-center justify-between border-t border-border/80 px-5 py-3">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {rangeStart}-{rangeEnd} of {totalProducts} products
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-14 text-center">
+                <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-muted">
+                  <Package className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="mb-2 text-lg font-semibold text-foreground">
+                  {searchTerm || selectedCategory ? "No products found" : "No products yet"}
+                </h3>
+                <p className="mb-4 text-muted-foreground">
+                  {searchTerm || selectedCategory
+                    ? "Try adjusting your search terms or filters."
+                    : "Get started by adding your first product."}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+      </div>
+    </DashboardLayout>
   );
 }

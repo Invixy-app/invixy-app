@@ -4,7 +4,7 @@ import { PricingTable } from "@/components/pricing-table"
 
 export function PricingSection() {
   return (
-    <section id="pricing" className="container py-24 sm:py-32 px-4 w-full mx-auto">
+    <section id="pricing" className=" py-24 sm:py-32 px-4 w-full mx-auto">
       <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-4 text-center">
         <h2 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-6xl">
           Simple, transparent pricing

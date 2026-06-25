@@ -20,6 +20,10 @@ export interface InvoiceItemTaxData {
   taxableAmount: number;
   taxRate: number;
   taxAmount: number;
+  taxSystem?: {
+    name: string;
+    taxId?: string;
+  };
 }
 
 export interface InvoiceTaxData {
@@ -173,7 +177,13 @@ export async function getInvoicesByBusiness(
         taxSystemId: itemTax.taxSystemId,
         taxableAmount: Number(itemTax.taxableAmount),
         taxRate: Number(itemTax.taxRate),
-        taxAmount: Number(itemTax.taxAmount)
+        taxAmount: Number(itemTax.taxAmount),
+        taxSystem: itemTax.taxSystem
+          ? {
+              name: itemTax.taxSystem.name,
+              taxId: itemTax.taxSystem.taxId,
+            }
+          : undefined,
       }))
     })),
     taxes: invoice.taxes.map(tax => ({
@@ -280,7 +290,13 @@ export async function getInvoiceById(
         taxSystemId: itemTax.taxSystemId,
         taxableAmount: Number(itemTax.taxableAmount),
         taxRate: Number(itemTax.taxRate),
-        taxAmount: Number(itemTax.taxAmount)
+        taxAmount: Number(itemTax.taxAmount),
+        taxSystem: itemTax.taxSystem
+          ? {
+              name: itemTax.taxSystem.name,
+              taxId: itemTax.taxSystem.taxId,
+            }
+          : undefined,
       }))
     })),
     taxes: invoice.taxes.map(tax => ({
@@ -389,7 +405,6 @@ export async function createInvoice(
     });
   }
 
-  // Create invoice with items and their taxes
   const invoice = await prisma.invoice.create({
     data: {
       businessId: invoiceData.businessId,
@@ -422,7 +437,16 @@ export async function createInvoice(
       },
       items: {
         include: {
-          itemTaxes: true
+          itemTaxes: {
+            include: {
+              taxSystem: {
+                select: {
+                  name: true,
+                  taxId: true
+                }
+              }
+            }
+          }
         },
         orderBy: { sortOrder: 'asc' }
       },
@@ -430,6 +454,31 @@ export async function createInvoice(
       payments: true
     }
   });
+
+  // Track customer specifically negotiated custom prices
+  if (invoiceData.customerId && invoiceData.businessId) {
+    for (const item of invoiceData.items) {
+      if (item.productId) {
+        await prisma.customerProductPrice.upsert({
+          where: {
+            customerId_productId: {
+              customerId: invoiceData.customerId,
+              productId: item.productId,
+            }
+          },
+          update: {
+            price: item.unitPrice,
+          },
+          create: {
+            businessId: invoiceData.businessId,
+            customerId: invoiceData.customerId,
+            productId: item.productId,
+            price: item.unitPrice,
+          }
+        });
+      }
+    }
+  }
 
   return {
     ...invoice,
@@ -449,7 +498,13 @@ export async function createInvoice(
         taxSystemId: itemTax.taxSystemId,
         taxableAmount: Number(itemTax.taxableAmount),
         taxRate: Number(itemTax.taxRate),
-        taxAmount: Number(itemTax.taxAmount)
+        taxAmount: Number(itemTax.taxAmount),
+        taxSystem: itemTax.taxSystem
+          ? {
+              name: itemTax.taxSystem.name,
+              taxId: itemTax.taxSystem.taxId,
+            }
+          : undefined,
       }))
     })),
     taxes: [],
@@ -559,7 +614,16 @@ export async function applyTaxesToInvoice(
       },
       items: {
         include: {
-          itemTaxes: true
+          itemTaxes: {
+            include: {
+              taxSystem: {
+                select: {
+                  name: true,
+                  taxId: true
+                }
+              }
+            }
+          }
         },
         orderBy: { sortOrder: 'asc' }
       },
@@ -595,7 +659,13 @@ export async function applyTaxesToInvoice(
         taxSystemId: itemTax.taxSystemId,
         taxableAmount: Number(itemTax.taxableAmount),
         taxRate: Number(itemTax.taxRate),
-        taxAmount: Number(itemTax.taxAmount)
+        taxAmount: Number(itemTax.taxAmount),
+        taxSystem: itemTax.taxSystem
+          ? {
+              name: itemTax.taxSystem.name,
+              taxId: itemTax.taxSystem.taxId,
+            }
+          : undefined,
       }))
     })),
     taxes: updatedInvoice.taxes.map(tax => ({
@@ -752,7 +822,7 @@ export async function updateInvoice(
     };
   }
 
-  // Update invoice
+  // Update invoice totals
   const updatedInvoice = await prisma.invoice.update({
     where: { id: invoiceId },
     data: updateData,
@@ -768,7 +838,16 @@ export async function updateInvoice(
       },
       items: {
         include: {
-          itemTaxes: true
+          itemTaxes: {
+            include: {
+              taxSystem: {
+                select: {
+                  name: true,
+                  taxId: true
+                }
+              }
+            }
+          }
         },
         orderBy: { sortOrder: 'asc' }
       },
@@ -785,6 +864,32 @@ export async function updateInvoice(
       payments: true
     }
   });
+
+  // Track customer specifically negotiated custom prices
+  if (invoiceData.items) {
+    const customerId = invoiceData.customerId || existingInvoice.customerId;
+    for (const item of invoiceData.items) {
+      if (item.productId) {
+        await prisma.customerProductPrice.upsert({
+          where: {
+            customerId_productId: {
+              customerId: customerId,
+              productId: item.productId,
+            }
+          },
+          update: {
+            price: item.unitPrice,
+          },
+          create: {
+            businessId: existingInvoice.businessId,
+            customerId: customerId,
+            productId: item.productId,
+            price: item.unitPrice,
+          }
+        });
+      }
+    }
+  }
 
   return {
     ...updatedInvoice,
@@ -804,7 +909,13 @@ export async function updateInvoice(
         taxSystemId: itemTax.taxSystemId,
         taxableAmount: Number(itemTax.taxableAmount),
         taxRate: Number(itemTax.taxRate),
-        taxAmount: Number(itemTax.taxAmount)
+        taxAmount: Number(itemTax.taxAmount),
+        taxSystem: itemTax.taxSystem
+          ? {
+              name: itemTax.taxSystem.name,
+              taxId: itemTax.taxSystem.taxId,
+            }
+          : undefined,
       }))
     })),
     taxes: updatedInvoice.taxes.map(tax => ({
@@ -864,7 +975,16 @@ export async function updateInvoiceStatus(
       },
       items: {
         include: {
-          itemTaxes: true
+          itemTaxes: {
+            include: {
+              taxSystem: {
+                select: {
+                  name: true,
+                  taxId: true
+                }
+              }
+            }
+          }
         },
         orderBy: { sortOrder: 'asc' }
       },
@@ -900,7 +1020,13 @@ export async function updateInvoiceStatus(
         taxSystemId: itemTax.taxSystemId,
         taxableAmount: Number(itemTax.taxableAmount),
         taxRate: Number(itemTax.taxRate),
-        taxAmount: Number(itemTax.taxAmount)
+        taxAmount: Number(itemTax.taxAmount),
+        taxSystem: itemTax.taxSystem
+          ? {
+              name: itemTax.taxSystem.name,
+              taxId: itemTax.taxSystem.taxId,
+            }
+          : undefined,
       }))
     })),
     taxes: updatedInvoice.taxes.map(tax => ({
@@ -976,8 +1102,8 @@ export async function recordPayment(
   let newStatus = invoice.status;
   if (newPaidAmount >= totalAmount) {
     newStatus = InvoiceStatus.PAID;
-  } else if (newPaidAmount > 0) {
-    newStatus = InvoiceStatus.PARTIAL_PAID;
+  } else {
+    newStatus = InvoiceStatus.SENT;
   }
 
   await prisma.invoice.update({

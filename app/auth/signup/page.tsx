@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 import { signUpSchema } from "@/lib/validations/auth";
-import Image from "next/image";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -109,37 +109,11 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left Side - Branding Section */}
-      <div className="hidden lg:flex flex-col justify-between bg-primary text-primary-foreground p-10">
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl tracking-tight">
-          {/* <Image src={"/logo.png"} alt="Invixy Logo" width={40} height={40} /> */}
-          <span>Invixy</span>
-        </Link>
-        
-        <div className="space-y-6 max-w-lg">
-          <blockquote className="text-2xl font-medium leading-relaxed">
-            "The best decision we made for our business. Invixy saves us hours every week on billing and collections."
-          </blockquote>
-          <div className="flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-primary-foreground/20 flex items-center justify-center font-bold">
-              AS
-            </div>
-            <div>
-              <div className="font-semibold">Sarah Miller</div>
-              <div className="text-sm text-primary-foreground/70">Founder, Design Studio</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="text-sm text-primary-foreground/50">
-          © {new Date().getFullYear()} Invixy Inc.
-        </div>
-      </div>
-
-      {/* Right Side - Signup Form */}
-      <div className="flex items-center justify-center p-8 bg-background">
-        <div className="w-full max-w-sm space-y-6">
+    <AuthShell
+      heading="Create your account and start sending professional invoices in minutes."
+      subheading="Set up your workspace once and keep products, customers, taxes, and payments synchronized."
+    >
+      <div className="space-y-6">
           <div className="flex flex-col space-y-2 text-center">
             <h1 className="text-2xl font-semibold tracking-tight">
               Create an account
@@ -231,8 +205,7 @@ export default function SignUpPage() {
               Sign in
             </Link>
           </div>
-        </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }

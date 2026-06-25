@@ -43,6 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { showError, showSuccess } from "@/lib/alert-store";
+import { downloadInvoicePdf } from "@/lib/invoice-client-actions";
 import { 
   ArrowLeft, 
   Edit, 
@@ -136,14 +137,10 @@ interface Invoice {
 }
 
 const statusConfig = {
-  DRAFT: { color: "bg-gray-500", icon: FileText, label: "Draft" },
-  SENT: { color: "bg-blue-500", icon: Send, label: "Sent" },
-  VIEWED: { color: "bg-purple-500", icon: Clock, label: "Viewed" },
-  PAID: { color: "bg-green-500", icon: CheckCircle, label: "Paid" },
-  PARTIAL_PAID: { color: "bg-yellow-500", icon: AlertCircle, label: "Partial" },
-  OVERDUE: { color: "bg-red-500", icon: XCircle, label: "Overdue" },
-  CANCELLED: { color: "bg-gray-400", icon: XCircle, label: "Cancelled" },
-  REFUNDED: { color: "bg-orange-500", icon: XCircle, label: "Refunded" }
+  DRAFT: { color: "bg-muted-foreground", icon: FileText, label: "Draft" },
+  SENT: { color: "bg-[var(--brand-cobalt)]", icon: Send, label: "Sent" },
+  PAID: { color: "bg-[var(--brand-teal)]", icon: CheckCircle, label: "Paid" },
+  CANCELLED: { color: "bg-muted-foreground", icon: XCircle, label: "Cancelled" }
 };
 
 export default function InvoiceDetailPage() {
@@ -210,16 +207,22 @@ export default function InvoiceDetailPage() {
   };
 
   const deleteInvoice = async () => {
+    if (!currentBusiness?.id) {
+      showError("Error", "No business selected");
+      return;
+    }
+
     setActionLoading(true);
     try {
-      const response = await fetch(`/api/invoices/${invoice?.id}`, {
+      const response = await fetch(`/api/invoices/${invoice?.id}?businessId=${currentBusiness.id}`, {
         method: "DELETE",
       });
 
       if (response.ok) {
         router.push("/dashboard/invoices");
       } else {
-        showError("Error", "Something went wrong. Please try again.");
+        const errorData = await response.json().catch(() => null);
+        showError("Error", errorData?.error || "Something went wrong. Please try again.");
       }
     } catch (error) {
       console.error("Error deleting invoice:", error);
@@ -249,24 +252,10 @@ export default function InvoiceDetailPage() {
     if (!invoice?.id) return;
     
     try {
-      const response = await fetch(`/api/invoices/${invoice.id}/pdf`);
-      
-      if (!response.ok) {
-        throw new Error("Failed to download PDF");
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Invoice-${invoice.invoiceNumber}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      await downloadInvoicePdf(invoice.id, invoice.invoiceNumber);
     } catch (error) {
       console.error("Error downloading PDF:", error);
-      showError("Error", "Something went wrong. Please try again.");
+      showError("Error", error instanceof Error ? error.message : "Something went wrong. Please try again.");
     }
   };
 
@@ -310,7 +299,7 @@ export default function InvoiceDetailPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -332,9 +321,8 @@ export default function InvoiceDetailPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="space-y-8">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className="flex items-center space-x-4">
             <Link href="/dashboard/invoices">
               <Button variant="outline" size="sm">
@@ -357,7 +345,7 @@ export default function InvoiceDetailPage() {
           </div>
 
           <div className="flex items-center space-x-2">
-             <Button variant="outline" onClick={downloadPDF}>
+            <Button variant="outline" onClick={downloadPDF}>
               <Download className="h-4 w-4 mr-2" />
               Download
             </Button>
@@ -445,7 +433,7 @@ export default function InvoiceDetailPage() {
                 {canDelete && (
                   <DropdownMenuItem 
                     onClick={() => setShowDeleteDialog(true)}
-                    className="text-red-600"
+                    className="text-destructive"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Invoice
@@ -460,7 +448,7 @@ export default function InvoiceDetailPage() {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Customer Information */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <User className="h-5 w-5 mr-2" />
@@ -486,7 +474,7 @@ export default function InvoiceDetailPage() {
             </Card>
 
             {/* Line Items */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <FileText className="h-5 w-5 mr-2" />
@@ -557,7 +545,7 @@ export default function InvoiceDetailPage() {
 
             {/* Notes & Terms */}
             {(invoice.notes || invoice.terms) && (
-              <Card>
+              <Card className="shadow-sm border-border/80">
                 <CardHeader>
                   <CardTitle>Additional Information</CardTitle>
                 </CardHeader>

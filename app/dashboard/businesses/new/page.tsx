@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Building2, Mail, Globe } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { CURRENCY_OPTIONS, TIMEZONE_OPTIONS } from "@/lib/business";
@@ -62,7 +62,7 @@ export default function NewBusinessPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -117,15 +117,14 @@ export default function NewBusinessPage() {
   };
 
   return (
-  <DashboardLayout>
+    <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="max-w-4xl mx-auto space-y-6"
+        className="space-y-8"
       >
-        {/* Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <Button variant="outline" size="icon" asChild>
             <Link href="/dashboard">
               <ArrowLeft className="h-4 w-4" />
@@ -139,7 +138,7 @@ export default function NewBusinessPage() {
           </div>
         </div>
 
-        <Card>
+        <Card className="shadow-sm border-border/80">
           <CardHeader>
             <CardTitle>Business Information</CardTitle>
             <CardDescription>
@@ -355,7 +354,7 @@ export default function NewBusinessPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="flex-1 bg-[var(--brand-cobalt)] hover:bg-[var(--brand-indigo)] text-white"
                 >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create Business

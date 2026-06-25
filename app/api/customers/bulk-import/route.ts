@@ -3,6 +3,7 @@ import { getAuthSession } from "@/lib/auth";
 import db from "@/lib/db";
 import * as XLSX from "xlsx";
 import { z } from "zod";
+import { canAccessProFeature } from "@/lib/subscription";
 
 const customerRowSchema = z.object({
   Name: z.string().min(1, "Name is required"),
@@ -17,26 +18,88 @@ const customerRowSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await getAuthSession();
-    if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized", errors: ["You are not authenticated."] }, { status: 401 });
     }
 
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const businessId = formData.get("businessId") as string;
 
-    if (!file || !businessId) {
-      return new NextResponse("Missing file or business ID", { status: 400 });
+    if (!file) {
+      return NextResponse.json({ error: "No file uploaded", errors: ["Please upload an Excel file."] }, { status: 400 });
     }
 
-    // specific check for business permissions could go here
+    if (!businessId) {
+      return NextResponse.json({ error: "Business ID is required", errors: ["Business context is missing."] }, { status: 400 });
+    }
+
+    const allowedMimeTypes = new Set([
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+      "application/octet-stream",
+    ]);
+    const lowerName = file.name.toLowerCase();
+    if (!lowerName.endsWith(".xlsx") && !lowerName.endsWith(".xls")) {
+      return NextResponse.json({ error: "Invalid file type", errors: ["Only .xlsx and .xls files are supported."] }, { status: 400 });
+    }
+    if (file.type && !allowedMimeTypes.has(file.type)) {
+      return NextResponse.json({ error: "Invalid file type", errors: ["The uploaded file is not a valid Excel document."] }, { status: 400 });
+    }
+
+    const [access, proAccess] = await Promise.all([
+      db.businessUserRole.findUnique({
+        where: {
+          userId_businessId: {
+            userId: session.user.id,
+            businessId,
+          },
+        },
+      }),
+      canAccessProFeature(businessId)
+    ]);
+
+    if (!access || access.role === "VIEWER") {
+      return NextResponse.json({ error: "Insufficient permissions", errors: ["You do not have permission to import customers for this business."] }, { status: 403 });
+    }
+
+    if (!proAccess.allowed) {
+      return NextResponse.json(
+        {
+          error: "Upgrade required",
+          errors: [proAccess.message || "Bulk import is available on Pro and Enterprise plans."],
+        },
+        { status: 403 }
+      );
+    }
 
     const buffer = await file.arrayBuffer();
     const workbook = XLSX.read(buffer);
-    const worksheet = workbook.Sheets[workbook.SheetNames[0]]; // Read first sheet
-    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+    const firstSheetName = workbook.SheetNames?.[0];
+    if (!firstSheetName) {
+      return NextResponse.json({ error: "Invalid file", errors: ["No worksheet found in uploaded file."] }, { status: 400 });
+    }
+    const worksheet = workbook.Sheets[firstSheetName];
+    const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, { defval: "" });
+    if (jsonData.length === 0) {
+      return NextResponse.json({ error: "Empty file", errors: ["The uploaded file has no data rows."] }, { status: 400 });
+    }
 
-    const validCustomers = [];
+    const headerKeys = Object.keys(jsonData[0] || {});
+    if (!headerKeys.includes("Name")) {
+      return NextResponse.json({ error: "Invalid template", errors: ["Required column 'Name' is missing from the uploaded file."] }, { status: 400 });
+    }
+
+    const validCustomers: Array<{
+      businessId: string;
+      name: string;
+      email: string | null;
+      phone: string | null;
+      billingAddress: string | null;
+      shippingAddress: string | null;
+      taxId: string | null;
+      notes: string | null;
+    }> = [];
     const errors: string[] = [];
     let rowIndex = 2; // Start from row 2 (header is row 1)
 
@@ -55,9 +118,9 @@ export async function POST(req: NextRequest) {
             notes: validated.Notes || null,
         });
 
-      } catch (err: any) {
-        if (err.errors) {
-            const rowErrors = err.errors.map((e: any) => e.message).join(", ");
+      } catch (err: unknown) {
+        if (err instanceof z.ZodError) {
+            const rowErrors = err.issues.map((e) => e.message).join(", ");
             errors.push(`Row ${rowIndex}: ${rowErrors}`);
         } else {
             errors.push(`Row ${rowIndex}: Invalid data`);
@@ -66,21 +129,34 @@ export async function POST(req: NextRequest) {
       rowIndex++;
     }
 
-    if (validCustomers.length > 0) {
-      await db.customer.createMany({
-        data: validCustomers,
+    let successCount = 0;
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < validCustomers.length; i += BATCH_SIZE) {
+      const batch = validCustomers.slice(i, i + BATCH_SIZE);
+      const results = await Promise.allSettled(
+        batch.map((customer) => db.customer.create({ data: customer }))
+      );
+      
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          successCount++;
+        } else {
+          const sheetRow = i + index + 2;
+          const message = result.reason instanceof Error ? result.reason.message : "Database error";
+          errors.push(`Row ${sheetRow}: Failed to save customer (${message}).`);
+        }
       });
     }
 
     return NextResponse.json({
-      success: true,
-      count: validCustomers.length,
+      success: errors.length === 0,
+      count: successCount,
       totalRows: jsonData.length,
       errors: errors
     });
 
   } catch (error) {
     console.error("Bulk customer import error:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error", errors: ["Unexpected error while importing customers."] }, { status: 500 });
   }
 }

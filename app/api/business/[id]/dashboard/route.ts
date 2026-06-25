@@ -15,6 +15,20 @@ export async function GET(
 
     const { id: businessId } = await params;
 
+    // Date filter
+    const fromParam = request.nextUrl.searchParams.get("from");
+    const toParam = request.nextUrl.searchParams.get("to");
+    const hasDateFilter = !!(fromParam || toParam);
+    let dateFilter = {};
+    if (hasDateFilter) {
+      dateFilter = {
+        issueDate: {
+          ...(fromParam ? { gte: new Date(fromParam) } : {}),
+          ...(toParam ? { lte: new Date(`${toParam}T23:59:59.999Z`) } : {}),
+        }
+      };
+    }
+
     // Verify user has access to this business
     const userBusiness = await prisma.businessUserRole.findUnique({
       where: {
@@ -56,7 +70,7 @@ export async function GET(
 
       // All invoices with totals
       prisma.invoice.findMany({
-        where: { businessId },
+        where: { businessId, ...dateFilter },
         select: {
           id: true,
           status: true,
@@ -70,9 +84,7 @@ export async function GET(
       prisma.invoice.count({
         where: {
           businessId,
-          issueDate: {
-            gte: firstDayOfMonth,
-          },
+          ...(hasDateFilter ? dateFilter : { issueDate: { gte: firstDayOfMonth } })
         },
       }),
 
@@ -80,7 +92,7 @@ export async function GET(
 
       // Recent invoices (last 5)
       prisma.invoice.findMany({
-        where: { businessId },
+        where: { businessId, ...dateFilter },
         include: {
           customer: {
             select: {
@@ -103,7 +115,8 @@ export async function GET(
           email: true,
           invoices: {
             where: {
-              status: { not: "DRAFT" },
+              status: { in: ["SENT", "PAID"] },
+              ...dateFilter
             },
             select: {
               totalAmount: true,
@@ -128,23 +141,30 @@ export async function GET(
       })
     ]);
 
+    const toNumber = (value: unknown): number => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const openStatuses = new Set(["SENT"]);
+    const bookedStatuses = new Set(["SENT", "PAID"]);
+
     // Calculate statistics from invoices
     const draftInvoices = invoices.filter(inv => inv.status === "DRAFT").length;
-    const pendingInvoices = invoices.filter(inv => 
-      inv.status === "SENT" || inv.status === "VIEWED" || inv.status === "PARTIAL_PAID"
-    ).length;
+    const pendingInvoices = invoices.filter(inv => inv.status === "SENT").length;
     const paidInvoices = invoices.filter(inv => inv.status === "PAID").length;
-    
-    // Check for overdue invoices
-    const overdueInvoices = invoices.filter(
-      inv => (inv.status === "SENT" || inv.status === "VIEWED" || inv.status === "PARTIAL_PAID") && 
-             inv.dueDate && 
-             new Date(inv.dueDate) < now
-    ).length;
+    const overdueInvoices = 0;
 
-    const totalRevenue = invoices.reduce((sum, inv) => sum + Number(inv.totalAmount), 0);
-    const paidRevenue = invoices.reduce((sum, inv) => sum + Number(inv.paidAmount), 0);
-    const pendingRevenue = totalRevenue - paidRevenue;
+    const bookedInvoices = invoices.filter(inv => bookedStatuses.has(inv.status));
+    const openInvoices = invoices.filter(inv => openStatuses.has(inv.status));
+
+    const totalRevenue = bookedInvoices.reduce((sum, inv) => sum + toNumber(inv.totalAmount), 0);
+    const paidRevenue = bookedInvoices.reduce((sum, inv) => sum + toNumber(inv.paidAmount), 0);
+    const pendingRevenue = openInvoices.reduce((sum, inv) => {
+      const total = toNumber(inv.totalAmount);
+      const paid = toNumber(inv.paidAmount);
+      return sum + Math.max(total - paid, 0);
+    }, 0);
 
     // Calculate this month's revenue
     const thisMonthInvoicesData = await prisma.invoice.findMany({
@@ -153,13 +173,16 @@ export async function GET(
         issueDate: {
           gte: firstDayOfMonth,
         },
+        status: {
+          in: ["SENT", "PAID"],
+        },
       },
       select: {
         totalAmount: true,
       },
     });
     const thisMonthRevenue = thisMonthInvoicesData.reduce(
-      (sum, inv) => sum + Number(inv.totalAmount),
+      (sum, inv) => sum + toNumber(inv.totalAmount),
       0
     );
 
@@ -171,13 +194,16 @@ export async function GET(
           gte: firstDayOfLastMonth,
           lte: lastDayOfLastMonth,
         },
+        status: {
+          in: ["SENT", "PAID"],
+        },
       },
       select: {
         totalAmount: true,
       },
     });
     const lastMonthRevenue = lastMonthInvoicesData.reduce(
-      (sum, inv) => sum + Number(inv.totalAmount),
+      (sum, inv) => sum + toNumber(inv.totalAmount),
       0
     );
 
@@ -202,7 +228,7 @@ export async function GET(
         name: customer.name,
         email: customer.email || "",
         totalSpent: customer.invoices.reduce(
-          (sum: number, inv: { totalAmount: any }) => sum + Number(inv.totalAmount),
+          (sum: number, inv: { totalAmount: any }) => sum + toNumber(inv.totalAmount),
           0
         ),
         invoiceCount: customer.invoices.length,
@@ -227,7 +253,8 @@ export async function GET(
       thisMonthRevenue,
       lastMonthRevenue,
       thisMonthInvoices,
-      subscriptionPlan: activeSubscription?.plan || "FREE"
+      subscriptionPlan: activeSubscription?.plan || "FREE",
+      hasDateFilter
     };
 
     return NextResponse.json({

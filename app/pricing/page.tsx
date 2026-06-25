@@ -6,7 +6,7 @@ export default function PricingPage() {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <SiteHeader />
-      <main className="flex-1 container py-10 px-4 w-full mx-auto">
+      <main className="flex-1  py-10 px-4 w-full mx-auto">
         <div className="mx-auto flex max-w-[58rem] flex-col items-center justify-center gap-2 text-center">
           <h1 className="text-3xl font-bold leading-[1.1] sm:text-3xl md:text-6xl">
             Simple, transparent pricing

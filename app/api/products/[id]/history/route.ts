@@ -42,6 +42,16 @@ export async function GET(
       );
     }
 
+    // Check for specifically negotiated custom price first
+    const customPrice = await prisma.customerProductPrice.findUnique({
+      where: {
+        customerId_productId: {
+          customerId: customerId,
+          productId: productId
+        }
+      }
+    });
+
     // Get the last invoice that included this product for this customer
     // Exclude draft invoices to get actual transaction history
     const lastInvoiceItem = await prisma.invoiceItem.findFirst({
@@ -74,7 +84,7 @@ export async function GET(
       }
     });
 
-    if (!lastInvoiceItem) {
+    if (!lastInvoiceItem && !customPrice) {
       return NextResponse.json({
         hasHistory: false,
         lastPrice: null
@@ -82,15 +92,15 @@ export async function GET(
     }
 
     return NextResponse.json({
-      hasHistory: true,
-      lastPrice: Number(lastInvoiceItem.unitPrice),
-      lastQuantity: Number(lastInvoiceItem.quantity),
-      lastDiscount: Number(lastInvoiceItem.discount),
-      lastInvoice: {
+      hasHistory: !!lastInvoiceItem || !!customPrice,
+      lastPrice: customPrice ? Number(customPrice.price) : (lastInvoiceItem ? Number(lastInvoiceItem.unitPrice) : null),
+      lastQuantity: lastInvoiceItem ? Number(lastInvoiceItem.quantity) : undefined,
+      lastDiscount: lastInvoiceItem ? Number(lastInvoiceItem.discount) : undefined,
+      lastInvoice: lastInvoiceItem ? {
         number: lastInvoiceItem.invoice.invoiceNumber,
         date: lastInvoiceItem.invoice.issueDate,
         status: lastInvoiceItem.invoice.status
-      }
+      } : undefined
     });
 
   } catch (error) {

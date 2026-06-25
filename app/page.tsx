@@ -1,338 +1,249 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
   ArrowRight,
-  BarChart3,
-  Bell,
-  Check,
-  CheckCircle2,
-  Code,
   DollarSign,
-  Globe,
-  Landmark,
   PlayCircle,
-  Receipt,
-  ShieldCheck,
-  Sparkles,
-  Wrench,
-  Zap,
 } from "lucide-react";
-import { FeaturesSection } from "@/components/landing/features-section";
-import { TrustedBy } from "@/components/landing/trusted-by";
-import { Testimonials } from "@/components/landing/testimonials";
 import { FAQ as FaqSection } from "@/components/landing/faq";
+import { features } from "@/components/landing/features-section";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
-import { PricingTable } from "@/components/pricing-table"; // Assuming this is exported correctly
+import { PricingTable } from "@/components/pricing-table";
 
 export default function LandingPage() {
   const { status } = useSession();
   const isAuthenticated = status === "authenticated";
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-primary/20 selection:text-primary">
+    <div className="relative flex min-h-screen flex-col overflow-x-clip bg-background text-foreground selection:bg-[var(--brand-cobalt)]/30 selection:text-foreground">
+      <div className="pointer-events-none absolute left-[8%] top-24 h-72 w-72 rounded-full bg-[var(--brand-cobalt)]/18 blur-[110px]" />
+      <div className="pointer-events-none absolute bottom-0 right-[5%] h-80 w-80 rounded-full bg-[var(--brand-teal)]/10 blur-[130px]" />
+
       <SiteHeader />
 
       <main className="flex-1 overflow-hidden">
-        {/* Hero Section */}
-        <section className="relative pt-12 pb-12 md:pt-12 md:pb-12 overflow-hidden">
-          <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <section className="relative pb-20 pt-12 ">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-4 sm:px-6 lg:px-8 lg:grid-cols-2 lg:gap-20 ">
             <div className="relative z-10 text-left">
-              <span className="bg-primary/10 text-primary text-xs tracking-widest font-black px-4 py-1.5 rounded-full uppercase mb-8 inline-block">
-                The New Era of Financial Management
+              <span className="mb-8 inline-block rounded-full border border-border bg-muted/40 px-4 py-2 font-mono text-[10px] font-light uppercase tracking-[0.26em] text-muted-foreground">
+                Intelligent Finance Operating Layer
               </span>
-              <h1 className="text-5xl md:text-7xl font-black tracking-tight text-foreground mb-8 leading-[1.05]">
-                Get paid faster, with{" "}
-                <span className="text-primary italic">zero effort.</span>
+
+              <h1 className="text-[18vw] font-black leading-[0.82] tracking-[-0.035em] text-foreground sm:text-7xl md:text-8xl lg:text-[7.2rem]">
+                Get paid{" "}
+                <span className="block text-[var(--brand-cyan)]">without friction.</span>
               </h1>
-              <p className="text-xl text-muted-foreground max-w-xl mb-12 leading-relaxed">
-                Automate your financial document lifecycle. From high-fidelity
-                time tracking to professional ledger-style invoicing, Invixy
-                handles the complexity while you scale.
+
+              <p className="mb-10 mt-8 max-w-xl font-mono text-sm leading-relaxed text-muted-foreground md:mb-12 md:text-base">
+                Automate your financial document lifecycle. From invoice
+                creation to settlement workflows, Invixy removes manual overhead
+                and gives your team confident control.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/auth/signup">
-                <button className="cursor-pointer bg-primary text-primary-foreground text-lg font-bold px-10 py-5 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all">
-                  Create Free Account
-                </button>
+
+              <div className="flex flex-col gap-4 sm:flex-row">
+                <Link href={isAuthenticated ? "/dashboard" : "/auth/signup"}>
+                  <button className="group inline-flex cursor-pointer items-center gap-2 rounded-2xl bg-[var(--brand-cobalt)] px-10 py-5 font-mono text-xs font-semibold uppercase tracking-[0.2em] text-stone-50 shadow-[0_18px_45px_-20px_rgba(37,99,235,0.7)] transition-all duration-300 hover:-translate-y-1 hover:bg-[var(--brand-indigo)]">
+                   {isAuthenticated ? "Go to Dashboard" : "Create Free Account"}
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </button>
                 </Link>
-                <button className="cursor-pointer bg-background border border-border text-foreground text-lg font-bold px-10 py-5 rounded-2xl hover:bg-muted transition-all flex items-center justify-center gap-3 group">
-                  <PlayCircle className="group-hover:scale-110 transition-transform" />
+                {/* <button className="group inline-flex cursor-pointer items-center justify-center gap-3 rounded-2xl border border-border bg-card px-10 py-5 font-mono text-xs font-light uppercase tracking-[0.18em] text-foreground transition-all duration-300 hover:border-[var(--brand-cobalt)]/40 hover:bg-muted">
+                  <PlayCircle className="h-5 w-5 transition-transform group-hover:scale-110" />
                   Watch Demo
-                </button>
+                </button> */}
               </div>
-              <div className="mt-12 flex items-center gap-4 text-sm text-muted-foreground font-medium">
+
+              <div className="mt-12 flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex -space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-muted border-2 border-background"></div>
-                  <div className="w-8 h-8 rounded-full bg-muted-foreground/30 border-2 border-background"></div>
-                  <div className="w-8 h-8 rounded-full bg-muted-foreground/50 border-2 border-background"></div>
+                  <div className="h-8 w-8 rounded-full border-2 border-background bg-[var(--brand-cyan)]/25" />
+                  <div className="h-8 w-8 rounded-full border-2 border-background bg-[var(--brand-cobalt)]/45" />
+                  <div className="h-8 w-8 rounded-full border-2 border-background bg-[var(--brand-indigo)]/60" />
                 </div>
-                <span>Trusted by multiple professionals globally</span>
+                <span className="font-mono text-xs font-light uppercase tracking-[0.14em]">
+                  Trusted by global finance teams
+                </span>
               </div>
             </div>
 
-            {/* High-Fidelity Mockup */}
             <div className="relative">
-              <div className="absolute -top-20 -right-20 w-96 h-96 bg-primary/20 rounded-full blur-[120px] -z-10"></div>
-              <div className="bg-background rounded-3xl p-3 shadow-xl border border-border relative z-10 w-full">
-                <div className="bg-muted/30 rounded-2xl overflow-hidden aspect-[4/3] border border-border p-6">
-                  <div className="flex justify-between items-center mb-10">
+              <div className="absolute -right-8 -top-8 h-64 w-64 rounded-full bg-[var(--brand-indigo)]/30 blur-[100px]" />
+
+              <div className="relative w-full rounded-[2rem] border border-border bg-card/90 p-3 shadow-[0_40px_120px_-50px_rgba(0,0,0,0.35)] transition-transform duration-500 hover:-translate-y-1 dark:shadow-[0_40px_120px_-50px_rgba(0,0,0,0.9)]">
+                <div className="aspect-[4/3] rounded-[1.5rem] border border-border bg-background/80 p-6">
+                  <div className="mb-10 flex items-center justify-between">
                     <div className="flex gap-2">
-                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                      <div className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+                      <div className="h-3 w-3 rounded-full bg-[#febc2e]" />
+                      <div className="h-3 w-3 rounded-full bg-[#28c840]" />
                     </div>
-                    <div className="h-6 w-32 bg-muted rounded-md"></div>
+                    <div className="h-6 w-32 rounded-md bg-muted" />
                   </div>
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-background p-6 rounded-xl shadow-sm border border-border">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">
+
+                  <div className="space-y-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="rounded-xl border border-border bg-card p-5">
+                        <p className="font-mono text-[10px] font-light uppercase tracking-[0.2em] text-muted-foreground">
                           Monthly Billing
                         </p>
-                        <p className="text-2xl font-black">$42,850.00</p>
-                        <div className="w-full h-1 bg-primary/20 mt-4 rounded-full overflow-hidden">
-                          <div className="w-3/4 h-full bg-primary"></div>
+                        <p className="mt-3 text-3xl font-black text-foreground">
+                          $42,850
+                        </p>
+                        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                          <div className="h-full w-3/4 bg-[var(--brand-cyan)]" />
                         </div>
                       </div>
-                      <div className="bg-background p-6 rounded-xl shadow-sm border border-border">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">
+
+                      <div className="rounded-xl border border-border bg-card p-5">
+                        <p className="font-mono text-[10px] font-light uppercase tracking-[0.2em] text-muted-foreground">
                           Outstanding
                         </p>
-                        <p className="text-2xl font-black">$12,400.00</p>
-                        <p className="text-[10px] font-bold text-red-500 mt-2">
-                          3 OVERDUE
+                        <p className="mt-3 text-3xl font-black text-foreground">
+                          $12,400
+                        </p>
+                        <p className="mt-3 font-mono text-[10px] font-light uppercase tracking-[0.18em] text-[var(--brand-cyan)]">
+                          3 overdue invoices
                         </p>
                       </div>
                     </div>
-                    <div className="bg-background p-6 rounded-xl shadow-sm border border-border h-40">
-                      <div className="flex justify-between mb-4">
-                        <div className="h-4 w-24 bg-muted rounded"></div>
-                        <div className="h-4 w-12 bg-muted rounded"></div>
+
+                    <div className="h-36 rounded-xl border border-border bg-card p-5">
+                      <div className="mb-4 flex justify-between">
+                        <div className="h-3.5 w-24 rounded bg-muted" />
+                        <div className="h-3.5 w-14 rounded bg-muted" />
                       </div>
                       <div className="space-y-3">
-                        <div className="h-2 w-full bg-muted/50 rounded"></div>
-                        <div className="h-2 w-full bg-muted/50 rounded"></div>
-                        <div className="h-2 w-4/5 bg-muted/50 rounded"></div>
+                        <div className="h-2 w-full rounded bg-muted" />
+                        <div className="h-2 w-full rounded bg-muted" />
+                        <div className="h-2 w-4/5 rounded bg-muted" />
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              {/* Float Card */}
-              <div className="absolute -bottom-8 -left-8 bg-background p-4 z-20 rounded-2xl shadow-xl border border-border flex items-center gap-4 animate-[bounce_2s_infinite]">
-                <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center">
-                  <DollarSign className="text-white w-5 h-5" />
+
+              <div className="absolute -bottom-7 left-3 z-20 hidden items-center gap-4 rounded-2xl border border-border bg-card p-4 shadow-2xl sm:flex md:-left-7">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--brand-cobalt)]">
+                  <DollarSign className="h-5 w-5 text-stone-50" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-muted-foreground">
-                    NEW PAYMENT
+                  <p className="font-mono text-[10px] font-light uppercase tracking-[0.18em] text-muted-foreground">
+                    New Payment
                   </p>
-                  <p className="text-sm font-black">$1,200.00 Received</p>
+                  <p className="text-sm font-black text-foreground">
+                    $1,200.00 Received
+                  </p>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Trusted By Section - More minimalist */}
-        {/* <TrustedBy /> */}
-        {/* Detailed How it Works */}
-        <section className="py-20 bg-muted/30">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center ">
-              <h2 className="text-4xl md:text-6xl font-black tracking-tight mb-6 text-foreground">
-                Designed for operational excellence.
-              </h2>
-              <p className="text-muted-foreground text-xl max-w-2xl mx-auto leading-relaxed">
-                We`ve broken down financial management into a seamless,
-                high-velocity workflow.
-              </p>
-            </div>
-            {/* <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
-              <div className="group">
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground text-foreground transition-all duration-300">
-                  <Wrench className="w-8 h-8" />
-                </div>
-                <h3 className="text-2xl font-bold mb-4">
-                  1. Effortless Ingestion
-                </h3>
-                <p className="text-muted-foreground leading-relaxed mb-6">
-                  Connect your bank accounts, calendars, and time trackers. Our
-                  AI engine categorizes every billable action with ledger-grade
-                  precision.
-                </p>
-                <ul className="space-y-2 text-sm font-medium text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <Check className="text-primary w-5 h-5" /> Bank sync
-                    (Plaid)
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="text-primary w-5 h-5" /> Automatic time
-                    logging
-                  </li>
-                </ul>
-              </div>
-              <div className="group">
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground text-foreground transition-all duration-300">
-                  <Sparkles className="w-8 h-8" />
-                </div>
-                <h3 className="text-2xl font-bold mb-4">
-                  2. Intelligent Synthesis
-                </h3>
-                <p className="text-muted-foreground leading-relaxed mb-6">
-                  Invixy aggregates data points into beautiful,
-                  editorial-quality invoices. No more manual formatting or
-                  cross-referencing spreadsheets.
-                </p>
-                <ul className="space-y-2 text-sm font-medium text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <Check className="text-primary w-5 h-5" /> Dynamic ledger
-                    styling
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="text-primary w-5 h-5" /> Multi-currency
-                    conversion
-                  </li>
-                </ul>
-              </div>
-              <div className="group">
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 group-hover:bg-primary group-hover:text-primary-foreground text-foreground transition-all duration-300">
-                  <Landmark className="w-8 h-8" />
-                </div>
-                <h3 className="text-2xl font-bold mb-4">
-                  3. Instant Settlement
-                </h3>
-                <p className="text-muted-foreground leading-relaxed mb-6">
-                  Clients pay via white-labeled portals. Funds are instantly
-                  reconciled and distributed across your tax and savings
-                  buckets.
-                </p>
-                <ul className="space-y-2 text-sm font-medium text-muted-foreground">
-                  <li className="flex items-center gap-2">
-                    <Check className="text-primary w-5 h-5" /> 1-click client
-                    payments
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <Check className="text-primary w-5 h-5" /> Automated tax
-                    withholding
-                  </li>
-                </ul>
-              </div>
-            </div> */}
+        <section className="bg-muted/30 py-20 text-foreground md:py-24 lg:py-28">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center ">
+            <h2 className="text-5xl font-black tracking-tight md:text-7xl">
+              Designed for operational excellence.
+            </h2>
+            <p className="mx-auto mt-7 max-w-2xl font-mono text-sm leading-relaxed text-muted-foreground md:text-base">
+              We have broken down financial management into a seamless,
+              high-velocity workflow your team can scale with confidence.
+            </p>
           </div>
         </section>
-        {/* Features Grid Section */}
-        <section className="py-32 bg-zinc-950 text-zinc-50 overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 blur-[150px] rounded-full translate-x-1/2 -translate-y-1/2"></div>
-          <div className="max-w-7xl mx-auto px-6 relative z-10">
-            <div className="grid lg:grid-cols-2 gap-20 items-center mb-20">
+
+        <section id="features" className="relative overflow-hidden bg-foreground py-24 text-background dark:bg-zinc-950 dark:text-zinc-50 md:py-28">
+          <div className="absolute right-0 top-0 h-[420px] w-[420px] translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--brand-indigo)]/25 blur-[130px]" />
+          <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 ">
+            <div className="mb-16 grid items-center gap-14 lg:grid-cols-2 lg:gap-20">
               <div>
-                <h2 className="text-4xl md:text-6xl font-black mb-8 leading-tight">
+                <h2 className="text-4xl font-black leading-[0.95] md:text-7xl">
                   Comprehensive power for modern finance.
                 </h2>
-                <p className="text-zinc-400 text-xl leading-relaxed">
-                  Stop piecing together tools. Invixy is the singular platform
-                  for global billing, compliance, and cash flow management.
+                <p className="mt-8 max-w-xl font-mono text-sm leading-relaxed text-zinc-400 md:text-base">
+                  Stop stitching tools together. Invixy brings billing,
+                  compliance, and collection operations into one premium command
+                  center.
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl hover:bg-zinc-800 transition-colors">
-                  <Globe className="text-primary mb-4 w-8 h-8" />
-                  <h4 className="text-lg font-bold mb-2">Global Payments</h4>
-                  <p className="text-zinc-400 text-sm">
-                    Accept 135+ currencies with local settlement options.
-                  </p>
-                </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl hover:bg-zinc-800 transition-colors">
-                  <Bell className="text-primary mb-4 w-8 h-8" />
-                  <h4 className="text-lg font-bold mb-2">Auto Reminders</h4>
-                  <p className="text-zinc-400 text-sm">
-                    Polite, automated follow-ups for overdue payments.
-                  </p>
-                </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl hover:bg-zinc-800 transition-colors">
-                  <Receipt className="text-primary mb-4 w-8 h-8" />
-                  <h4 className="text-lg font-bold mb-2">Tax Readiness</h4>
-                  <p className="text-zinc-400 text-sm">
-                    Real-time VAT/Sales Tax calculation and reporting.
-                  </p>
-                </div>
-                <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-3xl hover:bg-zinc-800 transition-colors">
-                  <Code className="text-primary mb-4 w-8 h-8" />
-                  <h4 className="text-lg font-bold mb-2">Deep API</h4>
-                  <li className="text-zinc-400 text-sm list-none">
-                    Integrate with your custom CRM or ERP stack.
-                  </li>
-                </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {features.map((feature, index) => {
+                  const Icon = feature.icon;
+                  return (
+                    <div
+                      key={feature.id}
+                      className={`rounded-3xl border border-zinc-800 bg-zinc-900 p-8 transition-colors hover:bg-zinc-800 ${index % 2 === 1 ? "sm:translate-y-10" : ""}`}
+                    >
+                      <Icon className={`mb-4 h-8 w-8 ${feature.iconColor}`} />
+                      <h4 className="text-xl font-extrabold">{feature.title}</h4>
+                      <p className="mt-3 font-mono text-xs leading-relaxed text-zinc-400">
+                        {feature.description}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Pricing Section */}
-        <section className="py-24 bg-background">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
+        <section id="pricing" className="bg-muted/30 py-20 text-foreground md:py-24">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8 ">
+            <div className="mx-auto mb-14 max-w-3xl text-center md:mb-16">
+              <h2 className="text-4xl font-black tracking-tight sm:text-6xl">
                 Simple, transparent pricing
               </h2>
-              <p className="text-lg text-muted-foreground">
-                Start for free, scale as you grow. No hidden fees.
+              <p className="mt-5 font-mono text-sm text-muted-foreground md:text-base">
+                Start free, scale with confidence, and keep full control over
+                your margins.
               </p>
             </div>
-            <div className="max-w-5xl mx-auto">
+            <div className="mx-auto max-w-5xl rounded-3xl border border-border bg-card p-3 shadow-[0_30px_90px_-45px_rgba(0,0,0,0.3)] dark:shadow-[0_30px_90px_-45px_rgba(0,0,0,0.75)]">
               <PricingTable mode="landing" />
             </div>
           </div>
         </section>
 
-        {/* Testimonials */}
-        {/* <Testimonials /> */}
+        <section className="bg-zinc-950">
+          <FaqSection />
+        </section>
 
-        {/* FAQ */}
-        <FaqSection />
-
-        {/* CTA Section */}
-        <section className="py-24">
-          <div className="container mx-auto px-4 md:px-6">
-            <div className="bg-primary text-primary-foreground rounded-3xl p-12 md:p-24 text-center relative overflow-hidden">
-              <div className="relative z-10 max-w-3xl mx-auto space-y-8">
-                <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
+        <section className="bg-zinc-950 py-20 dark:bg-zinc-950 md:py-24">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8 ">
+            <div className="relative overflow-hidden rounded-3xl border border-stone-200/10 bg-[var(--brand-cobalt)] p-10 text-center text-stone-50 md:p-16 lg:p-20">
+              <div className="relative z-10 mx-auto max-w-3xl space-y-6 md:space-y-8">
+                <h2 className="text-4xl font-black tracking-tight md:text-6xl">
                   Ready to transform your invoicing?
                 </h2>
-                <p className="text-primary-foreground/80 text-xl max-w-2xl mx-auto">
-                  Join thousands of businesses that trust Invixy for their
+                <p className="mx-auto max-w-2xl font-mono text-sm uppercase tracking-[0.12em] text-stone-100/85 md:text-base">
+                  Join thousands of businesses that trust Invixy for modern
                   financial operations.
                 </p>
-                <Link href="/auth/signup" className="inline-block">
+                <Link
+                  href={isAuthenticated ? "/dashboard" : "/auth/signup"}
+                  className="inline-block"
+                >
                   <Button
                     size="lg"
                     variant="secondary"
-                    className="h-14 px-8 text-lg font-semibold text-primary"
+                    className="h-14 border border-stone-200/20 bg-stone-50 px-8 font-mono text-xs font-semibold uppercase tracking-[0.16em] text-zinc-950 hover:bg-white"
                   >
                     Get Started Now
                   </Button>
                 </Link>
               </div>
 
-              {/* Background pattern */}
-              <div className="absolute inset-0 opacity-10">
-                <svg
-                  className="h-full w-full"
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                >
-                  <path d="M0 100 C 20 0 50 0 100 100 Z" fill="currentColor" />
-                </svg>
-              </div>
+              <div className="pointer-events-none absolute -left-16 -top-16 h-52 w-52 rounded-full border border-stone-100/20" />
+              <div className="pointer-events-none absolute -bottom-20 -right-10 h-64 w-64 rounded-full border border-stone-100/20" />
+              <div className="pointer-events-none absolute inset-0 opacity-15 [background-image:radial-gradient(circle_at_1px_1px,white_1px,transparent_0)] [background-size:22px_22px]" />
             </div>
           </div>
         </section>
       </main>
+
       <SiteFooter />
     </div>
   );

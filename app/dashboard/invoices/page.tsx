@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { showConfirm, showError, showSuccess } from "@/lib/alert-store";
@@ -32,7 +32,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { LIMITS } from "@/lib/constants-limits";
+import { downloadInvoicePdf } from "@/lib/invoice-client-actions";
 import { InvoiceEmailDialog } from "@/components/invoices/invoice-email-dialog";
+import { ProFeatureTooltip } from "@/components/pro-feature-tooltip";
 import { 
   Search, 
   Plus, 
@@ -49,7 +51,8 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
-  XCircle
+  XCircle,
+  CreditCard
 } from "lucide-react";
 import Link from "next/link";
 
@@ -87,74 +90,122 @@ interface Invoice {
 }
 
 export default function InvoicesPage() {
+  const ITEMS_PER_PAGE = 10;
   const { currentBusiness, isLoading: businessLoading } = useBusinessContext();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [filteredInvoices, setFilteredInvoices] = useState<Invoice[]>([]);
+  const [totalInvoices, setTotalInvoices] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("all");
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [selectedInvoiceForEmail, setSelectedInvoiceForEmail] = useState<Invoice | null>(null);
+  const hasLoadedOnceRef = useRef(false);
+  const [stats, setStats] = useState({
+    total: 0,
+    draft: 0,
+    sent: 0,
+    paid: 0,
+    cancelled: 0,
+    totalRevenue: 0,
+    totalPaid: 0,
+    totalOutstanding: 0,
+  });
 
   useEffect(() => {
-    if (currentBusiness?.id) {
-      fetchInvoices(currentBusiness.id);
-    } else if (!businessLoading) {
-      setLoading(false);
+    if (!currentBusiness?.id && !businessLoading) {
+      setInitialLoading(false);
     }
   }, [currentBusiness?.id, businessLoading]);
 
   useEffect(() => {
-    filterInvoices();
-  }, [invoices, searchTerm, statusFilter, activeTab]);
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
 
-  const fetchInvoices = async (businessId: string) => {
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm, statusFilter, activeTab, currentBusiness?.id]);
+
+  useEffect(() => {
+    if (currentBusiness?.id) {
+      fetchInvoices(currentBusiness.id, currentPage, debouncedSearchTerm, statusFilter, activeTab);
+    }
+  }, [currentBusiness?.id, currentPage, debouncedSearchTerm, statusFilter, activeTab]);
+
+  const fetchInvoices = async (
+    businessId: string,
+    page = 1,
+    search = "",
+    status = "",
+    tab = "all"
+  ) => {
+    const isInitialFetch = !hasLoadedOnceRef.current;
     try {
-      setLoading(true);
-      const response = await fetch(`/api/invoices?businessId=${businessId}`);
+      if (isInitialFetch) {
+        setInitialLoading(true);
+      } else {
+        setTableLoading(true);
+      }
+      const tabStatusMap: Record<string, string> = {
+        draft: "DRAFT",
+        sent: "SENT",
+        paid: "PAID",
+        cancelled: "CANCELLED",
+      };
+
+      const params = new URLSearchParams({
+        businessId,
+        paginated: "true",
+        page: String(page),
+        pageSize: String(ITEMS_PER_PAGE),
+      });
+
+      const effectiveStatus = status || (tab !== "all" ? tabStatusMap[tab] : "");
+      if (effectiveStatus) {
+        params.set("status", effectiveStatus);
+      }
+      if (search.trim()) {
+        params.set("search", search.trim());
+      }
+
+      const response = await fetch(`/api/invoices?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setInvoices(data);
+        setInvoices(data.items || []);
+        setTotalInvoices(data.total || 0);
+        setTotalPages(data.totalPages || 1);
+        setStats(
+          data.stats || {
+            total: 0,
+            draft: 0,
+            sent: 0,
+            paid: 0,
+            cancelled: 0,
+            totalRevenue: 0,
+            totalPaid: 0,
+            totalOutstanding: 0,
+          }
+        );
       } else {
         console.error("Failed to fetch invoices");
       }
     } catch (error) {
       console.error("Error fetching invoices:", error);
     } finally {
-      setLoading(false);
+      if (isInitialFetch) {
+        hasLoadedOnceRef.current = true;
+        setInitialLoading(false);
+      }
+      setTableLoading(false);
     }
-  };
-
-  const filterInvoices = () => {
-    let filtered = invoices;
-
-    // Filter by active tab
-    if (activeTab !== "all") {
-      const tabStatusMap: Record<string, string> = {
-        draft: "DRAFT",
-        sent: "SENT",
-        paid: "PAID",
-        overdue: "OVERDUE"
-      };
-      filtered = filtered.filter(invoice => invoice.status === tabStatusMap[activeTab]);
-    }
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(invoice =>
-        invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        invoice.customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        invoice.customer.email?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filter by status dropdown (additional filter)
-    if (statusFilter) {
-      filtered = filtered.filter(invoice => invoice.status === statusFilter);
-    }
-
-    setFilteredInvoices(filtered);
   };
 
   const handleDeleteInvoice = (invoiceId: string) => {
@@ -173,11 +224,11 @@ export default function InvoicesPage() {
           });
 
           if (response.ok) {
-            setInvoices(invoices.filter(i => i.id !== invoiceId));
+            await fetchInvoices(currentBusiness.id, currentPage, debouncedSearchTerm, statusFilter, activeTab);
             showSuccess("Success", "Invoice deleted successfully");
           } else {
-            const errorData = await response.json();
-            showError("Error", "Something went wrong. Please try again.");
+            const errorData = await response.json().catch(() => null);
+            showError("Error", errorData?.error || "Something went wrong. Please try again.");
           }
         } catch (error) {
           console.error("Error deleting invoice:", error);
@@ -207,10 +258,7 @@ export default function InvoicesPage() {
       });
 
       if (response.ok) {
-        const updatedInvoice = await response.json();
-        setInvoices(invoices.map(inv => 
-          inv.id === invoiceId ? { ...inv, status: updatedInvoice.status } : inv
-        ));
+        await fetchInvoices(currentBusiness.id, currentPage, debouncedSearchTerm, statusFilter, activeTab);
         showSuccess("Success", "Invoice status updated successfully");
       } else {
         const errorData = await response.json();
@@ -223,32 +271,13 @@ export default function InvoicesPage() {
   };
 
   const handleDownloadPDF = async (invoiceId: string) => {
-    if (!currentBusiness?.id) {
-      showError("Error", "No business selected");
-      return;
-    }
-
     try {
-      const response = await fetch(`/api/invoices/${invoiceId}/pdf?businessId=${currentBusiness.id}`);
-      
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = globalThis.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `invoice-${invoiceId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        globalThis.URL.revokeObjectURL(url);
-        a.remove();
-        showSuccess("Success", "Invoice PDF downloaded successfully");
-      } else {
-        const errorData = await response.json();
-        showError("Error", "Something went wrong. Please try again.");
-      }
+      const selectedInvoice = invoices.find((inv) => inv.id === invoiceId);
+      await downloadInvoicePdf(invoiceId, selectedInvoice?.invoiceNumber);
+      showSuccess("Success", "Invoice PDF downloaded successfully");
     } catch (error) {
       console.error("Error downloading PDF:", error);
-      showError("Error", "Something went wrong. Please try again.");
+      showError("Error", error instanceof Error ? error.message : "Something went wrong. Please try again.");
     }
   };
 
@@ -306,18 +335,13 @@ export default function InvoicesPage() {
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case "paid":
-        return <CheckCircle className="h-4 w-4 text-green-600" />;
+        return <CheckCircle className="h-4 w-4 text-[var(--brand-teal)]" />;
       case "sent":
-      case "viewed":
-        return <Clock className="h-4 w-4 text-blue-600" />;
-      case "partial_paid":
-        return <Clock className="h-4 w-4 text-yellow-600" />;
-      case "overdue":
-        return <AlertTriangle className="h-4 w-4 text-red-600" />;
+        return <Clock className="h-4 w-4 text-[var(--brand-cobalt)]" />;
       case "cancelled":
-        return <XCircle className="h-4 w-4 text-gray-600" />;
+        return <XCircle className="h-4 w-4 text-muted-foreground" />;
       default:
-        return <FileText className="h-4 w-4 text-gray-600" />;
+        return <FileText className="h-4 w-4 text-muted-foreground" />;
     }
   };
 
@@ -326,12 +350,7 @@ export default function InvoicesPage() {
       case "paid":
         return "default";
       case "sent":
-      case "viewed":
         return "secondary";
-      case "partial_paid":
-        return "outline";
-      case "overdue":
-        return "destructive";
       case "cancelled":
         return "secondary";
       default:
@@ -339,40 +358,22 @@ export default function InvoicesPage() {
     }
   };
 
-  const getDaysOverdue = (dueDate?: string | null) => {
-    if (!dueDate) return 0;
-    const due = new Date(dueDate);
-    const today = new Date();
-    const diffTime = today.getTime() - due.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
-  };
-
-  // Calculate stats
-  const stats = {
-    total: invoices.length,
-    draft: invoices.filter(i => i.status === "DRAFT").length,
-    sent: invoices.filter(i => i.status === "SENT").length,
-    paid: invoices.filter(i => i.status === "PAID").length,
-    overdue: invoices.filter(i => i.status === "OVERDUE").length,
-    totalRevenue: invoices.reduce((sum, inv) => sum + inv.totalAmount, 0),
-    totalPaid: invoices.reduce((sum, inv) => sum + inv.paidAmount, 0),
-    totalOutstanding: invoices.reduce((sum, inv) => sum + (inv.totalAmount - inv.paidAmount), 0)
-  };
-
-  const statusOptions = ["DRAFT", "SENT", "VIEWED", "PAID", "OVERDUE", "CANCELLED"];
+  const statusOptions = ["DRAFT", "SENT", "PAID", "CANCELLED"];
   
   // Calculate limits
   const currentPlan = currentBusiness?.plan || "FREE";
   const invoiceLimit = LIMITS[currentPlan].INVOICES;
-  const canCreateInvoice = invoices.length < invoiceLimit;
+  const canCreateInvoice = stats.total < invoiceLimit;
   const canSendEmail = LIMITS[currentPlan].CAN_SEND_EMAIL;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const rangeStart = totalInvoices === 0 ? 0 : startIndex + 1;
+  const rangeEnd = Math.min(startIndex + ITEMS_PER_PAGE, totalInvoices);
 
-  if (loading) {
+  if (initialLoading || businessLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -398,9 +399,8 @@ export default function InvoicesPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
+      <div className="space-y-8">
+        <div className="flex justify-between items-center rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Invoices</h1>
             <p className="text-muted-foreground">
@@ -411,7 +411,7 @@ export default function InvoicesPage() {
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
                 <span>
-                  <Button disabled={!canCreateInvoice} asChild={canCreateInvoice}>
+                  <Button disabled={!canCreateInvoice} asChild={canCreateInvoice} className="bg-[var(--brand-cobalt)] hover:bg-[var(--brand-indigo)] text-white">
                     {canCreateInvoice ? (
                       <Link href="/dashboard/invoices/new">
                         <Plus className="h-4 w-4 mr-2" />
@@ -436,12 +436,11 @@ export default function InvoicesPage() {
           </TooltipProvider>
         </div>
 
-        {/* Stats Overview */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
+          <Card className="border-[var(--brand-cobalt)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <DollarSign className="h-4 w-4 text-[var(--brand-cobalt)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(stats.totalRevenue, currentBusiness?.currency || 'USD')}</div>
@@ -451,36 +450,36 @@ export default function InvoicesPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--brand-teal)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Outstanding</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <Clock className="h-4 w-4 text-[var(--brand-teal)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(stats.totalOutstanding, currentBusiness?.currency || 'USD')}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.sent + stats.overdue} invoices pending
+                {stats.sent} invoices pending
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--brand-indigo)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Invoices</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
+              <FileText className="h-4 w-4 text-[var(--brand-indigo)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.total}</div>
               <p className="text-xs text-muted-foreground">
-                {stats.paid} paid, {stats.overdue} overdue
+                {stats.paid} paid, {stats.cancelled} cancelled
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-[var(--brand-cyan)]/25 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">This Month</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <Calendar className="h-4 w-4 text-[var(--brand-cyan)]" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -498,8 +497,7 @@ export default function InvoicesPage() {
           </Card>
         </div>
 
-        {/* Invoices List */}
-        <Card>
+        <Card className="shadow-sm border-border/80">
           <CardHeader>
             <CardTitle>Invoice Management</CardTitle>
             <CardDescription>
@@ -508,12 +506,12 @@ export default function InvoicesPage() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-              <TabsList>
+              <TabsList className="bg-muted/60">
                 <TabsTrigger value="all">All ({stats.total})</TabsTrigger>
                 <TabsTrigger value="draft">Draft ({stats.draft})</TabsTrigger>
                 <TabsTrigger value="sent">Sent ({stats.sent})</TabsTrigger>
                 <TabsTrigger value="paid">Paid ({stats.paid})</TabsTrigger>
-                <TabsTrigger value="overdue">Overdue ({stats.overdue})</TabsTrigger>
+                <TabsTrigger value="cancelled">Cancelled ({stats.cancelled})</TabsTrigger>
               </TabsList>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-4">
@@ -523,13 +521,13 @@ export default function InvoicesPage() {
                     placeholder="Search invoices by number, customer, or email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
+                    className="pl-8 border-border/80"
                   />
                 </div>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-input bg-background rounded-md text-sm"
+                  className="h-10 rounded-md border border-border/80 bg-background px-3 text-sm shadow-sm outline-none ring-0 transition-colors focus:border-[var(--brand-cobalt)]"
                 >
                   <option value="">All Statuses</option>
                   {statusOptions.map(status => (
@@ -541,8 +539,13 @@ export default function InvoicesPage() {
               </div>
 
               <TabsContent value="all" className="space-y-4">
-                {filteredInvoices.length > 0 ? (
-                  <div className="rounded-md border">
+                {tableLoading ? (
+                  <div className="flex items-center justify-center gap-2 rounded-xl border border-border/80 bg-muted/40 px-4 py-8 text-sm text-muted-foreground">
+                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand-cobalt)] border-b-transparent" />
+                    Loading invoices...
+                  </div>
+                ) : invoices.length > 0 ? (
+                  <div className="rounded-xl border border-border/80 overflow-hidden">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -556,7 +559,7 @@ export default function InvoicesPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredInvoices.map((invoice) => (
+                        {invoices.map((invoice) => (
                           <TableRow key={invoice.id}>
                             <TableCell>
                               <div className="flex items-center space-x-2">
@@ -584,7 +587,7 @@ export default function InvoicesPage() {
                                 {formatCurrency(invoice.totalAmount, invoice.currency)}
                               </div>
                               {invoice.paidAmount > 0 && (
-                                <div className="text-sm text-green-600">
+                                <div className="text-sm text-[var(--brand-teal)]">
                                   {formatCurrency(invoice.paidAmount, invoice.currency)} paid
                                 </div>
                               )}
@@ -593,11 +596,6 @@ export default function InvoicesPage() {
                               <Badge variant={getStatusBadgeVariant(invoice.status)}>
                                 {invoice.status.replace('_', ' ')}
                               </Badge>
-                              {invoice.status === "OVERDUE" && invoice.dueDate && (
-                                <div className="text-xs text-red-600 mt-1">
-                                  {getDaysOverdue(invoice.dueDate)} days overdue
-                                </div>
-                              )}
                             </TableCell>
                             <TableCell>
                               {invoice.dueDate ? (
@@ -621,6 +619,12 @@ export default function InvoicesPage() {
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                   <DropdownMenuSeparator />
+                                  <Link href={`/dashboard/record-payments/${invoice.customer.id}?invoiceId=${invoice.id}`}>
+                                    <DropdownMenuItem>
+                                      <CreditCard className="h-4 w-4 mr-2" />
+                                      Record Payment
+                                    </DropdownMenuItem>
+                                  </Link>
                                   <Link href={`/dashboard/invoices/${invoice.id}`}>
                                     <DropdownMenuItem>
                                       <Eye className="h-4 w-4 mr-2" />
@@ -648,10 +652,17 @@ export default function InvoicesPage() {
                                       Send to Customer
                                     </DropdownMenuItem>
                                   ) : (
-                                    <DropdownMenuItem disabled>
-                                      <Send className="h-4 w-4 mr-2" />
-                                      Send to Customer (Pro)
-                                    </DropdownMenuItem>
+                                    <ProFeatureTooltip
+                                      isEnabled={canSendEmail}
+                                      message="Email sending is available on Pro and Enterprise plans."
+                                    >
+                                      <span>
+                                        <DropdownMenuItem disabled>
+                                          <Send className="h-4 w-4 mr-2" />
+                                          Send to Customer (Pro)
+                                        </DropdownMenuItem>
+                                      </span>
+                                    </ProFeatureTooltip>
                                   )}
                                   <DropdownMenuSeparator />
                                   {invoice.status === "DRAFT" && (
@@ -662,18 +673,10 @@ export default function InvoicesPage() {
                                       Mark as Sent
                                     </DropdownMenuItem>
                                   )}
-                                  {invoice.status !== "PAID" && invoice.totalAmount > invoice.paidAmount && (
-                                    <Link href={`/dashboard/invoices/${invoice.id}/payment`}>
-                                      <DropdownMenuItem>
-                                        <DollarSign className="h-4 w-4 mr-2" />
-                                        Record Payment
-                                      </DropdownMenuItem>
-                                    </Link>
-                                  )}
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     onClick={() => handleDeleteInvoice(invoice.id)}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Delete
@@ -730,11 +733,15 @@ export default function InvoicesPage() {
                 )}
               </TabsContent>
 
-              {/* Additional tab contents for different statuses */}
-              {["draft", "sent", "paid", "overdue"].map((status) => (
+              {["draft", "sent", "paid", "cancelled"].map((status) => (
                 <TabsContent key={status} value={status} className="space-y-4">
-                  {filteredInvoices.length > 0 ? (
-                    <div className="rounded-md border">
+                  {tableLoading ? (
+                    <div className="flex items-center justify-center gap-2 rounded-xl border border-border/80 bg-muted/40 px-4 py-8 text-sm text-muted-foreground">
+                      <div className="h-3 w-3 animate-spin rounded-full border-2 border-[var(--brand-cobalt)] border-b-transparent" />
+                      Loading invoices...
+                    </div>
+                  ) : invoices.length > 0 ? (
+                    <div className="rounded-xl border border-border/80 overflow-hidden">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -748,7 +755,7 @@ export default function InvoicesPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredInvoices.map((invoice) => (
+                          {invoices.map((invoice) => (
                             <TableRow key={invoice.id}>
                               <TableCell>
                                 <div className="flex items-center space-x-2">
@@ -776,7 +783,7 @@ export default function InvoicesPage() {
                                   {formatCurrency(invoice.totalAmount, invoice.currency)}
                                 </div>
                                 {invoice.paidAmount > 0 && (
-                                  <div className="text-sm text-green-600">
+                                  <div className="text-sm text-[var(--brand-teal)]">
                                     {formatCurrency(invoice.paidAmount, invoice.currency)} paid
                                   </div>
                                 )}
@@ -785,11 +792,6 @@ export default function InvoicesPage() {
                                 <Badge variant={getStatusBadgeVariant(invoice.status)}>
                                   {invoice.status.replace('_', ' ')}
                                 </Badge>
-                                {invoice.status === "OVERDUE" && invoice.dueDate && (
-                                  <div className="text-xs text-red-600 mt-1">
-                                    {getDaysOverdue(invoice.dueDate)} days overdue
-                                  </div>
-                                )}
                               </TableCell>
                               <TableCell>
                                 {invoice.dueDate ? (
@@ -840,10 +842,17 @@ export default function InvoicesPage() {
                                         Send to Customer
                                       </DropdownMenuItem>
                                     ) : (
-                                      <DropdownMenuItem disabled>
-                                        <Send className="h-4 w-4 mr-2" />
-                                        Send to Customer (Pro)
-                                      </DropdownMenuItem>
+                                      <ProFeatureTooltip
+                                        isEnabled={canSendEmail}
+                                        message="Email sending is available on Pro and Enterprise plans."
+                                      >
+                                        <span>
+                                          <DropdownMenuItem disabled>
+                                            <Send className="h-4 w-4 mr-2" />
+                                            Send to Customer (Pro)
+                                          </DropdownMenuItem>
+                                        </span>
+                                      </ProFeatureTooltip>
                                     )}
                                     <DropdownMenuSeparator />
                                     {invoice.status === "DRAFT" && (
@@ -854,18 +863,10 @@ export default function InvoicesPage() {
                                         Mark as Sent
                                       </DropdownMenuItem>
                                     )}
-                                    {invoice.status !== "PAID" && invoice.totalAmount > invoice.paidAmount && (
-                                      <Link href={`/dashboard/invoices/${invoice.id}/payment`}>
-                                        <DropdownMenuItem>
-                                          <DollarSign className="h-4 w-4 mr-2" />
-                                          Record Payment
-                                        </DropdownMenuItem>
-                                      </Link>
-                                    )}
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem 
                                       onClick={() => handleDeleteInvoice(invoice.id)}
-                                      className="text-red-600"
+                                      className="text-destructive"
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
                                       Delete
@@ -922,12 +923,40 @@ export default function InvoicesPage() {
                   )}
                 </TabsContent>
               ))}
+
+              {totalInvoices > 0 && (
+                <div className="flex items-center justify-between border-t border-border/80 pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Showing {rangeStart}-{rangeEnd} of {totalInvoices} invoices
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    <span className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
             </Tabs>
           </CardContent>
         </Card>
       </div>
 
-      {/* Email Dialog */}
       {selectedInvoiceForEmail && (
         <InvoiceEmailDialog
           invoiceId={selectedInvoiceForEmail.id}
@@ -939,7 +968,7 @@ export default function InvoicesPage() {
           onSuccess={() => {
             // Refresh invoices after successful email
             if (currentBusiness?.id) {
-              fetchInvoices(currentBusiness.id);
+              fetchInvoices(currentBusiness.id, currentPage, debouncedSearchTerm, statusFilter, activeTab);
             }
             showSuccess("Success", "Invoice emailed successfully");
           }}

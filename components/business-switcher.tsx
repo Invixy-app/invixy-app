@@ -69,15 +69,15 @@ export function BusinessSwitcher({ className }: BusinessSwitcherProps) {
   const getRoleColor = (role: string) => {
     switch (role) {
       case "OWNER":
-        return "bg-purple-100 text-purple-800";
+        return "bg-[var(--brand-indigo)]/15 text-[var(--brand-indigo)]";
       case "MANAGER":
-        return "bg-blue-100 text-blue-800";
+        return "bg-[var(--brand-cobalt)]/15 text-[var(--brand-cobalt)]";
       case "ACCOUNTANT":
-        return "bg-green-100 text-green-800";
+        return "bg-[var(--brand-teal)]/15 text-[var(--brand-teal)]";
       case "EMPLOYEE":
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted text-muted-foreground";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted text-muted-foreground";
     }
   };
 
@@ -85,7 +85,7 @@ export function BusinessSwitcher({ className }: BusinessSwitcherProps) {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span className="text-sm text-gray-600">Loading businesses...</span>
+        <span className="text-sm text-muted-foreground">Loading businesses...</span>
       </div>
     );
   }
@@ -108,7 +108,7 @@ export function BusinessSwitcher({ className }: BusinessSwitcherProps) {
           <Button variant="outline" className="flex items-center gap-2 min-w-[200px] w-full justify-between">
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
-              <div className="flex flex-col items-start">
+              <div className="flex items-center gap-2">
                 <span className="text-sm font-medium truncate max-w-[120px]">
                   {currentBusiness?.name || "Select Business"}
                 </span>
@@ -138,7 +138,7 @@ export function BusinessSwitcher({ className }: BusinessSwitcherProps) {
             >
               <div className="flex flex-col">
                 <span className="font-medium">{business.name}</span>
-                <span className="text-xs text-gray-500">{business.email}</span>
+                <span className="text-xs text-muted-foreground">{business.email}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Badge
@@ -148,7 +148,7 @@ export function BusinessSwitcher({ className }: BusinessSwitcherProps) {
                   {business.role}
                 </Badge>
                 {business.id === currentBusiness?.id && (
-                  <Check className="h-4 w-4 text-green-600" />
+                  <Check className="h-4 w-4 text-[var(--brand-teal)]" />
                 )}
               </div>
             </DropdownMenuItem>

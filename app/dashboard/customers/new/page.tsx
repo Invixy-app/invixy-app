@@ -109,7 +109,7 @@ export default function NewCustomerPage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -135,9 +135,8 @@ export default function NewCustomerPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center space-x-4">
+      <div className="space-y-8">
+        <div className="flex items-center space-x-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <Link href="/dashboard/customers">
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -155,7 +154,7 @@ export default function NewCustomerPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Basic Information */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <User className="h-5 w-5 mr-2" />
@@ -235,7 +234,7 @@ export default function NewCustomerPage() {
             </Card>
 
             {/* Address Information */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <MapPin className="h-5 w-5 mr-2" />
@@ -322,7 +321,7 @@ export default function NewCustomerPage() {
                 Cancel
               </Button>
             </Link>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
               {loading ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

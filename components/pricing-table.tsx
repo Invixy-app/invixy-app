@@ -34,7 +34,7 @@ const tiers = {
     {
       name: "Pro",
       id: "pro",
-      price: { MONTHLY: 15, QUARTERLY: 40, YEARLY: 150 },
+      price: { MONTHLY: 10, QUARTERLY: 27, YEARLY: 99 },
       description: "Everything you need to scale your business operations.",
       features: [
         "Unlimited clients",
@@ -222,7 +222,7 @@ export function PricingTable({ mode = "landing" }: PricingTableProps) {
           name: session.user.name,
           email: session.user.email,
         },
-        theme: { color: "#3399cc" },
+        theme: { color: "#2563eb" },
       }
 
       new (globalThis as any).Razorpay(options).open()
@@ -239,20 +239,23 @@ export function PricingTable({ mode = "landing" }: PricingTableProps) {
       <Tabs
         defaultValue="MONTHLY"
         onValueChange={(value) => setBillingCycle(value as BillingCycle)}
-        className="mt-10 rounded-full border bg-muted/40 p-1"
+        className="mt-10 w-full max-w-xl rounded-full border bg-muted/40 p-1"
       >
-        <TabsList className="grid grid-cols-3 bg-transparent">
-          <TabsTrigger className="rounded-full px-6" value="MONTHLY">
+        <TabsList className="grid w-full grid-cols-3 bg-transparent">
+          <TabsTrigger className="rounded-full px-2 py-2 text-xs sm:px-4 sm:text-sm md:px-6" value="MONTHLY">
             Monthly
           </TabsTrigger>
-          <TabsTrigger className="rounded-full px-6" value="QUARTERLY">
-            Quarterly <span className="ml-2 text-xs text-primary">Save 10%</span>
+          <TabsTrigger className="rounded-full px-2 py-2 text-xs sm:px-4 sm:text-sm md:px-6" value="QUARTERLY">
+            Quarterly <span className="hidden text-xs text-primary md:inline">Save 10%</span>
           </TabsTrigger>
-          <TabsTrigger className="rounded-full px-6" value="YEARLY">
-            Yearly <span className="ml-2 text-xs text-primary">Save 17%</span>
+          <TabsTrigger className="rounded-full px-2 py-2 text-xs sm:px-4 sm:text-sm md:px-6" value="YEARLY">
+            Yearly <span className="hidden text-xs text-primary md:inline">Save 17%</span>
           </TabsTrigger>
         </TabsList>
       </Tabs>
+      <p className="mt-2 text-xs text-muted-foreground md:hidden">
+        Quarterly saves 10% and yearly saves 17%
+      </p>
 
       <div className="grid w-full grid-cols-1 gap-8 pt-4 md:grid-cols-3 lg:gap-8 text-left">
         {tiers[currency].map((tier) => {

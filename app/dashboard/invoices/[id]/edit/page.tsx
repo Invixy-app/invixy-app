@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Link from "next/link";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { useBusinessContext } from "@/components/business-context";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,18 +29,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { 
   ArrowLeft, 
-  Save, 
-  Plus,
   Trash2,
+  Tags,
+  Plus,
   Calculator,
   User,
   FileText,
   AlertTriangle,
-  Edit
+  Edit,
+  Save,
+  Check,
+  ChevronsUpDown
 } from "lucide-react";
-import Link from "next/link";
 import { showError, showSuccess, showConfirm } from "@/lib/alert-store";
 import { z } from "zod";
 import { invoiceSchema } from "@/lib/validations/invoice";
@@ -57,6 +69,7 @@ interface Product {
   price: number;
   unit: string;
   taxSystemId?: string;
+  stockQuantity?: number | null;
 }
 
 interface TaxSystem {
@@ -103,14 +116,17 @@ export default function EditInvoicePage() {
   const router = useRouter();
   const params = useParams();
   const { currentBusiness } = useBusinessContext();
+  const PRODUCT_PAGE_SIZE = 100;
   
   const [invoice, setInvoice] = useState<any>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [productOptionsByIndex, setProductOptionsByIndex] = useState<Record<number, Product[]>>({});
+  const [productLookup, setProductLookup] = useState<Record<string, Product>>({});
   const [taxSystems, setTaxSystems] = useState<TaxSystem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [productHistories, setProductHistories] = useState<Record<string, ProductHistory>>({});
+  const [popoverOpenIndex, setPopoverOpenIndex] = useState<number | null>(null);
   
   const [formData, setFormData] = useState<InvoiceFormData>({
     customerId: "",
@@ -121,17 +137,19 @@ export default function EditInvoicePage() {
     items: []
   });
 
-  const [showProductDialog, setShowProductDialog] = useState(false);
-  const [showCustomItemDialog, setShowCustomItemDialog] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null);
-  const [newItem, setNewItem] = useState<Partial<InvoiceItem>>({
-    description: "",
-    quantity: 1,
-    unitPrice: 0,
-    discount: 0,
-    taxSystemIds: []
-  });
+  const [productSearchQueries, setProductSearchQueries] = useState<Record<number, string>>({});
+  const productSearchTimersRef = useRef<Record<number, ReturnType<typeof setTimeout> | null>>({});
+
+  useEffect(() => {
+    return () => {
+      Object.values(productSearchTimersRef.current).forEach((timer) => {
+        if (timer) {
+          clearTimeout(timer);
+        }
+      });
+    };
+  }, []);
 
   useEffect(() => {
     if (params?.id && currentBusiness?.id) {
@@ -173,7 +191,6 @@ export default function EditInvoicePage() {
       // Fetch related data
       await Promise.all([
         fetchCustomers(),
-        fetchProducts(),
         fetchTaxSystems()
       ]);
     } catch (error) {
@@ -196,16 +213,62 @@ export default function EditInvoicePage() {
     }
   };
 
-  const fetchProducts = async () => {
+  const loadProductOptions = async (index: number, search = "") => {
     try {
-      const response = await fetch(`/api/products?businessId=${currentBusiness?.id}`);
+      const params = new URLSearchParams({
+        businessId: String(currentBusiness?.id || ""),
+        paginated: "true",
+        page: "1",
+        pageSize: String(PRODUCT_PAGE_SIZE),
+      });
+
+      if (search.trim()) {
+        params.set("search", search.trim());
+      }
+
+      const response = await fetch(`/api/products?${params.toString()}`);
       if (response.ok) {
         const data = await response.json();
-        setProducts(data);
+        const items = (data.items || []) as Product[];
+
+        setProductOptionsByIndex(prev => ({
+          ...prev,
+          [index]: items,
+        }));
+
+        setProductLookup(prev => {
+          const next = { ...prev };
+          for (const product of items) {
+            next[product.id] = product;
+          }
+          return next;
+        });
       }
     } catch (error) {
       console.error("Error fetching products:", error);
     }
+  };
+
+  const handleProductSearchChange = (index: number, value: string) => {
+    setProductSearchQueries(prev => ({ ...prev, [index]: value }));
+
+    const timer = productSearchTimersRef.current[index];
+    if (timer) {
+      clearTimeout(timer);
+    }
+
+    productSearchTimersRef.current[index] = setTimeout(() => {
+      loadProductOptions(index, value);
+    }, 250);
+  };
+
+  const handleProductSelectOpen = (index: number, open: boolean) => {
+    if (!open) {
+      setProductSearchQueries(prev => ({ ...prev, [index]: "" }));
+      return;
+    }
+
+    void loadProductOptions(index, productSearchQueries[index] || "");
   };
 
   const fetchTaxSystems = async () => {
@@ -225,62 +288,25 @@ export default function EditInvoicePage() {
   };
 
   const addItem = () => {
-    if (!newItem.description || !newItem.quantity || !newItem.unitPrice) {
-      showError("Validation Error", "Please fill in all required fields");
-      return;
-    }
-
-    const lineTotal = calculateLineTotal(
-      newItem.quantity || 0,
-      newItem.unitPrice || 0,
-      newItem.discount || 0
-    );
-
-    const item: InvoiceItem = {
-      tempId: `temp_${Date.now()}`,
-      productId: newItem.productId,
-      description: newItem.description || "",
-      quantity: newItem.quantity || 0,
-      unitPrice: newItem.unitPrice || 0,
-      discount: newItem.discount || 0,
-      lineTotal,
-      taxSystemIds: newItem.taxSystemIds || []
-    };
-
-    if (editingItemIndex !== null) {
-      const updatedItems = [...formData.items];
-      updatedItems[editingItemIndex] = { ...updatedItems[editingItemIndex], ...item };
-      setFormData(prev => ({ ...prev, items: updatedItems }));
-      setEditingItemIndex(null);
-    } else {
-      setFormData(prev => ({ ...prev, items: [...prev.items, item] }));
-    }
-
-    setNewItem({
-      description: "",
-      quantity: 1,
-      unitPrice: 0,
-      discount: 0,
-      taxSystemIds: []
-    });
-    setShowProductDialog(false);
-  };
-
-  const editItem = (index: number) => {
-    const item = formData.items[index];
-    setNewItem({
-      productId: item.productId,
-      description: item.description,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      discount: item.discount,
-      taxSystemIds: item.taxSystemIds || []
-    });
-    setEditingItemIndex(index);
-    setShowProductDialog(true);
+    setFormData(prev => ({
+      ...prev,
+      items: [
+        ...prev.items,
+        {
+          productId: "",
+          description: "",
+          quantity: 1,
+          unitPrice: 0,
+          discount: 0,
+          lineTotal: 0,
+          taxSystemIds: []
+        }
+      ]
+    }));
   };
 
   const removeItem = (index: number) => {
+    if (formData.items.length <= 1) return;
     showConfirm(
       "Remove Item",
       "Are you sure you want to remove this item from the invoice?",
@@ -293,51 +319,87 @@ export default function EditInvoicePage() {
     );
   };
 
-  const selectProduct = (productId: string) => {
-    const product = products.find(p => p.id === productId);
+  const updateItem = (index: number, field: string, value: any) => {
+    setFormData(prev => {
+      const updatedItems = prev.items.map((item, i) => {
+        if (i === index) {
+          const updatedItem = { ...item, [field]: value };
+          if (field === 'quantity' || field === 'unitPrice' || field === 'discount') {
+            updatedItem.lineTotal = calculateLineTotal(updatedItem.quantity, updatedItem.unitPrice, updatedItem.discount);
+          }
+          if (field === 'quantity' && updatedItem.productId) {
+            const product = productLookup[updatedItem.productId];
+            if (product && product.stockQuantity !== null && product.stockQuantity !== undefined) {
+              if (updatedItem.quantity > product.stockQuantity) {
+                showError(
+                  "Stock Warning",
+                  `Requested quantity (${updatedItem.quantity}) exceeds available stock (${product.stockQuantity}) for ${product.name}.`
+                );
+              }
+            }
+          }
+          return updatedItem;
+        }
+        return item;
+      });
+      return { ...prev, items: updatedItems };
+    });
+  };
+
+  const selectProduct = (index: number, productId: string) => {
+    const product = productLookup[productId];
     if (product) {
-      // Fetch historical price if customer is selected
       if (formData.customerId && currentBusiness?.id) {
         fetchProductHistory(productId, formData.customerId);
       }
-
-      setNewItem(prev => ({
+      setFormData(prev => ({
         ...prev,
-        productId: product.id,
-        description: product.name,
-        unitPrice: product.price,
-        taxSystemIds: product.taxSystemId ? [product.taxSystemId] : []
+        items: prev.items.map((item, i) => {
+          if (i === index) {
+            const updatedItem = {
+              ...item,
+              productId: productId,
+              description: product.name,
+              unitPrice: product.price,
+              taxSystemIds: product.taxSystemId ? [product.taxSystemId] : []
+            };
+            updatedItem.lineTotal = calculateLineTotal(updatedItem.quantity, updatedItem.unitPrice, updatedItem.discount);
+            return updatedItem;
+          }
+          return item;
+        })
       }));
     }
   };
 
   const fetchProductHistory = async (productId: string, customerId: string) => {
     if (!currentBusiness?.id) return;
-
     try {
       const response = await fetch(
         `/api/products/${productId}/history?customerId=${customerId}&businessId=${currentBusiness.id}`
       );
-
       if (response.ok) {
         const data = await response.json();
-        setProductHistories(prev => ({
-          ...prev,
-          [productId]: data
-        }));
+        setProductHistories(prev => ({ ...prev, [productId]: data }));
       }
     } catch (error) {
       console.error("Error fetching product history:", error);
     }
   };
 
-  const toggleItemTax = (taxId: string) => {
-    setNewItem(prev => {
-      const currentTaxes = prev.taxSystemIds || [];
-      const newTaxes = currentTaxes.includes(taxId)
-        ? currentTaxes.filter(id => id !== taxId)
-        : [...currentTaxes, taxId];
-      return { ...prev, taxSystemIds: newTaxes };
+  const toggleItemTax = (index: number, taxId: string) => {
+    setFormData(prev => {
+      const updatedItems = prev.items.map((item, i) => {
+        if (i === index) {
+          const currentTaxes = item.taxSystemIds || [];
+          const newTaxes = currentTaxes.includes(taxId)
+            ? currentTaxes.filter((id: string) => id !== taxId)
+            : [...currentTaxes, taxId];
+          return { ...item, taxSystemIds: newTaxes };
+        }
+        return item;
+      });
+      return { ...prev, items: updatedItems };
     });
   };
 
@@ -450,7 +512,7 @@ export default function EditInvoicePage() {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[var(--brand-cobalt)]"></div>
         </div>
       </DashboardLayout>
     );
@@ -496,9 +558,8 @@ export default function EditInvoicePage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="space-y-8">
+        <div className="flex items-center justify-between rounded-2xl border border-border bg-card px-5 py-4 shadow-sm">
           <div className="flex items-center space-x-4">
             <Button variant="outline" size="sm" onClick={handleCancel}>
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -519,7 +580,7 @@ export default function EditInvoicePage() {
             <Button variant="outline" onClick={handleCancel} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
+            <Button onClick={handleSave} disabled={saving} className="bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
               {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -535,11 +596,11 @@ export default function EditInvoicePage() {
           </div>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
             {/* Invoice Details */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle>Invoice Details</CardTitle>
                 <CardDescription>
@@ -566,10 +627,10 @@ export default function EditInvoicePage() {
                       <SelectContent>
                         {customers.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id}>
-                            <div>
-                              <div className="font-medium">{customer.name}</div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{customer.name}</span>
                               {customer.email && (
-                                <div className="text-xs text-muted-foreground">{customer.email}</div>
+                                <span className="text-xs text-muted-foreground">- {customer.email}</span>
                               )}
                             </div>
                           </SelectItem>
@@ -626,7 +687,7 @@ export default function EditInvoicePage() {
             </Card>
 
             {/* Line Items */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -635,115 +696,233 @@ export default function EditInvoicePage() {
                       Add products or services to this invoice
                     </CardDescription>
                   </div>
-                  <Button onClick={() => setShowProductDialog(true)}>
+                  <Button type="button" onClick={addItem}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Item
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
-                {errors.items && (
-                  <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-600 text-sm">
-                    {errors.items}
-                  </div>
-                )}
-                {formData.items.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                    <h3 className="mt-4 text-lg font-semibold">No items added</h3>
-                    <p className="text-muted-foreground">
-                      Add your first item to get started
-                    </p>
-                    <Button className="mt-4" onClick={() => setShowProductDialog(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Item
-                    </Button>
-                  </div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="text-right">Qty</TableHead>
-                        <TableHead className="text-right">Price</TableHead>
-                        <TableHead className="text-right">Discount</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {formData.items.map((item, index) => {
-                        const hasError = Object.keys(errors).some(key => key.startsWith(`items.${index}.`));
-                        return (
-                        <TableRow key={item.id || item.tempId} className={hasError ? "bg-red-50" : ""}>
-                          <TableCell>
-                            <div className="font-medium">{item.description}</div>
-                            {errors[`items.${index}.description`] && (
-                                <div className="text-xs text-red-500 mt-1">{errors[`items.${index}.description`]}</div>
-                            )}
-                            {item.taxSystemIds && item.taxSystemIds.length > 0 && (
-                              <div className="text-xs text-muted-foreground mt-1">
-                                Taxes: {item.taxSystemIds.map((taxId, idx) => {
-                                  const tax = taxSystems.find(t => t.id === taxId);
-                                  return tax ? (
-                                    <span key={taxId}>
-                                      {idx > 0 && ", "}
-                                      {(tax.rate * 100).toFixed(2)}%
-                                    </span>
-                                  ) : null;
-                                })}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {item.quantity}
-                            {errors[`items.${index}.quantity`] && (
-                                <div className="text-xs text-red-500 mt-1">{errors[`items.${index}.quantity`]}</div>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            ${item.unitPrice.toFixed(2)}
-                            {errors[`items.${index}.unitPrice`] && (
-                                <div className="text-xs text-red-500 mt-1">{errors[`items.${index}.unitPrice`]}</div>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            ${item.discount.toFixed(2)}
-                             {errors[`items.${index}.discount`] && (
-                                <div className="text-xs text-red-500 mt-1">{errors[`items.${index}.discount`]}</div>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            ${item.lineTotal.toFixed(2)}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center space-x-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => editItem(index)}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => removeItem(index)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </TableCell>
+              <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50 border-y">
+                          <TableHead className="w-[30%] min-w-[220px] h-12">PRODUCT / ACCOUNT</TableHead>
+                          <TableHead className="w-[20%] min-w-[150px] h-12">DESCRIPTION</TableHead>
+                          <TableHead className="w-[100px] min-w-[100px] h-12">QTY</TableHead>
+                          <TableHead className="w-[120px] min-w-[120px] h-12">PRICE</TableHead>
+                          <TableHead className="w-[100px] min-w-[100px] h-12">DISC.</TableHead>
+                          {taxSystems.length > 0 && <TableHead className="w-[140px] min-w-[140px] h-12">TAX</TableHead>}
+                          <TableHead className="w-[120px] min-w-[120px] text-right h-12">TOTAL</TableHead>
+                          <TableHead className="w-[60px] min-w-[60px] text-center h-12"></TableHead>
                         </TableRow>
-                      )})}
-                    </TableBody>
-                  </Table>
-                )}
+                      </TableHeader>
+                      <TableBody>
+                        {formData.items.map((item, index) => {
+                          const idError = errors["items." + index + ".productId"];
+                          const descError = errors["items." + index + ".description"];
+                          const qtyError = errors["items." + index + ".quantity"];
+                          const priceError = errors["items." + index + ".unitPrice"];
+                          const discError = errors["items." + index + ".discount"];
+                          
+                          return (
+                            <TableRow key={index} className="group border-b">
+                              <TableCell className="align-top p-3">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <Popover 
+                                      open={popoverOpenIndex === index} 
+                                      onOpenChange={(open) => {
+                                        setPopoverOpenIndex(open ? index : null);
+                                        if (!open) setProductSearchQueries(prev => ({ ...prev, [index]: "" }));
+                                      }}
+                                    >
+                                      <PopoverTrigger asChild>
+                                        <Button
+                                          variant="outline"
+                                          role="combobox"
+                                          className={`w-full justify-between font-normal ${!item.productId ? "text-muted-foreground" : ""} ${idError ? "border-red-500" : ""}`}
+                                        >
+                                          {item.productId 
+                                            ? productLookup[item.productId]?.name || "Selected Product" 
+                                            : "Select/Search Product..."}
+                                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-[300px] p-0" align="start">
+                                        <Command shouldFilter={false}>
+                                          <CommandInput 
+                                            placeholder="Search products..." 
+                                            value={productSearchQueries[index] || ""}
+                                            onValueChange={(value) => handleProductSearchChange(index, value)}
+                                          />
+                                          <CommandList>
+                                            {(productOptionsByIndex[index] || []).length === 0 ? (
+                                               <CommandEmpty>No products found.</CommandEmpty>
+                                            ) : (
+                                              <CommandGroup>
+                                                {(productOptionsByIndex[index] || []).map((product) => (
+                                                  <CommandItem
+                                                    key={product.id}
+                                                    value={product.id}
+                                                    onSelect={(value) => {
+                                                      selectProduct(index, value);
+                                                      setPopoverOpenIndex(null);
+                                                    }}
+                                                  >
+                                                    <Check
+                                                      className={`mr-2 h-4 w-4 ${item.productId === product.id ? "opacity-100" : "opacity-0"}`}
+                                                    />
+                                                    {product.name}
+                                                  </CommandItem>
+                                                ))}
+                                              </CommandGroup>
+                                            )}
+                                          </CommandList>
+                                        </Command>
+                                      </PopoverContent>
+                                    </Popover>
+                                  </div>
+                                  {item.productId && productHistories[item.productId]?.hasHistory && (
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground ml-1">
+                                      <span>Last Purchase:</span>
+                                      <span className="font-medium">${(productHistories[item.productId].lastPrice || 0).toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  {idError && typeof idError === 'string' && <p className="text-xs text-red-500 mt-1">{idError}</p>}
+                                </div>
+                              </TableCell>
+  
+                              <TableCell className="align-top p-3">
+                                <Input
+                                  placeholder="-"
+                                  value={item.description}
+                                  onChange={(e) => updateItem(index, "description", e.target.value)}
+                                  className={"w-full bg-transparent border-transparent hover:border-input focus:border-input focus:bg-background transition-all " + (descError ? "border-red-500 bg-background" : "")}
+                                />
+                                {descError && typeof descError === 'string' && <p className="text-xs text-red-500 mt-1">{descError}</p>}
+                              </TableCell>
+  
+                              <TableCell className="align-top p-3">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0.01"
+                                  placeholder="1"
+                                  value={item.quantity || ""}
+                                  onChange={(e) => updateItem(index, "quantity", parseFloat(e.target.value) || 0)}
+                                  className={"w-full " + (qtyError ? "border-red-500" : "")}
+                                />
+                                {qtyError && typeof qtyError === 'string' && <p className="text-xs text-red-500 mt-1">{qtyError}</p>}
+                              </TableCell>
+  
+                              <TableCell className="align-top p-3">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={item.unitPrice || ""}
+                                  onChange={(e) => updateItem(index, "unitPrice", parseFloat(e.target.value) || 0)}
+                                  className={"w-full " + (priceError ? "border-red-500" : "")}
+                                />
+                                {priceError && typeof priceError === 'string' && <p className="text-xs text-red-500 mt-1">{priceError}</p>}
+                              </TableCell>
+  
+                              <TableCell className="align-top p-3">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  value={item.discount || ""}
+                                  onChange={(e) => updateItem(index, "discount", parseFloat(e.target.value) || 0)}
+                                  className={"w-full bg-transparent border-transparent hover:border-input focus:border-input focus:bg-background transition-all " + (discError ? "border-red-500 bg-background" : "")}
+                                />
+                                {discError && typeof discError === 'string' && <p className="text-xs text-red-500 mt-1">{discError}</p>}
+                              </TableCell>
+  
+                              {taxSystems.length > 0 && (
+                                <TableCell className="align-top p-3">
+                                  <div className="space-y-2">
+                                    <div className="mt-1">
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button variant="outline" className="h-8 w-full justify-between px-2 text-xs">
+                                            <span className="truncate">
+                                              {item.taxSystemIds.length > 0
+                                                ? `${item.taxSystemIds.length} Selected`
+                                                : "Select Tax"}
+                                            </span>
+                                            <span className="text-[10px] text-muted-foreground ml-1">▼</span>
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end" className="w-[180px]">
+                                          {taxSystems.map((tax) => {
+                                            const isSelected = item.taxSystemIds.includes(tax.id);
+                                            return (
+                                              <DropdownMenuCheckboxItem
+                                                key={tax.id}
+                                                checked={isSelected}
+                                                onCheckedChange={() => toggleItemTax(index, tax.id)}
+                                              >
+                                                {tax.name} ({(tax.rate * 100).toFixed(0)}%)
+                                              </DropdownMenuCheckboxItem>
+                                            );
+                                          })}
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
+                                    {item.taxSystemIds.length > 0 && (
+                                      <div className="text-[10px] text-muted-foreground font-medium">
+                                        Tax: ${(
+                                          item.taxSystemIds.reduce((sum, taxId) => {
+                                            const tax = taxSystems.find(t => t.id === taxId);
+                                            return sum + (tax ? item.lineTotal * tax.rate : 0);
+                                          }, 0)
+                                        ).toFixed(2)}
+                                      </div>
+                                    )}
+                                  </div>
+                                </TableCell>
+                              )}
+  
+                              <TableCell className="align-top p-3 text-right">
+                                <div className="font-medium py-2">
+                                  ${item.lineTotal.toFixed(2)}
+                                </div>
+                              </TableCell>
+  
+                              <TableCell className="align-top p-3 text-center">
+                                <div className="flex items-center justify-center gap-1 opacity-100 mt-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => removeItem(index)}
+                                    disabled={formData.items.length === 1}
+                                    className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 disabled:opacity-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {errors.items && typeof errors.items === 'string' && (
+                    <div className="p-4 border-t">
+                      <p className="text-sm text-red-500 font-medium">{errors.items}</p>
+                    </div>
+                  )}
               </CardContent>
             </Card>
 
             {/* Notes & Terms */}
-            <Card>
+            <Card className="shadow-sm border-border/80">
               <CardHeader>
                 <CardTitle>Additional Information</CardTitle>
                 <CardDescription>
@@ -785,7 +964,7 @@ export default function EditInvoicePage() {
           </div>
 
           {/* Invoice Summary Sidebar */}
-          <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -837,7 +1016,7 @@ export default function EditInvoicePage() {
 
             {/* Customer Info */}
             {formData.customerId && (
-              <Card>
+              <Card className="shadow-sm border-border/80">
                 <CardHeader>
                   <CardTitle className="flex items-center">
                     <User className="h-5 w-5 mr-2" />
@@ -865,190 +1044,7 @@ export default function EditInvoicePage() {
           </div>
         </div>
 
-        {/* Add/Edit Item Dialog */}
-        <Dialog open={showProductDialog} onOpenChange={setShowProductDialog}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingItemIndex !== null ? "Edit Item" : "Add Item"}
-              </DialogTitle>
-              <DialogDescription>
-                Add or edit an item for this invoice
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              {/* Product Selection */}
-              <div className="space-y-2">
-                <Label>Select Product (Optional)</Label>
-                <Select value={newItem.productId || ""} onValueChange={selectProduct}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a product or enter manually" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {products.map((product) => (
-                      <SelectItem key={product.id} value={product.id}>
-                        <div>
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            ${product.price.toFixed(2)} per {product.unit}
-                          </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {newItem.productId && productHistories[newItem.productId]?.hasHistory && (
-                  <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm">
-                    <div className="font-medium text-blue-900 mb-1">Last Purchase Price for This Customer</div>
-                    <div className="text-blue-700 font-semibold text-lg">
-                      ${productHistories[newItem.productId].lastPrice?.toFixed(2) || '0.00'}
-                    </div>
-                    {productHistories[newItem.productId].lastInvoice && (
-                      <div className="text-xs text-blue-600 mt-1">
-                        From Invoice #{productHistories[newItem.productId].lastInvoice?.number} 
-                        {' '}({new Date(productHistories[newItem.productId].lastInvoice?.date || '').toLocaleDateString()})
-                      </div>
-                    )}
-                    {(() => {
-                      const currentProduct = products.find(p => p.id === newItem.productId);
-                      const lastPrice = productHistories[newItem.productId].lastPrice || 0;
-                      return currentProduct && lastPrice !== currentProduct.price && (
-                        <div className="text-xs text-blue-700 mt-2 pt-2 border-t border-blue-200">
-                          Current catalog price: ${currentProduct.price.toFixed(2)}
-                          {lastPrice > currentProduct.price ? (
-                            <span className="text-green-600 ml-1">(↓ Price decreased)</span>
-                          ) : (
-                            <span className="text-orange-600 ml-1">(↑ Price increased)</span>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
               </div>
-
-              <Separator />
-
-              {/* Manual Item Entry */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2 col-span-2">
-                  <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="description"
-                    value={newItem.description}
-                    onChange={(e) => setNewItem(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Item description"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="quantity">Quantity <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="quantity"
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={newItem.quantity}
-                    onChange={(e) => setNewItem(prev => ({ ...prev, quantity: parseFloat(e.target.value) || 0 }))}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="unitPrice">Unit Price <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="unitPrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={newItem.unitPrice}
-                    onChange={(e) => setNewItem(prev => ({ ...prev, unitPrice: parseFloat(e.target.value) || 0 }))}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="discount">Discount</Label>
-                  <Input
-                    id="discount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={newItem.discount}
-                    onChange={(e) => setNewItem(prev => ({ ...prev, discount: parseFloat(e.target.value) || 0 }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Line Total</Label>
-                  <div className="px-3 py-2 border rounded-md bg-muted">
-                    ${calculateLineTotal(
-                      newItem.quantity || 0,
-                      newItem.unitPrice || 0,
-                      newItem.discount || 0
-                    ).toFixed(2)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Tax Selection */}
-              {taxSystems.length > 0 && (
-                <div className="space-y-2 pt-2 border-t">
-                  <Label className="text-sm font-medium">Applicable Taxes</Label>
-                  <div className="grid grid-cols-1 gap-2">
-                    {taxSystems.map((tax) => (
-                      <div key={tax.id} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`tax-${tax.id}`}
-                          checked={(newItem.taxSystemIds || []).includes(tax.id)}
-                          onChange={() => toggleItemTax(tax.id)}
-                          className="rounded"
-                        />
-                        <label 
-                          htmlFor={`tax-${tax.id}`} 
-                          className="flex-1 flex items-center justify-between text-sm cursor-pointer"
-                        >
-                          <span>{tax.name}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {(tax.rate * 100).toFixed(2)}%
-                          </Badge>
-                        </label>
-                      </div>
-                    ))}
-                  </div>
-                  {(newItem.taxSystemIds || []).length > 0 && (
-                    <div className="text-sm text-muted-foreground pt-1">
-                      Tax on this item: ${
-                        (newItem.taxSystemIds || []).reduce((sum, taxId) => {
-                          const tax = taxSystems.find(t => t.id === taxId);
-                          const lineTotal = calculateLineTotal(
-                            newItem.quantity || 0,
-                            newItem.unitPrice || 0,
-                            newItem.discount || 0
-                          );
-                          return sum + (tax ? lineTotal * tax.rate : 0);
-                        }, 0).toFixed(2)
-                      }
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowProductDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={addItem}>
-                {editingItemIndex !== null ? "Update Item" : "Add Item"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
     </DashboardLayout>
   );
 }

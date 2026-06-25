@@ -1,6 +1,7 @@
 import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import InvoicePDFTemplate from './invoice-pdf-template';
+import FinancialStatementPDFTemplate, { FinancialStatementData } from './financial-statement-pdf-template';
 
 interface InvoiceData {
   id: string;
@@ -15,13 +16,13 @@ interface InvoiceData {
   currency: string;
   notes?: string;
   terms?: string;
-  // salespersonName?: string; // Removed as requested
   business: {
     name: string;
     description?: string;
     email?: string;
     phone?: string;
     address?: string;
+    taxRegistrationNumber?: string;
     logo?: string;
     invoiceTemplate?: string;
   };
@@ -41,6 +42,10 @@ interface InvoiceData {
     itemTaxes?: Array<{
       taxRate: number;
       taxAmount: number;
+      taxSystem?: {
+        name: string;
+        taxType?: string;
+      };
     }>;
     product?: {
       name: string;
@@ -52,7 +57,7 @@ interface InvoiceData {
     rate: number;
     taxSystem: {
       name: string;
-      type: string;
+      taxType?: string;
     };
   }>;
   payments: Array<{
@@ -71,7 +76,7 @@ export class InvoicePDFService {
       return buffer;
     } catch (error) {
       console.error('Error generating PDF:', error);
-      throw new Error(`Failed to generate PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error("Failed to generate PDF: ");
     }
   }
 
@@ -80,14 +85,24 @@ export class InvoicePDFService {
       if (invoices.length === 0) {
         throw new Error('No invoices provided');
       }
-      // For now, just generate the first invoice
-      // You can enhance this to combine multiple invoices
       const pdfDocument = <InvoicePDFTemplate invoice={invoices[0]} />;
       const buffer = await renderToBuffer(pdfDocument);
       return buffer;
     } catch (error) {
       console.error('Error generating batch PDF:', error);
-      throw new Error(`Failed to generate batch PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error("Failed to generate batch PDF: ");
+    }
+  }
+
+  static async generateFinancialStatementPDF(data: FinancialStatementData): Promise<Buffer> {
+    try {
+      const pdfDocument = <FinancialStatementPDFTemplate data={data} />;
+      const buffer = await renderToBuffer(pdfDocument);
+      return buffer;
+    } catch (error) {
+      console.error('Error generating Financial Statement PDF:', error);
+      throw new Error("Failed to generate Financial Statement PDF: ");
     }
   }
 }
+

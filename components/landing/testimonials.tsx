@@ -37,9 +37,9 @@ export function Testimonials() {
     <section id="testimonials" className="py-24 bg-background relative overflow-hidden">
         {/* Background Gradients */}
         <div className="absolute top-1/2 left-0 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl -z-10" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl -z-10" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-[var(--brand-cobalt)]/10 rounded-full blur-3xl -z-10" />
 
-      <div className="container mx-auto px-4 md:px-6">
+      <div className=" mx-auto px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
             Loved by businesses everywhere
@@ -67,10 +67,10 @@ export function Testimonials() {
               <CardContent>
                 <div className="flex mb-3">
                   {Array.from({ length: testimonial.rating }).map((_, i) => (
-                    <Star key={`star-${testimonial.id}-${i}`} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    <Star key={`star-${testimonial.id}-${i}`} className="w-4 h-4 fill-[var(--brand-cyan)] text-[var(--brand-cyan)]" />
                   ))}
                 </div>
-                <p className="text-muted-foreground text-sm leading-relaxed">
+                <p className="max-w-[36ch] text-sm leading-relaxed text-muted-foreground">
                   "{testimonial.content}"
                 </p>
               </CardContent>

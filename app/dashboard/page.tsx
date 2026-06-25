@@ -1,31 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { DashboardLayout } from "@/components/dashboard-layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Users, 
-  Package, 
-  FileText, 
-  TrendingUp, 
-  TrendingDown,
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
   DollarSign,
-  AlertCircle,
+  Download,
+  FileText,
+  MoreHorizontal,
   Plus,
   Settings as SettingsIcon,
-  Clock,
-  Edit,
-  Activity,
-  ArrowUpRight,
-  ArrowDownRight,
-  Calculator,
-  Crown
+  TrendingDown,
+  TrendingUp,
+  Users,
+  Filter,
+  X,
 } from "lucide-react";
+import { DashboardLayout } from "@/components/dashboard-layout";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useBusinessContext } from "@/components/business-context";
-import Link from "next/link";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface BusinessDashboardStats {
   totalCustomers: number;
@@ -45,6 +42,7 @@ interface BusinessDashboardStats {
   lastMonthRevenue: number;
   thisMonthInvoices: number;
   subscriptionPlan?: string;
+  hasDateFilter?: boolean;
 }
 
 interface RecentInvoice {
@@ -86,27 +84,37 @@ export default function DashboardPage() {
     thisMonthRevenue: 0,
     lastMonthRevenue: 0,
     thisMonthInvoices: 0,
-    subscriptionPlan: "FREE"
+    subscriptionPlan: "FREE",
+    hasDateFilter: false,
   });
   const [recentInvoices, setRecentInvoices] = useState<RecentInvoice[]>([]);
   const [topCustomers, setTopCustomers] = useState<TopCustomer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dateFilter, setDateFilter] = useState<{from: string, to: string} | null>(null);
+  const [pendingFilter, setPendingFilter] = useState<{from: string, to: string}>({ from: "", to: "" });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     if (currentBusiness) {
       fetchDashboardData();
     }
-  }, [currentBusiness]);
+  }, [currentBusiness, dateFilter]);
 
   const fetchDashboardData = async () => {
     if (!currentBusiness) return;
 
     setLoading(true);
     try {
-      const response = await fetch(`/api/business/${currentBusiness.id}/dashboard`);
+      let url = `/api/business/${currentBusiness.id}/dashboard`;
+      if (dateFilter && (dateFilter.from || dateFilter.to)) {
+        const params = new URLSearchParams();
+        if (dateFilter.from) params.append("from", dateFilter.from);
+        if (dateFilter.to) params.append("to", dateFilter.to);
+        url += `?${params.toString()}`;
+      }
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
-        console.log("Dashboard stats:", data.stats); // Debug log
         setStats(data.stats || stats);
         setRecentInvoices(data.recentInvoices || []);
         setTopCustomers(data.topCustomers || []);
@@ -121,10 +129,10 @@ export default function DashboardPage() {
   if (!currentBusiness) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
+        <div className="flex h-96 items-center justify-center">
           <div className="text-center">
-            <h3 className="text-lg font-semibold mb-2">No Business Selected</h3>
-            <p className="text-muted-foreground mb-4">
+            <h3 className="mb-2 text-lg font-semibold">No Business Selected</h3>
+            <p className="mb-4 text-muted-foreground">
               Please select a business from the top bar or create a new one.
             </p>
             <Link href="/dashboard/businesses/new">
@@ -136,19 +144,10 @@ export default function DashboardPage() {
     );
   }
 
-  const getStatusDotColor = (status: string) => {
-    switch (status) {
-      case 'PAID': return 'bg-green-500';
-      case 'PENDING': return 'bg-yellow-500';
-      case 'OVERDUE': return 'bg-red-500';
-      default: return 'bg-gray-400';
-    }
-  };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: currentBusiness?.currency || "USD"
+      currency: currentBusiness.currency || "USD",
     }).format(amount);
   };
 
@@ -156,238 +155,308 @@ export default function DashboardPage() {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
-      day: "numeric"
+      day: "numeric",
     });
   };
 
+  const getInvoiceStatusBadgeClass = (status: string) => {
+    if (status === "PAID") {
+      return "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800";
+    }
+    if (status === "SENT") {
+      return "bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800";
+    }
+    if (status === "CANCELLED") {
+      return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-800";
+    }
+    return "bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-800";
+  };
+
+  const formatInvoiceStatus = (status: string) => {
+    return status
+      .toLowerCase()
+      .split("_")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  };
+
+  const atRiskRevenue = stats.pendingRevenue;
+  const computedTotalInvoices =
+    stats.draftInvoices + stats.pendingInvoices + stats.paidInvoices;
+  const totalInvoicesCount =
+    stats.totalInvoices > 0 ? stats.totalInvoices : computedTotalInvoices;
+  const openInvoicesCountRaw = stats.pendingInvoices;
+  const openInvoicesCount = Math.min(openInvoicesCountRaw, totalInvoicesCount);
+
+  const growthPrefix = stats.revenueGrowth >= 0 ? "+" : "";
+  const growthLabel = `${growthPrefix}${stats.revenueGrowth.toFixed(1)}%`;
+  const getDueDateLabel = (dueDate: string | null | undefined) => {
+    if (!dueDate) return "-";
+    return formatDate(dueDate);
+  };
+
+  const getKpiPillClass = (tone: "positive" | "warning" | "neutral") => {
+    if (tone === "positive") {
+      return "bg-[var(--brand-teal)]/12 text-[var(--brand-teal)]";
+    }
+    if (tone === "warning") {
+      return "bg-destructive/10 text-destructive";
+    }
+    return "bg-muted text-muted-foreground";
+  };
+
+  const downloadCsv = (fileName: string, csvContent: string) => {
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const escapeCsvValue = (value: string | number) => {
+    const text = String(value ?? "");
+    if (text.includes(",") || text.includes("\n") || text.includes('"')) {
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+    return text;
+  };
+
+  const handleExportReport = () => {
+    const today = new Date().toISOString().slice(0, 10);
+    const businessName = (currentBusiness?.name || "business").replace(/\s+/g, "-").toLowerCase();
+
+    const summaryRows = [
+      ["Metric", "Value"],
+      ["Business", currentBusiness?.name || "-"],
+      ["Total Revenue", stats.totalRevenue],
+      ["Paid Revenue", stats.paidRevenue],
+      ["Pending Revenue", stats.pendingRevenue],
+      ["Total Invoices", totalInvoicesCount],
+      ["Draft Invoices", stats.draftInvoices],
+      ["Open Invoices", openInvoicesCount],
+      ["Paid Invoices", stats.paidInvoices],
+      ["Cancelled Invoices", Math.max(totalInvoicesCount - stats.draftInvoices - stats.pendingInvoices - stats.paidInvoices, 0)],
+      ["Total Customers", stats.totalCustomers],
+      ["Total Products", stats.totalProducts],
+      ["Revenue Growth (%)", stats.revenueGrowth.toFixed(2)],
+      ["This Month Revenue", stats.thisMonthRevenue],
+      ["Last Month Revenue", stats.lastMonthRevenue],
+      ["Average Invoice Value", stats.avgInvoiceValue],
+    ];
+
+    const invoiceRows = [
+      ["Invoice Number", "Customer", "Issue Date", "Due Date", "Status", "Total Amount"],
+      ...recentInvoices.map((invoice) => [
+        invoice.invoiceNumber,
+        invoice.customer.name,
+        formatDate(invoice.issueDate),
+        getDueDateLabel(invoice.dueDate),
+        invoice.status,
+        invoice.totalAmount,
+      ]),
+    ];
+
+    const customerRows = [
+      ["Customer", "Email", "Invoice Count", "Total Spent"],
+      ...topCustomers.map((customer) => [
+        customer.name,
+        customer.email || "-",
+        customer.invoiceCount,
+        customer.totalSpent,
+      ]),
+    ];
+
+    const toCsv = (rows: Array<Array<string | number>>) => rows
+      .map((row) => row.map((cell) => escapeCsvValue(cell)).join(","))
+      .join("\n");
+
+    const csv = [
+      "Dashboard Summary",
+      toCsv(summaryRows),
+      "",
+      "Recent Invoices",
+      toCsv(invoiceRows),
+      "",
+      "Top Customers",
+      toCsv(customerRows),
+    ].join("\n");
+
+    downloadCsv(`${businessName}-dashboard-report-${today}.csv`, csv);
+  };
+
+  const kpiCards: Array<{
+    label: string;
+    value: string;
+    meta: string;
+    pill: string;
+    icon: any;
+    tone: "positive" | "warning" | "neutral";
+  }> = [
+    {
+      label: stats.hasDateFilter ? "Period Revenue" : "Total Revenue",
+      value: formatCurrency(stats.totalRevenue),
+      meta: stats.hasDateFilter ? "Revenue in selected period" : "Revenue booked across invoices",
+      pill: stats.hasDateFilter ? "Filtered" : growthLabel,
+      icon: DollarSign,
+      tone: stats.hasDateFilter ? "neutral" : "positive",
+    },
+    {
+      label: "Outstanding",
+      value: formatCurrency(atRiskRevenue),
+      meta: stats.hasDateFilter ? `${openInvoicesCount} open invoices in period` : `${openInvoicesCount} open invoices (sent)`,
+      pill: `${openInvoicesCount} Open`,
+      icon: TrendingDown,
+      tone: "warning",
+    },
+    {
+      label: stats.hasDateFilter ? "Period Invoices" : "Total Invoices",
+      value: totalInvoicesCount.toLocaleString(),
+      meta: stats.hasDateFilter ? `${stats.thisMonthInvoices} in period` : `${stats.thisMonthInvoices} created this month`,
+      pill: stats.hasDateFilter ? "Filtered" : `${totalInvoicesCount} Total`,
+      icon: FileText,
+      tone: "neutral",
+    },
+  ];
+
+  const elevatedCardShadow =
+    "shadow-[0_12px_28px_-18px_rgba(15,23,42,0.35)] dark:shadow-[0_20px_40px_-24px_rgba(0,0,0,0.85)]";
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header with Business Info and Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="rounded-[28px] bg-muted/35 p-2 dark:bg-zinc-900/40 md:p-3">
+        <div className="space-y-4">
+        <div className={`flex flex-col gap-4 rounded-[24px] border border-border bg-card px-5 py-4 ${elevatedCardShadow} sm:flex-row sm:items-center sm:justify-between`}>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground mt-1 flex items-center gap-2">
-              Overview for <span className="font-semibold text-foreground">{currentBusiness.name}</span>
-              <Badge variant="outline" className="text-xs font-normal">
-                Plan: {stats.subscriptionPlan || "Loading..."}
-              </Badge>
+            <h1 className="text-[2.15rem] font-bold tracking-tight text-foreground">Financial Health</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Welcome back. {currentBusiness.name} is up{" "}
+              <span className="ml-1 font-semibold text-[var(--brand-teal)]">
+                {growthLabel}
+              </span>
+              {" "}this month.
             </p>
+            {dateFilter && (dateFilter.from || dateFilter.to) && (
+              <div className="mt-2 flex items-center">
+                <Badge variant="secondary" className="flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-normal">
+                  <span className="text-muted-foreground">Filtered:</span> 
+                  {dateFilter.from ? formatDate(dateFilter.from) : "Any"} - {dateFilter.to ? formatDate(dateFilter.to) : "Any"}
+                  <button 
+                    onClick={() => { setDateFilter(null); setPendingFilter({ from: "", to: "" }); }}
+                    className="ml-1 rounded-full p-0.5 hover:bg-muted-foreground/20"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </Badge>
+              </div>
+            )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="sm" className={`h-10 rounded-md border-border/70 px-4 ${dateFilter ? "bg-[var(--brand-cobalt)]/10 text-[var(--brand-cobalt)] border-[var(--brand-cobalt)]/30" : "bg-background"}`}>
+                  <Filter className="mr-2 h-4 w-4" />
+                  Filter
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="flex w-full flex-col p-6 sm:max-w-md">
+                <SheetHeader className="mb-2">
+                  <SheetTitle className="text-xl font-semibold">Filter Overview</SheetTitle>
+                </SheetHeader>
+                <div className="flex-1 space-y-6 py-4">
+                  <div className="space-y-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="date-from" className="text-sm font-medium">From Date</Label>
+                      <Input 
+                        id="date-from" 
+                        type="date" 
+                        className="h-11"
+                        value={pendingFilter.from} 
+                        onChange={(e) => setPendingFilter(prev => ({ ...prev, from: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="date-to" className="text-sm font-medium">To Date</Label>
+                      <Input 
+                        id="date-to" 
+                        type="date" 
+                        className="h-11"
+                        value={pendingFilter.to} 
+                        onChange={(e) => setPendingFilter(prev => ({ ...prev, to: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <SheetFooter className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end sm:gap-3">
+                  <Button variant="outline" className="h-11 w-full sm:w-auto" onClick={() => { setPendingFilter({from: "", to: ""}); setDateFilter(null); setIsFilterOpen(false); }}>
+                    Clear
+                  </Button>
+                  <Button className="h-11 w-full bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)] sm:w-auto" onClick={() => { setDateFilter(pendingFilter); setIsFilterOpen(false); }}>
+                    Apply Filter
+                  </Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+
+            <Button variant="outline" size="sm" className="h-10 rounded-md border-border/70 bg-background px-4" onClick={handleExportReport}>
+              <Download className="mr-2 h-4 w-4" />
+              Export Report
+            </Button>
+            <Link href="/dashboard/invoices/new">
+              <Button size="sm" className="h-10 rounded-md bg-[var(--brand-cobalt)] px-5 text-white hover:bg-[var(--brand-indigo)]">
+                <Plus className="mr-2 h-4 w-4" />
+                New Invoice
+              </Button>
+            </Link>
             <Link href="/dashboard/business-settings">
-              <Button variant="outline" size="sm" className="h-9">
-                <SettingsIcon className="w-4 h-4 mr-2" />
-                Business Settings
+              <Button variant="outline" size="sm" className="h-10 rounded-md border-border/70 bg-background px-4">
+                <SettingsIcon className="mr-2 h-4 w-4" />
+                Settings
               </Button>
             </Link>
           </div>
         </div>
 
-        {/* Subscription Alert for Free Plan */}
-        {(!stats.subscriptionPlan || stats.subscriptionPlan === "FREE") && (
-          <Alert className="bg-primary/5 border-primary/20">
-            <Crown className="h-4 w-4 text-primary" />
-            <AlertTitle className="text-primary font-semibold">Upgrade to Pro</AlertTitle>
-            <AlertDescription className="flex items-center justify-between flex-wrap gap-2 mt-1">
-              <span>
-                You are currently on the Free plan. Upgrade to Pro to unlock unlimited invoices, custom branding, and more.
-              </span>
-              <Link href="/pricing">
-                <Button size="sm" className="whitespace-nowrap">
-                  Upgrade Now
-                </Button>
-              </Link>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Bento Grid Metrics Workspace */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          
-          {/* Main Revenue Card (Spans 2 columns, maybe 2 rows on large screens) */}
-          <Card className="md:col-span-2 xl:col-span-2 xl:row-span-2 flex flex-col justify-between overflow-hidden shadow-sm hover:shadow-md transition-shadow relative bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
-            <CardHeader className="flex flex-row items-start justify-between pb-2 relative z-10">
-              <div className="space-y-1">
-                <CardTitle className="text-base font-medium text-muted-foreground">Total Revenue</CardTitle>
-                <div className="text-4xl md:text-5xl font-bold tracking-tight">
-                  {formatCurrency(stats.totalRevenue)}
-                </div>
-              </div>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                <DollarSign className="h-6 w-6 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6 relative z-10 space-y-4">
-              <div className="flex items-center text-sm">
-                {stats.revenueGrowth >= 0 ? (
-                  <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-none px-2 py-1">
-                    <TrendingUp className="w-3.5 h-3.5 mr-1" />
-                    +{stats.revenueGrowth.toFixed(1)}%
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="bg-rose-100 text-rose-800 hover:bg-rose-100 border-none px-2 py-1">
-                    <TrendingDown className="w-3.5 h-3.5 mr-1" />
-                    {stats.revenueGrowth.toFixed(1)}%
-                  </Badge>
-                )}
-                <span className="text-muted-foreground ml-2">vs last month</span>
-              </div>
-              
-              <div className="flex items-center gap-4 pt-4 border-t border-primary/10">
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Last Month</div>
-                  <div className="text-sm font-semibold">{formatCurrency(stats.lastMonthRevenue)}</div>
-                </div>
-                <div className="w-px h-8 bg-border"></div>
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">This Month</div>
-                  <div className="text-sm font-semibold">{formatCurrency(stats.thisMonthRevenue)}</div>
-                </div>
-              </div>
-            </CardContent>
-            {/* Background decorative elements */}
-            <div className="absolute -right-12 -bottom-12 w-48 h-48 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
-          </Card>
-
-          {/* Invoice Performance Card */}
-          <Card className="lg:col-span-1 xl:col-span-1 shadow-sm hover:shadow-md transition-shadow border-t-4 border-t-blue-500 flex flex-col justify-between">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Invoices</CardTitle>
-                <FileText className="h-4 w-4 text-blue-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalInvoices}</div>
-              <p className="text-xs text-muted-foreground mt-1 mb-4">
-                {stats.thisMonthInvoices} issued this month
-              </p>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 text-green-700">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    Paid
+        <div className="grid gap-3 md:grid-cols-3">
+          {kpiCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <Card key={card.label} className={`rounded-[22px] border-border/80 bg-card ${elevatedCardShadow}`}>
+                <CardContent className="p-5">
+                  <div className="mb-3 flex items-start justify-between">
+                    <div className="rounded-full bg-muted/80 p-2.5">
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className={getKpiPillClass(card.tone)}
+                    >
+                      {card.pill}
+                    </Badge>
                   </div>
-                  <span className="font-medium bg-green-50 px-1.5 py-0.5 rounded text-green-800">{stats.paidInvoices}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5 text-slate-700">
-                    <div className="w-2 h-2 rounded-full bg-slate-400" />
-                    Drafts
-                  </div>
-                  <span className="font-medium bg-slate-100 px-1.5 py-0.5 rounded text-slate-800">{stats.draftInvoices}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Actionable / Alert Cards (Pending & Overdue) - Stacked vertically on xl screens if possible, or just normal cards */}
-          <Card className="shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center bg-yellow-50/50 border-yellow-200/50 dark:bg-yellow-950/10 dark:border-yellow-900/50">
-            <CardContent className="p-4 md:p-6 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-500">Pending</p>
-                <h3 className="text-2xl font-bold text-yellow-900 dark:text-yellow-400 mt-1">{stats.pendingInvoices}</h3>
-                <p className="text-xs text-yellow-700/80 dark:text-yellow-500/80 mt-1">Awaiting payment</p>
-              </div>
-              <div className="h-10 w-10 shrink-0 rounded-full bg-yellow-100 dark:bg-yellow-900/40 flex items-center justify-center">
-                <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm hover:shadow-md transition-shadow flex flex-col justify-center bg-red-50/50 border-red-200/50 dark:bg-red-950/10 dark:border-red-900/50">
-            <CardContent className="p-4 md:p-6 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm font-medium text-red-800 dark:text-red-500">Overdue</p>
-                <h3 className="text-2xl font-bold text-red-900 dark:text-red-400 mt-1">{stats.overdueInvoices}</h3>
-                <p className="text-xs text-red-700/80 dark:text-red-500/80 mt-1">Action required</p>
-              </div>
-              <div className="h-10 w-10 shrink-0 rounded-full bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
-                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Customers & Products grouped */}
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Customers</CardTitle>
-                <Users className="h-4 w-4 text-violet-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{stats.totalCustomers}</div>
-                  <div className="flex items-center text-xs mt-1">
-                    {stats.customerGrowth >= 0 ? (
-                      <span className="text-emerald-600 flex items-center bg-emerald-50 px-1 py-0.5 rounded">
-                        <ArrowUpRight className="w-3 h-3 mr-0.5" />
-                        +{stats.customerGrowth}%
-                      </span>
-                    ) : (
-                      <span className="text-rose-600 flex items-center bg-rose-50 px-1 py-0.5 rounded">
-                        <ArrowDownRight className="w-3 h-3 mr-0.5" />
-                        {stats.customerGrowth}%
-                      </span>
-                    )}
-                    <span className="text-muted-foreground ml-1">growth</span>
-                  </div>
-                </div>
-                <Link href="/dashboard/customers/new">
-                  <Button variant="secondary" size="icon" className="h-7 w-7 rounded-md bg-muted">
-                    <Plus className="w-3.5 h-3.5" />
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-medium text-muted-foreground">Products</CardTitle>
-                <Package className="h-4 w-4 text-orange-500" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-end justify-between">
-                <div>
-                  <div className="text-2xl font-bold">{stats.totalProducts}</div>
-                  <div className="text-xs text-muted-foreground mt-1 bg-muted px-1.5 py-0.5 rounded inline-block">
-                    Avg. Value: <span className="font-semibold text-foreground">{formatCurrency(stats.avgInvoiceValue)}</span>
-                  </div>
-                </div>
-                <Link href="/dashboard/products/new">
-                  <Button variant="secondary" size="icon" className="h-7 w-7 rounded-md bg-muted">
-                    <Plus className="w-3.5 h-3.5" />
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+                  <p className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{card.label}</p>
+                  <p className="mt-1.5 text-[2rem] font-bold leading-none tracking-tight text-foreground">{card.value}</p>
+                  <p className="mt-1.5 text-xs text-muted-foreground">{card.meta}</p>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
-        {/* Recent Invoices and Top Customers */}
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {/* Recent Invoices - Spans 2 cols on xl screens */}
-          <Card className="shadow-sm xl:col-span-2">
-            <CardHeader className="border-b bg-muted/10 pb-4">
+        <div className="grid gap-4 xl:grid-cols-12">
+          <Card className={`rounded-[24px] border-border/80 xl:col-span-8 ${elevatedCardShadow}`}>
+            <CardHeader className="border-b bg-muted/20 px-5 pb-3 pt-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                  <CardTitle className="text-lg font-semibold flex items-center">
-                    <Activity className="w-5 h-5 mr-2 text-primary" />
-                    Recent Activity
-                  </CardTitle>
-                  <CardDescription>Latest invoices generated</CardDescription>
+                  <CardTitle className="text-xl font-semibold">Recent Invoice Activity</CardTitle>
+                  <CardDescription>Latest billing records and current payment state</CardDescription>
                 </div>
                 <Link href="/dashboard/invoices">
-                  <Button variant="outline" size="sm" className="h-8">
-                    View All Invoices
-                    <ArrowUpRight className="w-3 h-3 ml-1" />
+                  <Button variant="outline" size="sm" className="h-9 rounded-md px-4">
+                    View all activity
                   </Button>
                 </Link>
               </div>
@@ -395,21 +464,23 @@ export default function DashboardPage() {
             <CardContent className="p-0">
               {loading && (
                 <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-[var(--brand-cobalt)]"></div>
                   Loading...
                 </div>
               )}
-              
+
               {!loading && recentInvoices.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                    <FileText className="w-6 h-6 text-muted-foreground" />
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                    <FileText className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <p className="text-sm font-medium text-foreground">No invoices yet</p>
-                  <p className="text-xs text-muted-foreground mb-4 max-w-[180px]">Create your first invoice to see activity here.</p>
+                  <p className="mb-4 max-w-[180px] text-xs text-muted-foreground">
+                    Create your first invoice to see activity here.
+                  </p>
                   <Link href="/dashboard/invoices/new">
                     <Button size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
+                      <Plus className="mr-2 h-4 w-4" />
                       Create Invoice
                     </Button>
                   </Link>
@@ -417,157 +488,135 @@ export default function DashboardPage() {
               )}
 
               {!loading && recentInvoices.length > 0 && (
-                <div className="divide-y">
-                  {recentInvoices.map((invoice) => (
-                    <div key={invoice.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 hover:bg-muted/30 transition-colors gap-4 sm:gap-0">
-                      <div className="flex items-center gap-4">
-                        <div className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-muted`}>
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <Link href={`/dashboard/invoices/${invoice.id}`} className="font-semibold text-sm hover:text-primary transition-colors">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[640px] text-sm">
+                    <thead className="bg-muted/30 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                      <tr>
+                        <th className="px-5 py-3 text-left font-medium">Client</th>
+                        <th className="px-5 py-3 text-left font-medium">Invoice #</th>
+                        <th className="px-5 py-3 text-left font-medium">Due Date</th>
+                        <th className="px-5 py-3 text-left font-medium">Amount</th>
+                        <th className="px-5 py-3 text-left font-medium">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {recentInvoices.slice(0, 3).map((invoice) => (
+                        <tr key={invoice.id} className="transition-colors hover:bg-muted/20">
+                          <td className="px-5 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--brand-cobalt)]/12 text-[10px] font-semibold text-[var(--brand-cobalt)]">
+                                {invoice.customer.name.slice(0, 2).toUpperCase()}
+                              </div>
+                              <p className="font-medium text-foreground">{invoice.customer.name}</p>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3">
+                            <Link href={`/dashboard/invoices/${invoice.id}`} className="font-medium text-foreground transition-colors hover:text-[var(--brand-cobalt)]">
                               {invoice.invoiceNumber}
                             </Link>
-                            <Badge variant="outline" className={`text-[10px] h-5 px-1.5 ${
-                              invoice.status === 'PAID' ? 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800' :
-                              invoice.status === 'PENDING' ? 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-800' :
-                              invoice.status === 'OVERDUE' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800' :
-                              'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-900/20 dark:text-slate-400 dark:border-slate-800'
-                            }`}>
-                              {invoice.status}
+                          </td>
+                          <td className="px-5 py-3 text-muted-foreground">
+                            {getDueDateLabel(invoice.dueDate)}
+                          </td>
+                          <td className="px-5 py-3 font-semibold text-foreground">
+                            {formatCurrency(invoice.totalAmount)}
+                          </td>
+                          <td className="px-5 py-3">
+                            <Badge variant="outline" className={`h-5 px-1.5 text-[10px] ${getInvoiceStatusBadgeClass(invoice.status)}`}>
+                              {formatInvoiceStatus(invoice.status)}
                             </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">{invoice.customer.name}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-6 justify-between sm:justify-end">
-                        <div className="text-right">
-                          <p className="text-xs text-muted-foreground">Due {formatDate(invoice.dueDate)}</p>
-                          <p className="text-xs text-muted-foreground">{formatDate(invoice.issueDate)}</p>
-                        </div>
-                        <div className="text-right w-24">
-                          <p className="font-semibold text-sm">{formatCurrency(invoice.totalAmount)}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Top Customers */}
-          <Card className="shadow-sm xl:col-span-1">
-            <CardHeader className="border-b bg-muted/10 pb-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <CardTitle className="text-lg font-semibold flex items-center">
-                    <Users className="w-5 h-5 mr-2 text-primary" />
-                    Top Customers
-                  </CardTitle>
-                  <CardDescription>By revenue generated</CardDescription>
-                </div>
-                <Link href="/dashboard/customers">
-                  <Button variant="outline" size="sm" className="h-8">
-                    View All
-                    <ArrowUpRight className="w-3 h-3 ml-1" />
+          <div className="space-y-4 xl:col-span-4">
+            <Card className={`rounded-[24px] border-[var(--brand-cobalt)]/20 bg-muted/40 ${elevatedCardShadow}`}>
+              <CardContent className="space-y-4 p-5">
+                <h3 className="text-lg font-semibold text-foreground">Revenue Growth Plan</h3>
+                <p className="text-sm text-muted-foreground">
+                  You are on <span className="font-semibold text-foreground">{stats.subscriptionPlan || "FREE"}</span>. Upgrade to Pro for deeper forecasting and automation.
+                </p>
+                <Link href="/pricing">
+                  <Button className="h-11 w-full rounded-md bg-[var(--brand-cobalt)] text-white hover:bg-[var(--brand-indigo)]">
+                    Explore Pro Features
                   </Button>
                 </Link>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              {loading && (
-                <div className="flex items-center justify-center py-12 text-muted-foreground">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                  Loading...
-                </div>
-              )}
-              
-              {!loading && topCustomers.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                    <Users className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-sm font-medium text-foreground">No customers yet</p>
-                  <p className="text-xs text-muted-foreground mb-4 max-w-[180px]">Create your first customer to see activity here.</p>
-                  <Link href="/dashboard/customers/new">
-                    <Button size="sm">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Customer
-                    </Button>
-                  </Link>
-                </div>
-              )}
+              </CardContent>
+            </Card>
 
-              {!loading && topCustomers.length > 0 && (
-                <div className="divide-y">
-                  {topCustomers.map((customer, index) => (
-                    <div key={customer.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary ring-2 ring-background">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <Link href={`/dashboard/customers/${customer.id}`} className="font-medium text-sm hover:text-primary transition-colors">
-                            {customer.name}
-                          </Link>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{customer.invoiceCount} invoices</span>
+            <Card className={`rounded-[24px] border-border/80 ${elevatedCardShadow}`}>
+              <CardHeader className="border-b bg-muted/20 px-5 pb-3 pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="text-lg font-semibold">Top Clients</CardTitle>
+                    <CardDescription>Highest revenue contributors</CardDescription>
+                  </div>
+                  <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {loading && (
+                  <div className="flex items-center justify-center py-10 text-muted-foreground">
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-[var(--brand-cobalt)]"></div>
+                    Loading...
+                  </div>
+                )}
+
+                {!loading && topCustomers.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                      <Users className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <p className="text-sm font-medium text-foreground">No customers yet</p>
+                    <p className="mb-4 max-w-[180px] text-xs text-muted-foreground">
+                      Create your first customer to populate this section.
+                    </p>
+                    <Link href="/dashboard/customers/new">
+                      <Button size="sm">Add Customer</Button>
+                    </Link>
+                  </div>
+                )}
+
+                {!loading && topCustomers.length > 0 && (
+                  <div className="space-y-2.5 p-4">
+                    {topCustomers.slice(0, 2).map((customer) => (
+                      <div key={customer.id} className="flex items-center justify-between rounded-xl border border-border/70 bg-card px-3 py-2.5">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand-cobalt)]/12 text-[10px] font-bold text-[var(--brand-cobalt)]">
+                            {customer.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <Link href={`/dashboard/customers/${customer.id}`} className="text-sm font-medium text-foreground transition-colors hover:text-[var(--brand-cobalt)]">
+                              {customer.name}
+                            </Link>
+                            <p className="text-xs text-muted-foreground">{customer.invoiceCount} invoices</p>
                           </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-sm">{formatCurrency(customer.totalSpent)}</p>
-                        <div className="w-16 h-1.5 bg-muted rounded-full mt-1 ml-auto overflow-hidden">
-                          <div 
-                            className="h-full bg-primary rounded-full" 
-                            style={{ width: `${Math.min((customer.totalSpent / (topCustomers[0]?.totalSpent || 1)) * 100, 100)}%` }}
-                          />
+                        <div className="text-right">
+                          <p className="text-sm font-semibold text-foreground">{formatCurrency(customer.totalSpent)}</p>
+                          <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--brand-teal)]">LTV</p>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    ))}
+                    <Link href="/dashboard/customers">
+                      <Button variant="outline" className="mt-1 h-10 w-full rounded-md">
+                        Manage All Clients
+                        <TrendingUp className="ml-2 h-3.5 w-3.5" />
+                      </Button>
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
-
-        {/* Quick Actions */}
-        <Card className="bg-muted/20 border-dashed">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-medium">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-              <Link href="/dashboard/invoices/new">
-                <Button variant="outline" className="w-full justify-start bg-background hover:bg-primary hover:text-primary-foreground transition-colors border-primary/20">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Invoice
-                </Button>
-              </Link>
-              <Link href="/dashboard/customers/new">
-                <Button variant="outline" className="w-full justify-start bg-background hover:bg-primary hover:text-primary-foreground transition-colors">
-                  <Users className="w-4 h-4 mr-2" />
-                  Add Customer
-                </Button>
-              </Link>
-              <Link href="/dashboard/products/new">
-                <Button variant="outline" className="w-full justify-start bg-background hover:bg-primary hover:text-primary-foreground transition-colors">
-                  <Package className="w-4 h-4 mr-2" />
-                  Add Product
-                </Button>
-              </Link>
-              <Link href="/dashboard/tax-systems/new">
-                <Button variant="outline" className="w-full justify-start bg-background hover:bg-primary hover:text-primary-foreground transition-colors">
-                  <Calculator className="w-4 h-4 mr-2" />
-                  Add Tax System
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+      </div>
       </div>
     </DashboardLayout>
   );
